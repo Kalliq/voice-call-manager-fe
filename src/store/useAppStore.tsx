@@ -4,6 +4,7 @@ import api from "../utils/axiosInstance";
 
 // Define types for the state
 interface AppState {
+  // TO-DO more intuitive is 'me' instead of 'user'
   user: { id: string; name: string } | null;
   settings: Record<string, any> | null;
   lists: Record<string, any>[] | null;

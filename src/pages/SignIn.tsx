@@ -11,6 +11,7 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
+import { UserRole } from "voice-javascript-common";
 
 import useAppStore from "../store/useAppStore";
 import { useAuth } from "../contexts/AuthContext";
@@ -27,6 +28,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 const { setUser } = useAppStore.getState();
 
 const Login: React.FC = () => {
+  const { isSuperadmin } = useAuth();
   const { signin } = useAuth();
   const navigate = useNavigate();
 
@@ -50,7 +52,12 @@ const Login: React.FC = () => {
       console.log("Login successful: ", res.data);
 
       setUser(res.data);
-      navigate("/dashboard");
+
+      if (res.data.role === UserRole.SUPER_ADMIN) {
+        navigate("/superdashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
       console.error(error);
       setErrorMessage("Invalid email or password");

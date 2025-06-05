@@ -12,8 +12,8 @@ import {
   MenuItem,
 } from "@mui/material";
 
-import { CustomTextField } from "../../../components/UI";
-import { CallSession } from "../../../types/contact";
+import { CustomTextField } from "../../../../components/UI";
+import { CallSession } from "../../../../types/contact";
 
 interface ContinueDialogInterface {
   callResults: { label: string }[];
@@ -61,18 +61,18 @@ const ContinueDialog = ({
       <DialogContent dividers>
         <Stack spacing={2}>
           {currentBatch.map((contact) => (
-            <Card key={contact._id} variant="outlined" sx={{ my: 1 }}>
+            <Card key={contact.id} variant="outlined" sx={{ my: 1 }}>
               <CardContent>
                 <Typography variant="h6">
                   {contact.first_name} {contact.last_name}
                 </Typography>
                 <Typography variant="body2">{contact.mobile_phone}</Typography>
                 <Select
-                  value={selectedResults[contact._id] || ""}
+                  value={selectedResults[contact.id] || ""}
                   onChange={(e) =>
                     setSelectedResults((prev) => ({
                       ...prev,
-                      [contact._id]: e.target.value,
+                      [contact.id]: e.target.value,
                     }))
                   }
                   displayEmpty
@@ -90,11 +90,11 @@ const ContinueDialog = ({
                 </Select>
                 <Typography>Short description</Typography>
                 <CustomTextField
-                  value={contactNotes[contact._id] || ""}
+                  value={contactNotes[contact.id] || ""}
                   onChange={(e) =>
                     setContactNotes((prev) => ({
                       ...prev,
-                      [contact._id]: e.target.value,
+                      [contact.id]: e.target.value,
                     }))
                   }
                 />
@@ -109,7 +109,7 @@ const ContinueDialog = ({
           onClick={async () => {
             await Promise.all(
               currentBatch.map((c) => {
-                handleResult(c, selectedResults[c._id]);
+                handleResult(c, selectedResults[c.id]);
               })
             );
             setPendingResultContacts([]);
@@ -119,7 +119,7 @@ const ContinueDialog = ({
           }}
           disabled={
             pendingResultContacts.length === 0 ||
-            pendingResultContacts.some((c) => !selectedResults[c._id])
+            pendingResultContacts.some((c) => !selectedResults[c.id])
           }
         >
           Save and continue

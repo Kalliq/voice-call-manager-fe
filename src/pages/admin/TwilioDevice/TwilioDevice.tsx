@@ -16,19 +16,19 @@ import {
   Container,
 } from "@mui/material";
 
-import api from "../../utils/axiosInstance";
-import useAppStore from "../../store/useAppStore";
+import api from "../../../utils/axiosInstance";
+import useAppStore from "../../../store/useAppStore";
 
 import AudioDevicesList from "./components/AudioDevicesList";
 import StatusLine from "./components/DeviceStatus";
 import DialingCards from "./components/DialingCards";
 import ActiveDialingCard from "./components/ActiveDialingCard";
 import { useTwilioCampaign } from "./useTwilioCampaign";
-import { CustomTextField, SimpleButton } from "../../components/UI";
-import { Contact } from "../../types/contact";
-import { CallResult } from "../../types/call-results";
+import { CustomTextField, SimpleButton } from "../../../components/UI";
+import { Contact } from "../../../types/contact";
+import { CallResult } from "../../../types/call-results";
 import ContinueDialog from "./components/ContinueDIalog";
-import { getDialingSessionsWithStatuses } from "../../utils/getDialingSessionsWithStatuses";
+import { getDialingSessionsWithStatuses } from "../../../utils/getDialingSessionsWithStatuses";
 
 enum TelephonyConnection {
   SOFT_CALL = "Soft call",
@@ -102,7 +102,7 @@ const TwilioDevice = () => {
     }
 
     const { data } = await api.post("/contacts/batch", {
-      ids: slice.map((contact) => contact._id),
+      ids: slice.map((contact) => contact.id),
     });
     const batchContacts = data;
 
@@ -151,9 +151,9 @@ const TwilioDevice = () => {
   };
 
   const handleResult = async (contact: Contact, result: string) => {
-    await api.patch(`/contacts/${contact._id}`, {
+    await api.patch(`/contacts/${contact.id}`, {
       result,
-      notes: contactNotes[contact._id] || "",
+      notes: contactNotes[contact.id] || "",
       timestamp: Date.now(),
     });
   };

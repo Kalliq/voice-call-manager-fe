@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 
-import ContactCard from "../../../components/ContactCard";
+import ContactCard from "../../../../components/ContactCard";
 
 const ContactDialog = ({ open, onClose, contacts }: any) => {
   return (

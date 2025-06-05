@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Accordion,
@@ -13,13 +13,13 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { ResizableBox } from "react-resizable";
 
-import { settingsComponentRegistry } from "../../registry/settings-component-registry";
-import SettingsTypeWrapper from "../../components/SettingsTypeWrapper";
-import useAppStore from "../../store/useAppStore";
+import { settingsComponentRegistry } from "../../../registry/settings-component-registry";
+import SettingsTypeWrapper from "../../../components/SettingsTypeWrapper";
+import useAppStore from "../../../store/useAppStore";
 
 import "react-resizable/css/styles.css";
 import "./Settings.css";
-import { translateToTitleCase } from "../../utils/translateToTitle";
+import { translateToTitleCase } from "../../../utils/translateToTitle";
 
 const drawerWidth = 380;
 
@@ -41,7 +41,28 @@ const Settings: React.FC = () => {
         .map((key) => translateToTitleCase(key))
     : [];
 
-  const [selected, setSelected] = useState<SelectedType>(null);
+  const [selected, setSelected] = useState<SelectedType>({
+    parent: "Phone Settings",
+    child: "powerDialerManagement",
+  });
+
+  useEffect(() => {
+    if (settings && !selected) {
+      console.log("settings: ", settings);
+      console.log("settingsKeys: ", settingsKeys);
+      const parent = settingsKeys.find((k) =>
+        k.toLowerCase().includes("power dialer")
+      );
+      if (parent) {
+        const child = Object.keys(settings[parent]).find(
+          (subKey) =>
+            subKey.toLowerCase().includes("powerdialer") ||
+            subKey.toLowerCase().includes("power_dialer")
+        );
+        if (child) setSelected({ parent, child });
+      }
+    }
+  }, [settings, settingsKeys, selected]);
 
   const handleChildClick = (parent: string, child: string) => {
     setSelected({ parent, child });
@@ -75,7 +96,11 @@ const Settings: React.FC = () => {
       >
         <Box className="hide-scrollbar" sx={{ flex: 1, overflowY: "auto" }}>
           {settingsKeys.map((category) => (
-            <Accordion key={category} disableGutters>
+            <Accordion
+              key={category}
+              disableGutters
+              defaultExpanded={category === "Phone Settings"}
+            >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="subtitle1" fontWeight="bold">
                   {category}

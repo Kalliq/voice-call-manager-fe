@@ -7,7 +7,7 @@ import {
   Divider,
   styled,
 } from "@mui/material";
-import { AudioDevice } from "../../../interfaces/audio-device";
+import { AudioDevice } from "../../../../interfaces/audio-device";
 
 interface AudioDevicesListProps {
   devices: AudioDevice[] | null;

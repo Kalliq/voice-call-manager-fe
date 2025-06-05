@@ -3,23 +3,31 @@ import { HashRouter as Router, Routes, Route } from "react-router-dom";
 
 import { useAuth } from "./contexts/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
+import SuperadminRoute from "./components/SuperadminROute";
 import WithHeader from "./hocs/WithHeader";
 
 // Main Pages
 import SignIn from "./pages/SignIn";
-import Dashboard from "./pages/Dashboard";
-import TwilioDevice from "./pages/TwilioDevice/TwilioDevice";
-import Settings from "./pages/Settings/Settings";
-import Lists from "./pages/Lists/Lists";
-import Contacts from "./pages/Contacts/Contacts";
-import ImportContacts from "./pages/ImportContacts";
-import CreateNewList from "./pages/CreateNewList";
-import ActiveDialing4 from "./pages/ActiveDialing4";
+
+// Admin pages
+import Dashboard from "./pages/admin/Dashboard";
+import TwilioDevice from "./pages/admin/TwilioDevice/TwilioDevice";
+import Settings from "./pages/admin/Settings/Settings";
+import Lists from "./pages/admin/Lists/Lists";
+import Contacts from "./pages/admin/Contacts/Contacts";
+import ImportContacts from "./pages/admin/ImportContacts";
+import CreateNewList from "./pages/admin/CreateNewList";
+
+// Superadmin pages
+import SuperDashboard from "./pages/superadmin/SuperDashboard";
+import NumberPoolSettings from "./pages/superadmin/NumberPoolSettings";
+
 import "./App.css";
 
 function App() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isSuperadmin } = useAuth();
   console.log("isAuthenticated: ", isAuthenticated);
+  console.log("isSuperadmin: ", isSuperadmin);
 
   return (
     <Router>
@@ -50,9 +58,14 @@ function App() {
               path="create-new-list/:id?"
               element={<WithHeader component={CreateNewList} />}
             />
+          </Route>
+        </Route>
+        <Route element={<SuperadminRoute />}>
+          <Route path="/superdashboard">
+            <Route index element={<WithHeader component={SuperDashboard} />} />
             <Route
-              path="active-dialing"
-              element={<WithHeader component={ActiveDialing4} />} // for testing
+              path="numbers-pool"
+              element={<WithHeader component={NumberPoolSettings} />}
             />
           </Route>
         </Route>

@@ -3,16 +3,16 @@ import { useLocation } from "react-router-dom";
 import { Box, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-import api from "../../utils/axiosInstance";
+import api from "../../../utils/axiosInstance";
 
-import ContactCard from "../../components/ContactCard";
-import { Contact } from "../../types/contact";
+import ContactCard from "../../../components/ContactCard";
+import { Contact } from "../../../types/contact";
 
 const ContactsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const contactIds: { _id: string; userId: string }[] =
+  const contactIds: { id: string; userId: string }[] =
     location.state?.contacts || [];
 
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -20,7 +20,7 @@ const ContactsPage = () => {
   useEffect(() => {
     if (contactIds.length > 0) {
       // Replace with real API call
-      const ids = contactIds.map((contactId) => contactId._id);
+      const ids = contactIds.map((contactId) => contactId.id);
       const fetchContacts = async () => {
         const { data } = await api.post("/contacts/batch", {
           ids,

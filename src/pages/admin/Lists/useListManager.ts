@@ -1,8 +1,8 @@
 import { useState } from "react";
-import api from "../../utils/axiosInstance";
-import useAppStore from "../../store/useAppStore";
-import { Contact } from "../../types/contact";
-import { Step } from "../../interfaces/list-dialing-step";
+import api from "../../../utils/axiosInstance";
+import useAppStore from "../../../store/useAppStore";
+import { Contact } from "../../../types/contact";
+import { Step } from "../../../interfaces/list-dialing-step";
 
 const useListManager = () => {
   const deleteList = useAppStore((state) => state.deleteList);

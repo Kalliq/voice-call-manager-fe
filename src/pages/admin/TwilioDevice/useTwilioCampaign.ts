@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Device, Call } from "@twilio/voice-sdk";
 import { Socket } from "socket.io-client";
+import { normalizePhone } from "voice-javascript-common";
 
-import { initTwilio } from "../../utils/initTwilio";
-import { initSocket } from "../../utils/initSocket";
+import { initTwilio } from "../../../utils/initTwilio";
+import { initSocket } from "../../../utils/initSocket";
 
-import { CallSession, Contact } from "../../types/contact";
-import { AudioDevice } from "../../interfaces/audio-device";
-import { normalizePhone } from "../../utils/normalizePhone";
-import { getAudioDevices } from "../../utils/audioDevice";
+import { CallSession, Contact } from "../../../types/contact";
+import { AudioDevice } from "../../../interfaces/audio-device";
+import { getAudioDevices } from "../../../utils/audioDevice";
 
 interface useTwilioCampaignProps {
   userId: string;
@@ -89,7 +89,7 @@ export const useTwilioCampaign = ({ userId }: useTwilioCampaignProps) => {
     const associatedContact = callToContactMap.current.get(call);
     if (associatedContact) {
       setPendingResultContacts((prev) => {
-        const alreadyAdded = prev.some((c) => c._id === associatedContact._id);
+        const alreadyAdded = prev.some((c) => c.id === associatedContact.id);
         return alreadyAdded ? prev : [...prev, associatedContact];
       });
     }
@@ -111,14 +111,14 @@ export const useTwilioCampaign = ({ userId }: useTwilioCampaignProps) => {
 
     if (status === "ringing") {
       setRingingSessions((prev) => {
-        const already = prev.some((c) => c._id === contact._id);
+        const already = prev.some((c) => c.id === contact.id);
         return already ? prev : [...prev, { ...contact, status }];
       });
     }
 
     if (status === "in-progress") {
       // Remove from ringing
-      setRingingSessions((prev) => prev.filter((c) => c._id !== contact._id));
+      setRingingSessions((prev) => prev.filter((c) => c.id !== contact.id));
       // Set current active call
       setAnsweredSession(contact);
     }
@@ -133,9 +133,9 @@ export const useTwilioCampaign = ({ userId }: useTwilioCampaignProps) => {
         return;
       }
 
-      setRingingSessions((prev) => prev.filter((c) => c._id !== contact._id));
+      setRingingSessions((prev) => prev.filter((c) => c.id !== contact.id));
       setPendingResultContacts((prev) => {
-        const alreadyAdded = prev.some((c) => c._id === contact._id);
+        const alreadyAdded = prev.some((c) => c.id === contact.id);
         return alreadyAdded ? prev : [...prev, contact];
       });
 
@@ -193,7 +193,7 @@ export const useTwilioCampaign = ({ userId }: useTwilioCampaignProps) => {
       const contactId = parsedParams.get("contactId");
 
       const contactToBind = currentBatchRef.current.find(
-        (contact) => contact._id === contactId
+        (contact) => contact.id === contactId
       ) as CallSession;
       if (!contactToBind) {
         console.warn("Could not bind call: no contact found for call params");
@@ -262,7 +262,7 @@ export const useTwilioCampaign = ({ userId }: useTwilioCampaignProps) => {
     if (currentBatch.length === 0) return;
 
     const allContactsHandled = currentBatch.every((contact) =>
-      pendingResultContacts.some((r) => r._id === contact._id)
+      pendingResultContacts.some((r) => r.id === contact.id)
     );
 
     if (

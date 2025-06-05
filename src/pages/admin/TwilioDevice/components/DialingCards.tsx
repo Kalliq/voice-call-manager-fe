@@ -8,7 +8,7 @@ import {
   styled,
 } from "@mui/material";
 import { Phone } from "@mui/icons-material";
-import { CallSession } from "../../../types/contact";
+import { CallSession } from "../../../../types/contact";
 
 interface DialingCardsProps {
   sessions: CallSession[];
@@ -35,7 +35,7 @@ const DialingCards = ({ sessions }: DialingCardsProps) => {
   return (
     <Grid container spacing={2}>
       {sessions.map((session) => (
-        <Grid item key={session._id} xs={6}>
+        <Grid item key={session.id} xs={6}>
           <Card>
             <CardContent>
               <DialingLabel>{session.status}</DialingLabel>

@@ -19,9 +19,9 @@ import {
   Dialpad,
 } from "@mui/icons-material";
 
-import { Contact } from "../../../types/contact";
+import { Contact } from "../../../../types/contact";
 
-import rawDashboardData from "../../../data/dashboardData.json";
+import rawDashboardData from "../../../../data/dashboardData.json";
 
 const simulateDate = (index: number) => {
   const date = new Date();
@@ -84,7 +84,7 @@ const ActiveDialingCard = ({
 
   useEffect(() => {
     setCallStartTime(new Date());
-  }, [session._id]);
+  }, [session.id]);
 
   return (
     <>
@@ -195,7 +195,7 @@ const ActiveDialingCard = ({
 
                   return (
                     <Box
-                      key={action._id || index}
+                      key={action.id || index}
                       sx={{
                         display: "flex",
                         alignItems: "center",

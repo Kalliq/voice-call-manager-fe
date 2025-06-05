@@ -1,4 +1,4 @@
-import MultiStep_ContactsImport from "../components/forms/contactsImport/MultiStep_ContactsImport";
+import MultiStep_ContactsImport from "../../components/forms/contactsImport/MultiStep_ContactsImport";
 
 const ImportContacts = () => {
   return (

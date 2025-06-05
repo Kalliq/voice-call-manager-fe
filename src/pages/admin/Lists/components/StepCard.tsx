@@ -10,9 +10,9 @@ import {
 } from "@mui/material";
 import { GroupOutlined, PhoneForwardedOutlined } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import WobblingIconButton from "../../../components/UI/WobblingArrowIcon";
+import WobblingIconButton from "../../../../components/UI/WobblingArrowIcon";
 import { connectionDisplayMap, TelephonyConnection } from "../constants";
-import { SimpleButton } from "../../../components/UI";
+import { SimpleButton } from "../../../../components/UI";
 import ContactDialog from "./ContactDialog";
 
 const StepCard = ({

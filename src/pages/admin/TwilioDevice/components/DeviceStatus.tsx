@@ -1,6 +1,6 @@
 import { Box, Typography, useTheme, styled } from "@mui/material";
 
-import { StatusDot } from "../../../components/atoms/StatusDot";
+import { StatusDot } from "../../../../components/atoms/StatusDot";
 
 const StatusLine = ({ status }: { status: string }) => {
   const theme = useTheme();

@@ -1,4 +1,4 @@
-import MultiStepForm_CreateNewList from "../components/forms/createList/MultiStepCreateList";
+import MultiStepForm_CreateNewList from "../../components/forms/createList/MultiStepCreateList";
 
 const CreateNewList = () => {
   return (

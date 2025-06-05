@@ -30,9 +30,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import api from "../utils/axiosInstance";
-import useAppStore from "../store/useAppStore";
-import dashboardData from "../data/dashboardData.json";
+import api from "../../utils/axiosInstance";
+import useAppStore from "../../store/useAppStore";
+import dashboardData from "../../data/dashboardData.json";
 
 // Color palette constants
 const colors = {

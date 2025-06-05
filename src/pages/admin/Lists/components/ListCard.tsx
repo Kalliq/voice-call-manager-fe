@@ -13,8 +13,8 @@ import { useNavigate } from "react-router-dom";
 
 import ConnectionMenu from "./ConnectionMenu";
 import StepCard from "./StepCard";
-import { Step } from "../../../interfaces/list-dialing-step";
-import { getStatusColor } from "../../../utils/getStatusColor";
+import { Step } from "../../../../interfaces/list-dialing-step";
+import { getStatusColor } from "../../../../utils/getStatusColor";
 
 const ListCard = ({
   list,

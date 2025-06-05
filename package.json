@@ -32,7 +32,7 @@
     "react-router-dom": "^7.2.0",
     "recharts": "^2.15.1",
     "socket.io-client": "^4.8.1",
-    "voice-javascript-common": "^1.0.6",
+    "voice-javascript-common": "^1.0.9",
     "zod": "^3.24.2",
     "zustand": "^5.0.3"
   },

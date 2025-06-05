@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Box, Typography } from "@mui/material";
 
-import { SimpleButton } from "../../components/UI/SimpleButton";
-import useAppStore from "../../store/useAppStore";
+import { SimpleButton } from "../../../components/UI/SimpleButton";
+import useAppStore from "../../../store/useAppStore";
 import useListManager from "./useListManager";
 import ListCard from "./components/ListCard";
 import DeleteDialog from "./components/DeleteDialog";
