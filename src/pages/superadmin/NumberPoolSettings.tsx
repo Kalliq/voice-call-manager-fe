@@ -2,18 +2,33 @@ import { useEffect, useState } from "react";
 import {
   Box,
   Button,
+  ButtonGroup,
   Checkbox,
   MenuItem,
   Select,
+  Switch,
   Table,
   TableHead,
   TableBody,
   TableRow,
   TableCell,
   Typography,
+  FormControlLabel,
 } from "@mui/material";
 
 import api from "../../utils/axiosInstance";
+
+type NumberRecord = {
+  number: string;
+  friendlyName?: string;
+  assigned: boolean;
+  released: boolean;
+  cooldown: boolean;
+  spammed: boolean;
+  usageCount: number;
+  validationStatus?: "valid" | "invalid" | "unknown";
+  remediationStatus?: string;
+};
 
 type User = {
   id: string;
@@ -21,12 +36,14 @@ type User = {
   role: string;
 };
 
-export default function NumberPoolSettings() {
+const NumberPoolSettings = () => {
+  const [view, setView] = useState<"pool" | "problematic" | "cleaned">("pool");
   const [numbers, setNumbers] = useState([]);
   const [users, setUsers] = useState<User[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [assignUser, setAssignUser] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSpammedOnly, setShowSpammedOnly] = useState(false);
 
   const usageCounts = numbers.map((num: any) => num.usageCount || 0);
   const maxUsage = Math.max(...usageCounts, 1);
@@ -39,15 +56,22 @@ export default function NumberPoolSettings() {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const resNums = await api.get("/numbers");
-      setNumbers(resNums.data);
-
+    const fetchUsers = async () => {
       const resUsers = await api.get("/users?role=admin"); // adjust path if needed
       setUsers(resUsers.data);
     };
-    fetchData();
+    fetchUsers();
   }, []);
+
+  useEffect(() => {
+    let url = "/numbers";
+    if (view === "problematic") url = "/cleaning/problematic";
+    if (view === "cleaned") url = "/cleaning/cleaned";
+    api.get(url).then((r) => {
+      setNumbers(r.data);
+      setSelected([]);
+    });
+  }, [view]);
 
   const handleSelect = (number: string) => {
     setSelected((prev) =>
@@ -82,43 +106,144 @@ export default function NumberPoolSettings() {
     setLoading(false);
   };
 
+  const handleValidate = async () => {
+    setLoading(true);
+
+    await api.post("/cleaning/validate", { numbers: selected });
+    const r = await api.get("/cleaning/problematic");
+
+    setNumbers(r.data);
+    setLoading(false);
+  };
+
+  const handleRemediate = async () => {
+    setLoading(true);
+
+    await api.post("/cleaning/remediate", { numbers: selected });
+    const r = await api.get("/numbers/cleaning/problematic");
+
+    setNumbers(r.data);
+    setLoading(false);
+  };
+
+  const handleReactivate = async () => {
+    setLoading(true);
+
+    await api.post("/cleaning/reactivate", { numbers: selected });
+    const r = await api.get("/cleaning/cleaned");
+
+    setNumbers(r.data);
+    setLoading(false);
+  };
+
+  const filteredNumbers = showSpammedOnly
+    ? numbers.filter((n: any) => n.spammed)
+    : numbers;
+
   return (
     <Box p={3}>
       <Typography variant="h5" mb={2}>
         Number Pool Management
       </Typography>
-      <Box mb={2} display="flex" alignItems="center" gap={2}>
-        <Select
-          value={assignUser}
-          onChange={(e) => setAssignUser(e.target.value)}
-          displayEmpty
-          size="small"
-          sx={{ minWidth: 180 }}
-        >
-          <MenuItem value="">Assign to user...</MenuItem>
-          {users.map((u) => (
-            <MenuItem key={u.id} value={u.id}>
-              {u.email}
-            </MenuItem>
-          ))}
-        </Select>
+
+      <ButtonGroup sx={{ mb: 2 }}>
         <Button
-          variant="contained"
-          color="primary"
-          disabled={!assignUser || selected.length === 0 || loading}
-          onClick={handleAssign}
+          variant={view === "pool" ? "contained" : "outlined"}
+          onClick={() => setView("pool")}
         >
-          Assign
+          Pool
         </Button>
         <Button
-          variant="outlined"
-          color="error"
-          disabled={selected.length === 0 || loading}
-          onClick={handleUnassign}
+          variant={view === "problematic" ? "contained" : "outlined"}
+          onClick={() => setView("problematic")}
         >
-          Unassign
+          Problematic
         </Button>
-      </Box>
+        <Button
+          variant={view === "cleaned" ? "contained" : "outlined"}
+          onClick={() => setView("cleaned")}
+        >
+          Cleaned
+        </Button>
+      </ButtonGroup>
+
+      {view === "pool" && (
+        <Box mb={2} display="flex" alignItems="center" gap={2}>
+          <Select
+            value={assignUser}
+            onChange={(e) => setAssignUser(e.target.value)}
+            displayEmpty
+            size="small"
+            sx={{ minWidth: 180 }}
+          >
+            <MenuItem value="">Assign to user...</MenuItem>
+            {users.map((u) => (
+              <MenuItem key={u.id} value={u.id}>
+                {u.email}
+              </MenuItem>
+            ))}
+          </Select>
+          <Button
+            variant="contained"
+            disabled={!assignUser || !selected.length || loading}
+            onClick={handleAssign}
+          >
+            Assign
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            disabled={!selected.length || loading}
+            onClick={handleUnassign}
+          >
+            Unassign
+          </Button>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showSpammedOnly}
+                onChange={(e) => setShowSpammedOnly(e.target.checked)}
+                color="error"
+              />
+            }
+            label="Show spammed only"
+          />
+        </Box>
+      )}
+
+      {/* Problematic‑only controls */}
+      {view === "problematic" && (
+        <Box mb={2} display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            disabled={!selected.length || loading}
+            onClick={handleValidate}
+          >
+            Validate Selected
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            disabled={!selected.length || loading}
+            onClick={handleRemediate}
+          >
+            Remediate Selected
+          </Button>
+        </Box>
+      )}
+
+      {/* Cleaned‑only controls */}
+      {view === "cleaned" && (
+        <Box mb={2}>
+          <Button
+            variant="contained"
+            disabled={!selected.length || loading}
+            onClick={handleReactivate}
+          >
+            Reactivate Selected
+          </Button>
+        </Box>
+      )}
 
       <Table>
         <TableHead>
@@ -130,10 +255,11 @@ export default function NumberPoolSettings() {
             <TableCell>Status</TableCell>
             <TableCell align="center">Usage</TableCell>
             <TableCell align="center">Cool Down</TableCell>
+            <TableCell>Spammed</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {numbers.map((num: any) => (
+          {filteredNumbers.map((num: any) => (
             <TableRow
               key={num.id || num.number}
               sx={
@@ -214,10 +340,21 @@ export default function NumberPoolSettings() {
                   </Button>
                 )}
               </TableCell>
+              <TableCell align="center">
+                {num.spammed ? (
+                  <Typography color="error" fontWeight="bold">
+                    Yes
+                  </Typography>
+                ) : (
+                  "-"
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </Box>
   );
-}
+};
+
+export default NumberPoolSettings;

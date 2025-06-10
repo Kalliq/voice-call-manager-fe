@@ -3,7 +3,7 @@ import { HashRouter as Router, Routes, Route } from "react-router-dom";
 
 import { useAuth } from "./contexts/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
-import SuperadminRoute from "./components/SuperadminROute";
+import SuperadminRoute from "./components/SuperadminRoute";
 import WithHeader from "./hocs/WithHeader";
 
 // Main Pages

@@ -3,6 +3,7 @@ import { UserRole } from "voice-javascript-common";
 
 import api from "../utils/axiosInstance";
 import cfg from "../config";
+import useAppStore from "../store/useAppStore";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -26,6 +27,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isSuperadmin, setIsSuperadmin] = useState<boolean>(false);
 
   const signin = async (creds: Record<string, unknown>) => {
+    useAppStore.getState().resetStore();
+
     const res = await api.post("/auth/signin", creds);
     setIsAuthenticated(true);
     if (res.data.role === UserRole.SUPER_ADMIN) setIsSuperadmin(true);
@@ -36,6 +39,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await api.post("/auth/signout", {});
     setIsAuthenticated(false);
     setIsSuperadmin(false);
+
+    useAppStore.getState().resetStore();
   };
 
   return (

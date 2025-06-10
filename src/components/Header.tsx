@@ -39,6 +39,10 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../assets/logo_text.svg";
 
+import cfg from "../config";
+
+const version = import.meta.env.VITE_APP_VERSION;
+
 export const colors = {
   background: "#16161a",
   headline: "#ffffff",
@@ -60,7 +64,7 @@ const notifications = [
 ];
 
 const Header = () => {
-  const { signout } = useAuth();
+  const { signout, isSuperadmin } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -162,10 +166,13 @@ const Header = () => {
                   cursor: "pointer",
                   filter: "brightness(0) invert(1)",
                 }}
-                onClick={() => navigate("/dashboard")}
+                onClick={() =>
+                  isSuperadmin
+                    ? navigate("/superdashboard")
+                    : navigate("/dashboard")
+                }
               />
             </Box>
-
             {/* Center area - Search and navigation (desktop only) */}
             <Box
               sx={{
@@ -365,6 +372,9 @@ const Header = () => {
           </Toolbar>
         </Container>
       </AppBar>
+      <Typography variant="caption" color="black" sx={{ ml: 1 }}>
+        {!cfg.isDevMode ? `Version: v${version}` : null}
+      </Typography>
 
       {/* Mobile Drawer */}
       <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
