@@ -1,22 +1,14 @@
-import { useEffect } from "react";
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 
 import { useAuth } from "./contexts/AuthContext";
-import PrivateRoute from "./components/PrivateRoute";
 import SuperadminRoute from "./components/SuperadminRoute";
 import WithHeader from "./hocs/WithHeader";
 
+// Layouts
+import AdminLayout from "./layouts/AdminLayout";
+
 // Main Pages
 import SignIn from "./pages/SignIn";
-
-// Admin pages
-import Dashboard from "./pages/admin/Dashboard";
-import TwilioDevice from "./pages/admin/TwilioDevice/TwilioDevice";
-import Settings from "./pages/admin/Settings/Settings";
-import Lists from "./pages/admin/Lists/Lists";
-import Contacts from "./pages/admin/Contacts/Contacts";
-import ImportContacts from "./pages/admin/ImportContacts";
-import CreateNewList from "./pages/admin/CreateNewList";
 
 // Superadmin pages
 import SuperDashboard from "./pages/superadmin/SuperDashboard";
@@ -34,32 +26,7 @@ function App() {
       <Routes>
         <Route path="/" element={<SignIn />} />
         {/* Private routes */}
-        <Route element={<PrivateRoute />}>
-          <Route path="/dashboard">
-            <Route index element={<WithHeader component={Dashboard} />} />
-            <Route
-              path="device"
-              element={<WithHeader component={TwilioDevice} />}
-            />
-            <Route
-              path="settings"
-              element={<WithHeader component={Settings} />}
-            />
-            <Route path="lists" element={<WithHeader component={Lists} />} />
-            <Route
-              path="contacts"
-              element={<WithHeader component={Contacts} />}
-            />
-            <Route
-              path="import-contacts"
-              element={<WithHeader component={ImportContacts} />}
-            />
-            <Route
-              path="create-new-list/:id?"
-              element={<WithHeader component={CreateNewList} />}
-            />
-          </Route>
-        </Route>
+        <AdminLayout />
         <Route element={<SuperadminRoute />}>
           <Route path="/superdashboard">
             <Route index element={<WithHeader component={SuperDashboard} />} />

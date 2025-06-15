@@ -113,7 +113,7 @@ const StepCard = ({
                 },
               }}
               onClick={() =>
-                navigate("/dashboard/device", {
+                navigate("/dashboard/campaign", {
                   state: { contacts, mode },
                 })
               }

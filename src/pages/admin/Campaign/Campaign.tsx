@@ -1,34 +1,21 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  MenuItem,
-  Select,
-  Stack,
-  Card,
-  CardContent,
-  Typography,
-  Container,
-} from "@mui/material";
+import { Alert, Stack, Container } from "@mui/material";
+import { Socket } from "socket.io-client";
 
 import api from "../../../utils/axiosInstance";
 import useAppStore from "../../../store/useAppStore";
 
-import AudioDevicesList from "./components/AudioDevicesList";
 import StatusLine from "./components/DeviceStatus";
 import DialingCards from "./components/DialingCards";
 import ActiveDialingCard from "./components/ActiveDialingCard";
-import { useTwilioCampaign } from "./useTwilioCampaign";
-import { CustomTextField, SimpleButton } from "../../../components/UI";
+import { useTwilioCampaign } from "./useCampaign";
+import { SimpleButton } from "../../../components/UI";
 import { Contact } from "../../../types/contact";
 import { CallResult } from "../../../types/call-results";
 import ContinueDialog from "./components/ContinueDIalog";
 import { getDialingSessionsWithStatuses } from "../../../utils/getDialingSessionsWithStatuses";
+import { useRingingTone } from "./useRingingTone";
 
 enum TelephonyConnection {
   SOFT_CALL = "Soft call",
@@ -41,7 +28,21 @@ interface LocationState {
   mode: TelephonyConnection;
 }
 
-const TwilioDevice = () => {
+interface CampaignProps {
+  socket: Socket;
+  inputVolume: number;
+  outputVolume: number;
+  volumeHandler: () => void;
+  hangUpHandler: () => void;
+}
+
+const Campaign = ({
+  socket,
+  inputVolume,
+  outputVolume,
+  volumeHandler,
+  hangUpHandler,
+}: CampaignProps) => {
   const location = useLocation();
   const { contacts, mode } = (location.state || {}) as LocationState;
 
@@ -61,8 +62,6 @@ const TwilioDevice = () => {
   // Custom hook state variables
   const {
     status,
-    inputVolume,
-    outputVolume,
     currentIndex,
     isCampaignRunning,
     isCampaignFinished,
@@ -83,7 +82,14 @@ const TwilioDevice = () => {
     handleHangUp,
   } = useTwilioCampaign({
     userId: user!.id,
+    socket,
+    callEventHandlers: {
+      volumeHandler,
+      hangUpHandler,
+    },
   });
+
+  useRingingTone({ ringingSessions, answeredSession });
 
   const callsPerBatch = {
     [TelephonyConnection.SOFT_CALL]: 1,
@@ -232,4 +238,4 @@ const TwilioDevice = () => {
   );
 };
 
-export default TwilioDevice;
+export default Campaign;
