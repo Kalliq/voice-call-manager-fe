@@ -3,10 +3,28 @@ import { create } from "zustand";
 import api from "../utils/axiosInstance";
 
 // Define types for the state
+export interface CallStat {
+  callsTotal: number;
+  callsConnected: number;
+  satisfactionScore: number;
+  avgDurationMin: number;
+  followUps: number;
+  callsSuccessful: number;
+  total: number;
+  period: "today" | "week" | "month";
+  dailyDistribution: { name: string; calls: number }[];
+  leadInsights: { enterprise: number; smb: number };
+  timeOnCalls: string;
+  enterprisePercent: number;
+  smbPercent: number;
+}
+
 interface AppState {
+  // TO-DO more intuitive is 'me' instead of 'user'
   user: { id: string; name: string } | null;
   settings: Record<string, any> | null;
   lists: Record<string, any>[] | null;
+  callStats: CallStat | null;
 
   // Actions
   setUser: (user: AppState["user"]) => void;
@@ -16,6 +34,10 @@ interface AppState {
   fetchLists: () => void;
   updateList: (id: string, updatedData: Partial<any>) => Promise<any>;
   deleteList: (id: string) => void;
+  setCallStats: (cs: CallStat | null) => void;
+  fetchCallStats: (period?: CallStat["period"]) => Promise<void>;
+
+  // Reset
   resetStore: () => void;
 }
 
@@ -23,6 +45,7 @@ const useAppStore = create<AppState>((set) => ({
   user: null,
   settings: null,
   lists: null,
+  callStats: null,
 
   // Actions
   setUser: (user) => set({ user }),
@@ -66,6 +89,19 @@ const useAppStore = create<AppState>((set) => ({
       }));
     } catch (error) {
       console.error("Error deleting a list:", error);
+    }
+  },
+  setCallStats: (callStats) => set({ callStats }),
+
+  fetchCallStats: async (period = "today") => {
+    try {
+      const { data } = await api.get("/call-logs/stats", {
+        params: { period },
+      });
+      set({ callStats: data });
+    } catch (err) {
+      console.error("Failed to fetch call stats:", err);
+      set({ callStats: null });
     }
   },
 

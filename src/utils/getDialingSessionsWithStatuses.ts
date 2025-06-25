@@ -6,10 +6,8 @@ export const getDialingSessionsWithStatuses = (
   pendingResultContacts: CallSession[]
 ) => {
   return batch.map((contact) => {
-    const isRinging = ringingSessions.some((c) => c._id === contact._id);
-    const isCompleted = pendingResultContacts.some(
-      (c) => c._id === contact._id
-    );
+    const isRinging = ringingSessions.some((c) => c.id === contact.id);
+    const isCompleted = pendingResultContacts.some((c) => c.id === contact.id);
     let status = "Starting";
     if (isRinging) {
       status = "Ringing";

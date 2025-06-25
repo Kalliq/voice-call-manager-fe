@@ -1,6 +1,6 @@
 type CallResult = {
+  id: string;
   label: string;
-  _id: string;
   checked: boolean;
 };
 

@@ -60,7 +60,7 @@ const MultiStepForm = () => {
       });
 
       console.log("Import Result: ", data);
-      navigate(`/dashboard/lists`);
+      navigate(`/lists`);
     } catch (err) {
       console.error("Import error: ", err);
     }
@@ -72,7 +72,7 @@ const MultiStepForm = () => {
         display="flex"
         justifyContent="center"
         flexDirection="column"
-        width={900}
+        width="90%"
       >
         <Typography variant="h1" textAlign="center" fontSize={24} mt={5}>
           IMPORT CONTACTS LIST
