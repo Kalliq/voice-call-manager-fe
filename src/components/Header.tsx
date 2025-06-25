@@ -28,10 +28,11 @@ import {
   List as ListIcon,
   Assignment,
   BarChart as BarChartIcon,
-  School,
   Add,
   Phone,
   Search,
+  Contacts as ContactsIcon,
+  Person,
   PersonAdd,
   PlaylistAdd,
 } from "@mui/icons-material";
@@ -39,19 +40,20 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../assets/logo_text.svg";
 
+import cfg from "../config";
+
+const version = import.meta.env.VITE_APP_VERSION;
+
 export const colors = {
   background: "#16161a",
   headline: "#ffffff",
-  button: "#7f5af0",
   buttonText: "#ffffff",
-  primary: "#7f5af0",
 };
 
 const menuItems = [
-  { text: "Lists", path: "/dashboard/lists", icon: <ListIcon /> },
-  { text: "Tasks", path: "/tasks", icon: <Assignment /> },
+  { text: "Lists", path: "/lists", icon: <ListIcon /> },
+  { text: "Contacts", path: "/contacts", icon: <ContactsIcon /> },
   { text: "Reports", path: "/reports", icon: <BarChartIcon /> },
-  { text: "Coaching", path: "/coaching", icon: <School /> },
 ];
 
 // Mock notifications data
@@ -62,7 +64,7 @@ const notifications = [
 ];
 
 const Header = () => {
-  const { signout } = useAuth();
+  const { signout, isSuperadmin } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -164,10 +166,13 @@ const Header = () => {
                   cursor: "pointer",
                   filter: "brightness(0) invert(1)",
                 }}
-                onClick={() => navigate("/dashboard")}
+                onClick={() =>
+                  isSuperadmin
+                    ? navigate("/superdashboard")
+                    : navigate("/dashboard")
+                }
               />
             </Box>
-
             {/* Center area - Search and navigation (desktop only) */}
             <Box
               sx={{
@@ -190,18 +195,18 @@ const Header = () => {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <Search sx={{ color: colors.headline }} />
+                        <Search sx={{ color: theme.palette.info.main }} />
                       </InputAdornment>
                     ),
                     sx: {
-                      color: colors.headline,
+                      color: "#fff",
                       backgroundColor: "rgba(255, 255, 255, 0.1)",
                       borderRadius: 2,
                       "& .MuiOutlinedInput-notchedOutline": {
                         borderColor: "transparent",
                       },
                       "&:hover .MuiOutlinedInput-notchedOutline": {
-                        borderColor: colors.primary,
+                        borderColor: theme.palette.info.main,
                       },
                     },
                   }}
@@ -226,10 +231,10 @@ const Header = () => {
                       "&.active": {
                         fontWeight: "bold",
                         color: colors.buttonText,
-                        backgroundColor: colors.button,
+                        backgroundColor: theme.palette.info.main,
                       },
                       "&:hover": {
-                        backgroundColor: colors.button,
+                        backgroundColor: theme.palette.info.main,
                         color: colors.buttonText,
                         textDecoration: "none",
                       },
@@ -266,13 +271,13 @@ const Header = () => {
               >
                 <MenuItem onClick={handleAddContact}>
                   <ListItemIcon>
-                    <PersonAdd sx={{ color: colors.primary }} />
+                    <PersonAdd sx={{ color: theme.palette.info.main }} />
                   </ListItemIcon>
                   <ListItemText>Add Contact</ListItemText>
                 </MenuItem>
                 <MenuItem onClick={handleAddList}>
                   <ListItemIcon>
-                    <PlaylistAdd sx={{ color: colors.primary }} />
+                    <PlaylistAdd sx={{ color: theme.palette.info.main }} />
                   </ListItemIcon>
                   <ListItemText>Add List</ListItemText>
                 </MenuItem>
@@ -367,6 +372,9 @@ const Header = () => {
           </Toolbar>
         </Container>
       </AppBar>
+      <Typography variant="caption" color="black" sx={{ ml: 1 }}>
+        {!cfg.isDevMode ? `Version: v${version}` : null}
+      </Typography>
 
       {/* Mobile Drawer */}
       <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
@@ -383,7 +391,7 @@ const Header = () => {
           <Box
             sx={{
               p: 2,
-              backgroundColor: colors.primary,
+              backgroundColor: theme.palette.info.main,
               color: colors.buttonText,
               display: "flex",
               justifyContent: "center",
@@ -420,7 +428,7 @@ const Header = () => {
                     borderColor: "transparent",
                   },
                   "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary,
+                    borderColor: theme.palette.info.main,
                   },
                 },
               }}
@@ -437,16 +445,16 @@ const Header = () => {
                 sx={{
                   color: colors.headline,
                   "&:hover": {
-                    backgroundColor: colors.button,
+                    backgroundColor: theme.palette.info.main,
                     color: colors.buttonText,
                   },
                   "&.active": {
-                    backgroundColor: colors.button,
+                    backgroundColor: theme.palette.info.main,
                     color: colors.buttonText,
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: colors.primary }}>
+                <ListItemIcon sx={{ color: theme.palette.info.main }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText primary={item.text} />
@@ -459,12 +467,12 @@ const Header = () => {
               sx={{
                 color: colors.headline,
                 "&:hover": {
-                  backgroundColor: colors.button,
+                  backgroundColor: theme.palette.info.main,
                   color: colors.buttonText,
                 },
               }}
             >
-              <ListItemIcon sx={{ color: colors.primary }}>
+              <ListItemIcon sx={{ color: theme.palette.info.main }}>
                 <PersonAdd />
               </ListItemIcon>
               <ListItemText primary="Add Contact" />
@@ -474,12 +482,12 @@ const Header = () => {
               sx={{
                 color: colors.headline,
                 "&:hover": {
-                  backgroundColor: colors.button,
+                  backgroundColor: theme.palette.info.main,
                   color: colors.buttonText,
                 },
               }}
             >
-              <ListItemIcon sx={{ color: colors.primary }}>
+              <ListItemIcon sx={{ color: theme.palette.info.main }}>
                 <PlaylistAdd />
               </ListItemIcon>
               <ListItemText primary="Add List" />
@@ -491,12 +499,12 @@ const Header = () => {
               sx={{
                 color: colors.headline,
                 "&:hover": {
-                  backgroundColor: colors.button,
+                  backgroundColor: theme.palette.info.main,
                   color: colors.buttonText,
                 },
               }}
             >
-              <ListItemIcon sx={{ color: colors.primary }}>
+              <ListItemIcon sx={{ color: theme.palette.info.main }}>
                 <Phone />
               </ListItemIcon>
               <ListItemText primary="Dialer" />

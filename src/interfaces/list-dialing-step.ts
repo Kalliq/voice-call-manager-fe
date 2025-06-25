@@ -5,6 +5,7 @@ interface Step {
   stepName: string;
   contacts: Contact[];
   defaultAction: string;
+  stepPriority: string;
 }
 
 export { Step };

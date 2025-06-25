@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 
 import { CustomTextField } from "../UI";
-import { useNestedError } from "../../utils/useNetedError";
+import { useNestedError } from "../../utils/useNestedError";
 import { Field } from "../../interfaces/form-renderer";
 import { FieldError } from "../atoms";
 

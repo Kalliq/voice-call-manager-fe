@@ -11,13 +11,9 @@ import { Delete, Add } from "@mui/icons-material";
 
 import { SimpleButton, CustomTextField } from "../UI";
 import useAppStore from "../../store/useAppStore";
-import api from "../../utils/axiosInstance";
+import { CallResult } from "../../types/call-results";
 
-type CallResult = {
-  id: string;
-  label: string;
-  checked: boolean;
-};
+import api from "../../utils/axiosInstance";
 
 export default function CallResultsManager() {
   const settings = useAppStore((state) => state.settings);

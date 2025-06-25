@@ -2,23 +2,37 @@ import { Device, Call } from "@twilio/voice-sdk";
 
 import api from "./axiosInstance";
 
-export const initTwilio = async (
-  onIncomingHandler: (call: Call) => void,
-  onRegisteredHandler: () => void,
-  onErrorHandler: (error: Error) => void
-) => {
+let twilioDeviceInstance: Device | null = null;
+
+enum TwilioEvent {
+  INCOMING = "incoming",
+  REGISTERED = "registered",
+  ERROR = "error",
+}
+
+export const getTwilioDevice = () => twilioDeviceInstance;
+
+export const initTwilioDevice = async (): Promise<Device> => {
+  if (twilioDeviceInstance) return twilioDeviceInstance;
+
   const identity = "webrtc_user";
 
   const { data } = await api.post("/twilio/token", { identity });
   const codecPreferences: any[] = ["opus", "pcmu"];
-  const newTwilioDevice = new Device(data.token, {
+
+  const device = new Device(data.token, {
     logLevel: "error",
     codecPreferences,
   });
 
-  newTwilioDevice.on("incoming", onIncomingHandler);
-  newTwilioDevice.on("registered", onRegisteredHandler);
-  newTwilioDevice.on("error", onErrorHandler);
+  twilioDeviceInstance = device;
 
-  return newTwilioDevice;
+  return device;
+};
+
+export const destroyTwilioDevice = () => {
+  if (twilioDeviceInstance) {
+    twilioDeviceInstance.destroy();
+    twilioDeviceInstance = null;
+  }
 };

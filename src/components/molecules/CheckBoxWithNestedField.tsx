@@ -3,7 +3,7 @@ import { Box, FormControlLabel, Checkbox, Typography } from "@mui/material";
 
 import { CustomTextField } from "../UI";
 import { Field } from "../../interfaces/form-renderer";
-import { useNestedError } from "../../utils/useNetedError";
+import { useNestedError } from "../../utils/useNestedError";
 import { FieldError } from "../atoms";
 
 interface CheckBoxWithNestedFieldProps {
