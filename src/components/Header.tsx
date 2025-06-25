@@ -28,10 +28,11 @@ import {
   List as ListIcon,
   Assignment,
   BarChart as BarChartIcon,
-  School,
   Add,
   Phone,
   Search,
+  Contacts as ContactsIcon,
+  Person,
   PersonAdd,
   PlaylistAdd,
 } from "@mui/icons-material";
@@ -50,10 +51,9 @@ export const colors = {
 };
 
 const menuItems = [
-  { text: "Lists", path: "/dashboard/lists", icon: <ListIcon /> },
-  { text: "Tasks", path: "/tasks", icon: <Assignment /> },
+  { text: "Lists", path: "/lists", icon: <ListIcon /> },
+  { text: "Contacts", path: "/contacts", icon: <ContactsIcon /> },
   { text: "Reports", path: "/reports", icon: <BarChartIcon /> },
-  { text: "Coaching", path: "/coaching", icon: <School /> },
 ];
 
 // Mock notifications data

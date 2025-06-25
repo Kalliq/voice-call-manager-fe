@@ -7,11 +7,11 @@ import {
   Typography,
 } from "@mui/material";
 
-const DeleteDialog = ({ open, onClose, onConfirm }: any) => (
+const DeleteDialog = ({ open, title, text, onClose, onConfirm }: any) => (
   <Dialog open={open} onClose={onClose}>
-    <DialogTitle>Confirm Deletion</DialogTitle>
+    <DialogTitle>{title}</DialogTitle>
     <DialogContent>
-      <Typography>Are you sure you want to delete this list?</Typography>
+      <Typography>{text}</Typography>
     </DialogContent>
     <DialogActions>
       <Button onClick={onClose}>Cancel</Button>
@@ -22,4 +22,4 @@ const DeleteDialog = ({ open, onClose, onConfirm }: any) => (
   </Dialog>
 );
 
-export default DeleteDialog;
+export { DeleteDialog };

@@ -1,20 +1,34 @@
 import {
-  Box,
-  Card,
-  CardContent,
+  TableRow,
+  TableCell,
   IconButton,
+  Box,
+  Collapse,
+  Table,
+  TableHead,
+  TableBody,
   Typography,
-  Chip,
-  Tooltip,
   useTheme,
 } from "@mui/material";
-import { Edit, Delete, ExpandMore, GroupOutlined } from "@mui/icons-material";
+import { ExpandMore, Edit, Delete, GroupOutlined } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-
 import ConnectionMenu from "./ConnectionMenu";
-import StepCard from "./StepCard";
+import StepRow from "./StepRow";
 import { Step } from "../../../../interfaces/list-dialing-step";
-import { getStatusColor } from "../../../../utils/getStatusColor";
+
+interface ListCardProps {
+  list: any;
+  selectedCall: string;
+  expanded: boolean;
+  eligibleContacts: Record<number, any[]>;
+  onExpand: (id: string, steps?: Step[]) => void;
+  onConnectionClick: (e: React.MouseEvent<HTMLElement>, id: string) => void;
+  onConnectionChange: (id: string, option: string) => void;
+  anchorEl: HTMLElement | null;
+  menuListId: string | null;
+  closeMenu: () => void;
+  onDeleteClick: (id: string) => void;
+}
 
 const ListCard = ({
   list,
@@ -28,137 +42,108 @@ const ListCard = ({
   menuListId,
   closeMenu,
   onDeleteClick,
-}: any) => {
-  const navigate = useNavigate();
+}: ListCardProps) => {
   const theme = useTheme();
-
+  const navigate = useNavigate();
   const hasContacts = list.contacts?.length > 0;
   const contactCount = list.contacts?.length ?? 0;
 
   return (
-    <Box>
-      <Card
-        elevation={1}
-        sx={{
-          mb: 2,
-          backgroundColor: theme.palette.background.paper,
-          borderRadius: theme.shape.borderRadius,
-          transition: "box-shadow 0.3s",
-          "&:hover": {
-            boxShadow: theme.shadows[3],
-          },
-        }}
-      >
-        <CardContent
-          sx={{
-            pb: `${theme.spacing(2)} !important`,
-            pt: theme.spacing(2),
-            px: theme.spacing(3),
-          }}
-        >
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            gap={2}
+    <>
+      <TableRow hover>
+        <TableCell padding="checkbox">
+          <IconButton
+            size="small"
+            onClick={() => onExpand(list.id, list.steps)}
+            sx={{
+              transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.2s",
+            }}
           >
-            <Typography
-              variant="h6"
-              color="text.primary"
-              fontWeight={600}
-              fontSize={theme.typography.pxToRem(16)}
-              sx={{
-                pl: 1,
-                borderLeft: `4px solid ${theme.palette.primary.main}`,
-              }}
-            >
-              {list.listName}
+            <ExpandMore />
+          </IconButton>
+        </TableCell>
+        <TableCell>
+          <Typography fontWeight={600}>{list.listName}</Typography>
+        </TableCell>
+        <TableCell>
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <GroupOutlined color={hasContacts ? "action" : "disabled"} />
+            <Typography variant="body2" color="text.secondary">
+              {hasContacts ? contactCount : "0"}
             </Typography>
-
-            <Box display="flex" alignItems="center" mt={0.5} gap={0.5}>
-              <GroupOutlined
-                fontSize="small"
-                color={hasContacts ? "action" : "disabled"}
-              />
-              <Typography
-                variant="caption"
-                color={hasContacts ? "text.secondary" : "warning.main"}
-              >
-                {hasContacts
-                  ? `Contacts: ${contactCount}`
-                  : "No Contacts Assigned"}
-              </Typography>
-            </Box>
-
-            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-              <Chip
-                label={list.status || "active"}
-                size="small"
-                color={getStatusColor(list.status)}
-                variant="outlined"
-              />
-
-              <Tooltip title="Edit List">
-                <IconButton
-                  onClick={() =>
-                    navigate(`/dashboard/create-new-list/${list.id}`)
-                  }
-                  size="small"
-                  color="default"
-                >
-                  <Edit fontSize="small" />
-                </IconButton>
-              </Tooltip>
-
-              <Tooltip title="Delete List">
-                <IconButton
-                  onClick={() => onDeleteClick(list.id)}
-                  size="small"
-                  color="error"
-                >
-                  <Delete fontSize="small" />
-                </IconButton>
-              </Tooltip>
-
-              <Tooltip title="Expand Steps">
-                <IconButton
-                  onClick={() => onExpand(list.id, list.steps)}
-                  size="small"
-                >
-                  <ExpandMore
-                    fontSize="small"
-                    style={{
-                      transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-                      transition: "transform 0.2s ease",
-                    }}
-                  />
-                </IconButton>
-              </Tooltip>
-            </Box>
           </Box>
-        </CardContent>
-      </Card>
+        </TableCell>
 
-      {expanded &&
-        list.steps?.map((step: Step, i: number) => (
-          <StepCard
-            key={step.id}
-            step={step}
-            index={i}
-            contacts={eligibleContacts?.[i] ?? step.contacts}
-            selectedCallType={selectedCall}
-            list={list}
-            onConnectionClick={onConnectionClick}
-          />
-        ))}
+        <TableCell>
+          <Typography
+            component="span"
+            variant="body2"
+            sx={{
+              px: 1,
+              py: 0.25,
+              borderRadius: 1,
+            }}
+          >
+            {list.status}
+          </Typography>
+        </TableCell>
+
+        <TableCell align="right">
+          <IconButton
+            size="small"
+            onClick={() => navigate(`/create-new-list/${list.id}`)}
+          >
+            <Edit fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => onDeleteClick(list.id)}
+          >
+            <Delete fontSize="small" />
+          </IconButton>
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <Box margin={1}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Step Name</TableCell>
+                    <TableCell>Eligible Contacts</TableCell>
+                    <TableCell>Priority</TableCell>
+                    <TableCell align="right">Operations</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {list.steps?.map((step: Step, i: number) => (
+                    <StepRow
+                      key={step.id}
+                      step={step}
+                      index={i}
+                      contacts={eligibleContacts?.[i] ?? step.contacts}
+                      selectedCallType={selectedCall}
+                      list={list}
+                      onConnectionClick={onConnectionClick}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
 
       <ConnectionMenu
         anchorEl={anchorEl}
         open={menuListId === list.id}
         onClose={closeMenu}
-        onSelect={(option: string) => onConnectionChange(list.id, option)}
+        onSelect={(opt: string) => onConnectionChange(list.id, opt)}
       />
-    </Box>
+    </>
   );
 };
 

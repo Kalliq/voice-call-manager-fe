@@ -10,12 +10,12 @@ interface useTwilioCampaignProps {
   userId: string;
   socket: Socket;
   callEventHandlers: {
-    volumeHandler: () => void;
+    volumeHandler: (inputVolume: number, outputVolume: number) => void;
     hangUpHandler: () => void;
   };
 }
 
-export const useTwilioCampaign = ({
+export const useCampaign = ({
   userId,
   socket,
   callEventHandlers,
@@ -125,6 +125,8 @@ export const useTwilioCampaign = ({
     const attachTwilioHandlers = () => {
       const device = getTwilioDevice();
 
+      console.log("device: ", device);
+
       if (!device) {
         console.warn("Twilio device is not initialized yet.");
         return;
@@ -139,14 +141,13 @@ export const useTwilioCampaign = ({
           (c) => c.id === contactId
         ) as CallSession;
 
+        if (!isOutbound) return;
+
         if (isOutbound && contact) {
           activeCallRef.current = call;
           bindCallEventHandlers(call, contact);
           call.accept();
           setStatus("Outbound call accepted");
-        } else {
-          // TODO: Trigger inbound dialog here, maybe use Zustand or another store
-          console.log("Inbound call received");
         }
       };
 
@@ -162,8 +163,6 @@ export const useTwilioCampaign = ({
       device.on("incoming", onIncomingHandler);
       device.on("registered", onRegisteredHandler);
       device.on("error", onErrorHandler);
-
-      device.register();
     };
 
     attachTwilioHandlers();

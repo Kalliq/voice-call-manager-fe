@@ -108,7 +108,7 @@ const MultiStepForm = () => {
       const { data } = await submitList(formDataValues);
       console.log(id ? "List updated:" : "New list created:", data);
 
-      navigate("/dashboard/lists");
+      navigate("/lists");
     } catch (err) {
       console.error("Error submitting list: ", err);
     }
@@ -120,7 +120,7 @@ const MultiStepForm = () => {
         display="flex"
         justifyContent="center"
         flexDirection="column"
-        width={900}
+        width="90%"
       >
         <Typography variant="h1" textAlign="center" fontSize={24} mt={5}>
           {id ? "EDIT LIST" : "CREATE NEW LIST"}

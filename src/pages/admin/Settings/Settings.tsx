@@ -20,53 +20,10 @@ import useAppStore from "../../../store/useAppStore";
 import "react-resizable/css/styles.css";
 import "./Settings.css";
 import { translateToTitleCase } from "../../../utils/translateToTitle";
-
-const drawerWidth = 380;
-
-type SelectedType = {
-  parent: string;
-  child: string;
-} | null;
+import { useSettingsContext } from "../../../contexts/SettingsContext";
 
 const Settings: React.FC = () => {
-  const theme = useTheme();
-  const settings = useAppStore((state) => state.settings) as Record<
-    string,
-    Record<string, any>
-  > | null;
-
-  const settingsKeys = settings
-    ? Object.keys(settings)
-        .filter((key) => key !== "user" && key !== "id")
-        .map((key) => translateToTitleCase(key))
-    : [];
-
-  const [selected, setSelected] = useState<SelectedType>({
-    parent: "Phone Settings",
-    child: "powerDialerManagement",
-  });
-
-  useEffect(() => {
-    if (settings && !selected) {
-      console.log("settings: ", settings);
-      console.log("settingsKeys: ", settingsKeys);
-      const parent = settingsKeys.find((k) =>
-        k.toLowerCase().includes("power dialer")
-      );
-      if (parent) {
-        const child = Object.keys(settings[parent]).find(
-          (subKey) =>
-            subKey.toLowerCase().includes("powerdialer") ||
-            subKey.toLowerCase().includes("power_dialer")
-        );
-        if (child) setSelected({ parent, child });
-      }
-    }
-  }, [settings, settingsKeys, selected]);
-
-  const handleChildClick = (parent: string, child: string) => {
-    setSelected({ parent, child });
-  };
+  const { selected, settings } = useSettingsContext();
 
   return (
     <Box
@@ -78,60 +35,6 @@ const Settings: React.FC = () => {
         overflow: "hidden",
       }}
     >
-      <ResizableBox
-        className="hide-scrollbar"
-        width={drawerWidth}
-        height={Infinity}
-        minConstraints={[380, Infinity]}
-        maxConstraints={[500, Infinity]}
-        resizeHandles={["e"]}
-        style={{
-          height: "100%",
-          backgroundColor: theme.palette.background.default,
-          borderRight: `1px solid ${theme.palette.divider}`,
-          display: "flex",
-          flexDirection: "column",
-          paddingBottom: 0,
-        }}
-      >
-        <Box className="hide-scrollbar" sx={{ flex: 1, overflowY: "auto" }}>
-          {settingsKeys.map((category) => (
-            <Accordion
-              key={category}
-              disableGutters
-              defaultExpanded={category === "Phone Settings"}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {category}
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <List disablePadding>
-                  {Object.keys(settings![category]).map((subKey) => (
-                    <ListItemButton
-                      key={subKey}
-                      selected={
-                        selected?.parent === category &&
-                        selected?.child === subKey
-                      }
-                      onClick={() => handleChildClick(category, subKey)}
-                      sx={{
-                        borderBottom: `1px solid ${theme.palette.divider}`,
-                        pl: 3,
-                        pr: 2,
-                      }}
-                    >
-                      <ListItemText primary={translateToTitleCase(subKey)} />
-                    </ListItemButton>
-                  ))}
-                </List>
-              </AccordionDetails>
-            </Accordion>
-          ))}
-        </Box>
-      </ResizableBox>
-
       {/* Drawer-aware content */}
       <Box
         className="hide-scrollbar"
@@ -140,7 +43,6 @@ const Settings: React.FC = () => {
           overflowY: "auto",
           px: 4,
           py: 3,
-          bgcolor: theme.palette.background.paper,
         }}
       >
         {settings &&

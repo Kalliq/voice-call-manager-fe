@@ -8,11 +8,10 @@ import { getAudioDevices } from "../utils/audioDevice";
 import useAppStore from "../store/useAppStore";
 import { AudioDevice } from "../interfaces/audio-device";
 
-export const useAdminLayout = () => {
+export const useAdminPhone = () => {
   const user = useAppStore((state) => state.user);
   const userId = user?.id;
 
-  const [status, setStatus] = useState("Connecting...");
   const [twilioDevice, setTwilioDevice] = useState<Device | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [devices, setDevices] = useState<AudioDevice[] | null>(null);
@@ -36,7 +35,7 @@ export const useAdminLayout = () => {
   const hangUpHandler = () => {};
 
   useEffect(() => {
-    if (twilioDevice) {
+    if (twilioDevice && userId) {
       getDevices();
     }
   }, [twilioDevice, getDevices]);
@@ -46,18 +45,17 @@ export const useAdminLayout = () => {
 
     (async () => {
       try {
-        // Twilio init
+        // Initialize Twilio
         const device = await initTwilioDevice();
 
         setTwilioDevice(device);
         device.register();
 
-        // Socket init
+        // Initialize Socket
         const socket = initSocket(userId);
 
         setSocket(socket);
       } catch (error) {
-        setStatus("Communication error has occurred.");
         console.error(error);
       }
     })();
@@ -69,7 +67,6 @@ export const useAdminLayout = () => {
   }, [userId]);
 
   return {
-    status,
     inputVolume,
     outputVolume,
     volumeHandler,

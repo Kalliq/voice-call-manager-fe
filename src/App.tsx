@@ -1,14 +1,27 @@
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 
 import { useAuth } from "./contexts/AuthContext";
+
+import { useInboundCall } from "./hooks/useInboundCall";
 import SuperadminRoute from "./components/SuperadminRoute";
 import WithHeader from "./hocs/WithHeader";
-
-// Layouts
 import AdminLayout from "./layouts/AdminLayout";
+import PrivateRoute from "./components/PrivateRoute";
+import { InboundCallDialog } from "./components/InboundCallDialog";
 
 // Main Pages
 import SignIn from "./pages/SignIn";
+
+// Admin pages
+import Dashboard from "./pages/admin/Dashboard";
+import Campaign from "./pages/admin/Campaign/Campaign";
+import Settings from "./pages/admin/Settings/Settings";
+import Lists from "./pages/admin/Lists/Lists";
+import Contacts from "./pages/admin/Contacts/Contacts";
+import Tasks from "./pages/admin/Tasks/Tasks";
+import ImportContacts from "./pages/admin/ImportContacts";
+import CreateNewList from "./pages/admin/CreateNewList";
+import Coaching from "./pages/admin/Coaching/Coaching";
 
 // Superadmin pages
 import SuperDashboard from "./pages/superadmin/SuperDashboard";
@@ -21,12 +34,35 @@ function App() {
   console.log("isAuthenticated: ", isAuthenticated);
   console.log("isSuperadmin: ", isSuperadmin);
 
+  const {
+    isInboundCallDialogOpen,
+    from,
+    accepted,
+    acceptCall,
+    rejectCall,
+    hangUp,
+  } = useInboundCall();
+
   return (
     <Router>
       <Routes>
         <Route path="/" element={<SignIn />} />
         {/* Private routes */}
-        <AdminLayout />
+        {isAuthenticated && (
+          <Route element={<PrivateRoute />}>
+            <Route element={<AdminLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/campaign" element={<Campaign />} />
+              <Route path="/lists" element={<Lists />} />
+              <Route path="/contacts" element={<Contacts />} />
+              <Route path="/tasks" element={<Tasks />} />
+              <Route path="/import-contacts" element={<ImportContacts />} />
+              <Route path="/create-new-list/:id?" element={<CreateNewList />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/coaching" element={<Coaching />} />
+            </Route>
+          </Route>
+        )}
         <Route element={<SuperadminRoute />}>
           <Route path="/superdashboard">
             <Route index element={<WithHeader component={SuperDashboard} />} />
@@ -37,6 +73,14 @@ function App() {
           </Route>
         </Route>
       </Routes>
+      <InboundCallDialog
+        open={isInboundCallDialogOpen}
+        from={from}
+        accepted={accepted}
+        onAccept={acceptCall}
+        onReject={rejectCall}
+        onHangUp={hangUp}
+      />
     </Router>
   );
 }

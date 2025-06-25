@@ -9,13 +9,14 @@ import useAppStore from "../../../store/useAppStore";
 import StatusLine from "./components/DeviceStatus";
 import DialingCards from "./components/DialingCards";
 import ActiveDialingCard from "./components/ActiveDialingCard";
-import { useTwilioCampaign } from "./useCampaign";
+import { useCampaign } from "./useCampaign";
 import { SimpleButton } from "../../../components/UI";
 import { Contact } from "../../../types/contact";
 import { CallResult } from "../../../types/call-results";
 import ContinueDialog from "./components/ContinueDIalog";
 import { getDialingSessionsWithStatuses } from "../../../utils/getDialingSessionsWithStatuses";
 import { useRingingTone } from "./useRingingTone";
+import { useTwilio } from "../../../contexts/TwilioContext";
 
 enum TelephonyConnection {
   SOFT_CALL = "Soft call",
@@ -28,30 +29,23 @@ interface LocationState {
   mode: TelephonyConnection;
 }
 
-interface CampaignProps {
-  socket: Socket;
-  inputVolume: number;
-  outputVolume: number;
-  volumeHandler: () => void;
-  hangUpHandler: () => void;
-}
-
-const Campaign = ({
-  socket,
-  inputVolume,
-  outputVolume,
-  volumeHandler,
-  hangUpHandler,
-}: CampaignProps) => {
+const Campaign = () => {
   const location = useLocation();
   const { contacts, mode } = (location.state || {}) as LocationState;
+  const { socket, inputVolume, outputVolume, volumeHandler, hangUpHandler } =
+    useTwilio();
+  if (!socket) {
+    throw new Error("Socket not initialized properly!");
+  }
 
-  const settings = useAppStore((state) => state.settings);
+  const { user, settings } = useAppStore((state) => state);
+  if (!user) {
+    throw new Error("Problem with authentication. Missing user!");
+  }
   if (!settings) {
     throw new Error("Missing settings!");
   }
   const callResults = settings["Phone Settings"].callResults as CallResult[];
-  const user = useAppStore((state) => state.user);
 
   // State management for the dialog box
   const [contactNotes, setContactNotes] = useState<Record<string, string>>({});
@@ -59,7 +53,7 @@ const Campaign = ({
     Record<string, string>
   >({});
 
-  // Custom hook state variables
+  // Private hook state variables
   const {
     status,
     currentIndex,
@@ -80,7 +74,7 @@ const Campaign = ({
     setStatus,
     setRingingSessions,
     handleHangUp,
-  } = useTwilioCampaign({
+  } = useCampaign({
     userId: user!.id,
     socket,
     callEventHandlers: {
@@ -176,9 +170,8 @@ const Campaign = ({
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container sx={{ py: 4 }}>
       <Stack spacing={3}>
-        <StatusLine status={status} />
         <Stack direction="row" spacing={1} justifyContent="center">
           <SimpleButton
             label="Start campaign"

@@ -57,7 +57,7 @@ const NumberPoolSettings = () => {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const resUsers = await api.get("/users?role=admin"); // adjust path if needed
+      const resUsers = await api.get("/users?role=admin");
       setUsers(resUsers.data);
     };
     fetchUsers();
