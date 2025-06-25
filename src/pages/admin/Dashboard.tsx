@@ -108,13 +108,7 @@ const Dashboard = () => {
   }, []);
 
   const outcomeData = useMemo(() => {
-    if (!callStats && !settings) return [];
-
-    console.log("settings: ", settings);
-
-    const threshold =
-      settings!.phoneSettings?.callManagement?.connectionDefinition?.callTime ??
-      0;
+    if (!callStats || !settings) return;
 
     const total = callStats!.callsTotal || 0;
     const successful = callStats!.callsSuccessful || 0;
@@ -301,28 +295,30 @@ const Dashboard = () => {
                     outerRadius={80}
                     paddingAngle={3}
                   >
-                    {outcomeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                    {outcomeData &&
+                      outcomeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
 
               <Stack direction="row" justifyContent="space-around">
-                {outcomeData.map((item) => (
-                  <Stack key={item.name} alignItems="center">
-                    <Box
-                      width={12}
-                      height={12}
-                      borderRadius="50%"
-                      bgcolor={item.color}
-                      mb={0.5}
-                    />
-                    <Typography variant="caption">
-                      {item.name} ({item.value}%)
-                    </Typography>
-                  </Stack>
-                ))}
+                {outcomeData &&
+                  outcomeData.map((item) => (
+                    <Stack key={item.name} alignItems="center">
+                      <Box
+                        width={12}
+                        height={12}
+                        borderRadius="50%"
+                        bgcolor={item.color}
+                        mb={0.5}
+                      />
+                      <Typography variant="caption">
+                        {item.name} ({item.value}%)
+                      </Typography>
+                    </Stack>
+                  ))}
               </Stack>
             </CardContent>
           </Card>
