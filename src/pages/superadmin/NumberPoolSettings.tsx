@@ -167,6 +167,29 @@ const NumberPoolSettings = () => {
         </Button>
       </ButtonGroup>
 
+      <Button
+        variant="contained"
+        color="primary"
+        sx={{
+          marginLeft: "20px",
+        }}
+        onClick={async () => {
+          setLoading(true);
+          try {
+            await api.post("/numbers/sync-twilio-numbers");
+            const refreshed = await api.get("/numbers");
+            setNumbers(refreshed.data);
+          } catch (err) {
+            console.error("Failed to sync numbers", err);
+          } finally {
+            setLoading(false);
+          }
+        }}
+        disabled={loading}
+      >
+        Sync Numbers
+      </Button>
+
       {view === "pool" && (
         <Box mb={2} display="flex" alignItems="center" gap={2}>
           <Select
