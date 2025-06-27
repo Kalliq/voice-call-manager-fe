@@ -3,11 +3,8 @@ import { useState, useEffect } from "react";
 import {
   AppBar,
   Avatar,
-  Badge,
   Box,
   Button,
-  Card,
-  CardContent,
   Divider,
   Grid,
   IconButton,
@@ -23,21 +20,16 @@ import {
   CallEnd,
   VolumeOff,
   Pause,
-  Timer,
-  Voicemail,
-  Dialpad,
   Info,
 } from "@mui/icons-material";
 import { Contact } from "../../../../types/contact";
 
-/* ─────────── styled helpers ─────────── */
 const LightPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
   borderRadius: 12,
   border: `1px solid ${theme.palette.divider}`,
 }));
 
-/* ─────────── props ─────────── */
 interface ActiveDialingCardProps {
   session: Contact;
   inputVolume: number;
@@ -45,7 +37,7 @@ interface ActiveDialingCardProps {
   hangUp: () => void;
 }
 
-/* talking‑point mock → could be pulled from DB later */
+/* talking‑point mock */
 const DEFAULT_POINTS = [
   "Introduce yourself and company",
   "Explain purpose of call",
@@ -54,18 +46,15 @@ const DEFAULT_POINTS = [
   "Schedule follow‑up meeting",
 ];
 
-/* ─────────── component ─────────── */
 const ActiveDialingCard = ({
   session,
   inputVolume,
   outputVolume,
   hangUp,
 }: ActiveDialingCardProps) => {
-  /* timer logic preserved */
   const [callStartTime, setCallStartTime] = useState<Date | null>(new Date());
   const [elapsedTime, setElapsedTime] = useState("00:00");
 
-  /* UI state */
   const [points, setPoints] = useState<string[]>(DEFAULT_POINTS);
   const [newPoint, setNewPoint] = useState("");
   const [tab, setTab] = useState<0 | 1>(0);
@@ -76,7 +65,6 @@ const ActiveDialingCard = ({
       { label: "Title", value: session.capacity },
     ];
 
-  /* tick every second */
   useEffect(() => {
     if (!callStartTime) return;
     const int = setInterval(() => {
@@ -93,10 +81,8 @@ const ActiveDialingCard = ({
     setCallStartTime(new Date());
   }, [session.id]);
 
-  /* ─────────── render ─────────── */
   return (
     <Box>
-      {/* ─── call header bar ─── */}
       <AppBar
         position="static"
         elevation={0}

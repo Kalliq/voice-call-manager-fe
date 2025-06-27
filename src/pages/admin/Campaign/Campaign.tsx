@@ -6,15 +6,18 @@ import { Socket } from "socket.io-client";
 import api from "../../../utils/axiosInstance";
 import useAppStore from "../../../store/useAppStore";
 
-import StatusLine from "./components/DeviceStatus";
 import DialingCards from "./components/DialingCards";
 import ActiveDialingCard from "./components/ActiveDialingCard";
+import SingleCallCampaignPanel from "./components/SingleCallCampaign";
 import { useCampaign } from "./useCampaign";
 import { SimpleButton } from "../../../components/UI";
-import { Contact } from "../../../types/contact";
+import { CallSession, Contact } from "../../../types/contact";
 import { CallResult } from "../../../types/call-results";
 import ContinueDialog from "./components/ContinueDIalog";
-import { getDialingSessionsWithStatuses } from "../../../utils/getDialingSessionsWithStatuses";
+import {
+  getDialingSessionsWithStatuses,
+  getSingleDialingSessionWithStatus,
+} from "../../../utils/getDialingSessionsWithStatuses";
 import { useRingingTone } from "./useRingingTone";
 import { useTwilio } from "../../../contexts/TwilioContext";
 
@@ -91,6 +94,8 @@ const Campaign = () => {
     [TelephonyConnection.ADVANCED_PARALLEL_CALL]: 4,
   }[mode];
 
+  const singleSession = getSingleDialingSessionWithStatus(currentBatch);
+
   const makeCallBatch = async () => {
     // TO-DO implement try-catch
     const slice = contacts.slice(currentIndex, currentIndex + callsPerBatch);
@@ -159,7 +164,7 @@ const Campaign = () => {
   };
 
   const maybeProceedWithNextBatch = () => {
-    if (isCampaignRunning) {
+    if (isCampaignRunning && mode !== TelephonyConnection.SOFT_CALL) {
       handleContinue();
     }
   };
@@ -185,23 +190,36 @@ const Campaign = () => {
           />
         </Stack>
 
-        {/* Dialing Cards Section */}
-        {!isCampaignFinished && !answeredSession && (
-          <DialingCards
-            sessions={getDialingSessionsWithStatuses(
-              currentBatch,
-              ringingSessions,
-              pendingResultContacts
+        {!isCampaignFinished &&
+        isCampaignRunning &&
+        mode === TelephonyConnection.SOFT_CALL &&
+        singleSession ? (
+          <SingleCallCampaignPanel
+            session={singleSession}
+            answeredSession={answeredSession}
+            onNextCall={makeCallBatch}
+            onEndCall={hangUp}
+          />
+        ) : (
+          <>
+            {!isCampaignFinished && !answeredSession && (
+              <DialingCards
+                sessions={getDialingSessionsWithStatuses(
+                  currentBatch,
+                  ringingSessions,
+                  pendingResultContacts
+                )}
+              />
             )}
-          />
-        )}
-        {!isCampaignFinished && answeredSession && (
-          <ActiveDialingCard
-            session={answeredSession}
-            inputVolume={inputVolume}
-            outputVolume={outputVolume}
-            hangUp={hangUp}
-          />
+            {!isCampaignFinished && answeredSession && (
+              <ActiveDialingCard
+                session={answeredSession}
+                inputVolume={inputVolume}
+                outputVolume={outputVolume}
+                hangUp={hangUp}
+              />
+            )}
+          </>
         )}
 
         {/* <AudioDevicesList devices={devices} /> */}
