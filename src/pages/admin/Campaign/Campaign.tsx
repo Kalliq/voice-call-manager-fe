@@ -190,28 +190,13 @@ const Campaign = () => {
           />
         </Stack>
 
-        {true ? (
+        {!isCampaignFinished &&
+        isCampaignRunning &&
+        mode === TelephonyConnection.SOFT_CALL &&
+        singleSession ? (
           <SingleCallCampaignPanel
-            session={
-              {
-                id: "123",
-                first_name: "Dan",
-                last_name: "Crouse",
-                company: "Patrick Malloy Communities",
-                email: "dan.crouse@pmcommunities.com",
-                mobile_phone: "7706354090",
-              } as CallSession
-            }
-            answeredSession={
-              {
-                id: "abc",
-                first_name: "Dan",
-                last_name: "Crouse",
-                company: "Patrick Malloy Communities",
-                email: "dan.crouse@pmcommunities.com",
-                mobile_phone: "7706354090",
-              } as CallSession
-            }
+            session={singleSession}
+            answeredSession={answeredSession}
             onNextCall={makeCallBatch}
             onEndCall={hangUp}
           />
