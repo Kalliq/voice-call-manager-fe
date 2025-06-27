@@ -20,3 +20,11 @@ export const getDialingSessionsWithStatuses = (
     };
   });
 };
+
+export function getSingleDialingSessionWithStatus(
+  batch: CallSession[]
+): CallSession | null {
+  if (batch.length === 0) return null;
+  const contact = batch[0];
+  return { ...contact, status: "Active" };
+}

@@ -15,8 +15,17 @@ type ContactBase = {
   email: string;
   company: string;
   mobile_phone: string;
+  phone: string;
   capacity?: string;
+  title?: string;
+  accountName?: string;
+  recordType?: string;
+  linkedIn?: string;
+  state?: string;
+  subject?: string;
   actions: Action[];
+  city?: string;
+  timezone?: string;
 };
 
 type Contact = ContactBase & {
