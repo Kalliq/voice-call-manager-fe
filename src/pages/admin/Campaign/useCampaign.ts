@@ -5,6 +5,7 @@ import { normalizePhone, TwilioFinalStatus } from "voice-javascript-common";
 
 import { CallSession, Contact } from "../../../types/contact";
 import { getTwilioDevice } from "../../../utils/initTwilio";
+import { useTwilio } from "../../../contexts/TwilioContext";
 
 interface useTwilioCampaignProps {
   userId: string;
@@ -22,7 +23,9 @@ export const useCampaign = ({
 }: useTwilioCampaignProps) => {
   const [status, setStatus] = useState<string>("");
   const [ringingSessions, setRingingSessions] = useState<CallSession[]>([]);
-  const [answeredSession, setAnsweredSession] = useState<Contact | null>(null);
+  const [answeredSession, setAnsweredSession] = useState<
+    Contact | boolean | null
+  >(null);
 
   const [currentBatch, setCurrentBatch] = useState<CallSession[]>([]);
   const [isCampaignRunning, setIsCampaignRunning] = useState(false);
@@ -33,13 +36,26 @@ export const useCampaign = ({
   >([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  const { twilioDevice, setIncomingHandler } = useTwilio();
+
   // Refs
-  const answeredSessionRef = useRef<Contact | null>(null);
+  const answeredSessionRef = useRef<Contact | boolean | null>(null);
   const activeCallRef = useRef<Call | null>(null);
   const callToContactMap = useRef(new Map<Call, CallSession>());
   const currentBatchRef = useRef<Contact[]>([]);
 
   // Handle hangUp
+  const handleHangUpNotKnown = () => {
+    const call = activeCallRef.current as Call;
+    if (!call) {
+      console.warn("No active call to hang up.");
+      return;
+    }
+
+    setAnsweredSession(null);
+    activeCallRef.current = null;
+  };
+
   const handleHangUp = () => {
     const call = activeCallRef.current as Call;
     if (!call) {
@@ -66,30 +82,32 @@ export const useCampaign = ({
   // Handle Call status
   const handleCallStatus = ({ to, status }: { to: string; status: string }) => {
     const contact = currentBatch.find(
-      (c) => normalizePhone(c.mobile_phone) === normalizePhone(to)
+      (c) => normalizePhone(c.phone) === normalizePhone(to)
     );
-    if (!contact) return;
 
-    if (status === "ringing") {
+    if (contact && status === "ringing") {
       setRingingSessions((prev) => {
         const already = prev.some((c) => c.id === contact.id);
         return already ? prev : [...prev, { ...contact, status }];
       });
     }
 
-    if (status === "in-progress") {
+    if (contact && status === "in-progress") {
       // Remove from ringing
       setRingingSessions((prev) => prev.filter((c) => c.id !== contact.id));
       // Set current active call
       setAnsweredSession(contact);
+    } else if (!contact && status === "in-progress") {
+      setAnsweredSession(true);
     }
 
     if (
+      contact &&
       Object.values(TwilioFinalStatus).includes(status as TwilioFinalStatus)
     ) {
       const isWinner =
-        answeredSessionRef.current &&
-        normalizePhone(answeredSessionRef.current.mobile_phone) ===
+        (answeredSessionRef.current as Contact) &&
+        normalizePhone((answeredSessionRef.current as Contact).phone) ===
           normalizePhone(to);
       if (isWinner && activeCallRef.current) {
         // The WebRTC side is still up → this "completed" is just Twilio handing off. Ignore it.
@@ -106,67 +124,68 @@ export const useCampaign = ({
       if (isWinner) {
         setAnsweredSession(null);
       }
+    } else if (
+      !contact &&
+      Object.values(TwilioFinalStatus).includes(status as TwilioFinalStatus)
+    ) {
+      setAnsweredSession(null);
     }
   };
 
-  const bindCallEventHandlers = (call: Call, contact: CallSession) => {
-    callToContactMap.current.set(call, contact);
+  const bindCallEventHandlers = (
+    call: Call,
+    contact: CallSession | null = null
+  ) => {
+    if (contact) {
+      callToContactMap.current.set(call, contact);
+    }
     call.on("volume", callEventHandlers.volumeHandler);
     // TO DO -- change to hangUpHandler
     call.on("disconnect", () => {
       if (activeCallRef.current === call) {
-        // handleHangUp();
+        handleHangUp();
       }
     });
   };
 
   // Effects
   useEffect(() => {
-    const attachTwilioHandlers = () => {
-      const device = getTwilioDevice();
+    if (!twilioDevice || !setIncomingHandler) return;
 
-      console.log("device: ", device);
+    const onIncomingHandler = (call: Call) => {
+      console.log("useCampaign");
+      const params = new URLSearchParams(call.parameters?.Params || "");
+      const contactId = params.get("contactId");
+      const isOutbound = params.get("outbound") === "true";
 
-      if (!device) {
-        console.warn("Twilio device is not initialized yet.");
-        return;
-      }
+      console.log("params.get outbound: ", params.get("outbound") === "true");
 
-      const onIncomingHandler = (call: Call) => {
-        const params = new URLSearchParams(call.parameters?.Params || "");
-        const contactId = params.get("contactId");
-        const isOutbound = params.get("outbound") === "true";
+      if (!isOutbound) return;
 
+      if (contactId) {
         const contact = currentBatchRef.current.find(
           (c) => c.id === contactId
         ) as CallSession;
 
-        if (!isOutbound) return;
-
-        if (isOutbound && contact) {
-          activeCallRef.current = call;
-          bindCallEventHandlers(call, contact);
-          call.accept();
-          setStatus("Outbound call accepted");
-        }
-      };
-
-      const onRegisteredHandler = () => {
-        setStatus("Device registered");
-      };
-
-      const onErrorHandler = (error: Error) => {
-        console.error("Twilio error:", error.message);
-      };
-
-      device.removeAllListeners(); // important!
-      device.on("incoming", onIncomingHandler);
-      device.on("registered", onRegisteredHandler);
-      device.on("error", onErrorHandler);
+        activeCallRef.current = call;
+        bindCallEventHandlers(call, contact);
+        call.accept();
+        setStatus("Outbound call accepted");
+      } else {
+        console.log("inside else in onIncomingHandler");
+        activeCallRef.current = call;
+        bindCallEventHandlers(call);
+        call.accept();
+        setStatus("Outbound call accepted");
+      }
     };
 
-    attachTwilioHandlers();
-  }, []);
+    setIncomingHandler(() => onIncomingHandler);
+
+    return () => {
+      setIncomingHandler(null);
+    };
+  }, [twilioDevice]);
 
   useEffect(() => {
     answeredSessionRef.current = answeredSession;
@@ -225,5 +244,6 @@ export const useCampaign = ({
     setShowContinueDialog,
     setRingingSessions,
     handleHangUp,
+    handleHangUpNotKnown,
   };
 };

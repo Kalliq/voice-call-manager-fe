@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Alert, Stack, Container } from "@mui/material";
-import { Socket } from "socket.io-client";
 
 import api from "../../../utils/axiosInstance";
 import useAppStore from "../../../store/useAppStore";
@@ -20,6 +19,8 @@ import {
 } from "../../../utils/getDialingSessionsWithStatuses";
 import { useRingingTone } from "./useRingingTone";
 import { useTwilio } from "../../../contexts/TwilioContext";
+import { useSnackbar } from "../../../hooks/useSnackbar";
+import MinimalCallPanel from "./components/MinimalCallPanel";
 
 enum TelephonyConnection {
   SOFT_CALL = "Soft call",
@@ -30,13 +31,18 @@ enum TelephonyConnection {
 interface LocationState {
   contacts: any[];
   mode: TelephonyConnection;
+  contactId: string;
+  phone: string;
+  autoStart: boolean;
 }
 
 const Campaign = () => {
   const location = useLocation();
-  const { contacts, mode } = (location.state || {}) as LocationState;
+  const { contacts, mode, contactId, phone, autoStart } = (location.state ||
+    {}) as LocationState;
   const { socket, inputVolume, outputVolume, volumeHandler, hangUpHandler } =
     useTwilio();
+  const { enqueue } = useSnackbar();
   if (!socket) {
     throw new Error("Socket not initialized properly!");
   }
@@ -48,7 +54,17 @@ const Campaign = () => {
   if (!settings) {
     throw new Error("Missing settings!");
   }
+
   const callResults = settings["Phone Settings"].callResults as CallResult[];
+  const [manualSession, setManualSession] = useState<CallSession | null>(null);
+
+  useEffect(() => {
+    if (contactId && !contacts && !mode) {
+      api.get(`/contacts/${contactId}`).then((res) => {
+        setManualSession(res.data);
+      });
+    }
+  }, [contactId]);
 
   // State management for the dialog box
   const [contactNotes, setContactNotes] = useState<Record<string, string>>({});
@@ -58,7 +74,6 @@ const Campaign = () => {
 
   // Private hook state variables
   const {
-    status,
     currentIndex,
     isCampaignRunning,
     isCampaignFinished,
@@ -77,6 +92,7 @@ const Campaign = () => {
     setStatus,
     setRingingSessions,
     handleHangUp,
+    handleHangUpNotKnown,
   } = useCampaign({
     userId: user!.id,
     socket,
@@ -96,13 +112,27 @@ const Campaign = () => {
 
   const singleSession = getSingleDialingSessionWithStatus(currentBatch);
 
+  const makeCallNotKnown = async (phone: string) => {
+    await api.post("/campaign/call-notknown", {
+      phone,
+    });
+  };
+
   const makeCallBatch = async () => {
     // TO-DO implement try-catch
-    const slice = contacts.slice(currentIndex, currentIndex + callsPerBatch);
-    if (slice.length === 0) {
-      setIsCampaignFinished(true);
-      setRingingSessions([]);
-      setIsCampaignRunning(false);
+    let slice: Contact[];
+    if (contacts) {
+      slice = contacts.slice(currentIndex, currentIndex + callsPerBatch);
+      if (slice.length === 0) {
+        setIsCampaignFinished(true);
+        setRingingSessions([]);
+        setIsCampaignRunning(false);
+        return;
+      }
+    } else if (contactId) {
+      slice = [manualSession as Contact];
+    } else {
+      enqueue("Some error happened. Please try again!", { variant: "error" });
       return;
     }
 
@@ -118,7 +148,7 @@ const Campaign = () => {
     const extendedBatchContactsWithSid = batchContacts.map(
       (batchContact: Contact) => {
         const call = activeCalls.data.find((activeCall: any) => {
-          return batchContact.mobile_phone === activeCall.phoneNumber;
+          return batchContact.phone === activeCall.phoneNumber;
         });
 
         return { ...batchContact, callSid: call.callSid };
@@ -169,6 +199,11 @@ const Campaign = () => {
     }
   };
 
+  const hangUpNotKnown = () => {
+    api.post("/campaign/stop-campaign");
+    handleHangUpNotKnown();
+  };
+
   const hangUp = () => {
     api.post("/campaign/stop-campaign");
     handleHangUp();
@@ -177,47 +212,76 @@ const Campaign = () => {
   return (
     <Container sx={{ py: 4 }}>
       <Stack spacing={3}>
-        <Stack direction="row" spacing={1} justifyContent="center">
-          <SimpleButton
-            label="Start campaign"
-            onClick={handleStartCampaign}
-            disabled={isCampaignRunning}
-          />
-          <SimpleButton
-            label="Stop campaign"
-            onClick={handleStopCampaign}
-            disabled={!isCampaignRunning}
-          />
-        </Stack>
+        {!contactId && !phone && (
+          <Stack direction="row" spacing={1} justifyContent="center">
+            <SimpleButton
+              label="Start campaign"
+              onClick={handleStartCampaign}
+              disabled={isCampaignRunning}
+            />
+            <SimpleButton
+              label="Stop campaign"
+              onClick={handleStopCampaign}
+              disabled={!isCampaignRunning}
+            />
+          </Stack>
+        )}
 
-        {!isCampaignFinished &&
-        isCampaignRunning &&
-        mode === TelephonyConnection.SOFT_CALL &&
-        singleSession ? (
-          <SingleCallCampaignPanel
-            session={singleSession}
-            answeredSession={answeredSession}
-            onNextCall={makeCallBatch}
-            onEndCall={hangUp}
+        {phone && !manualSession && (
+          <MinimalCallPanel
+            answeredSession={answeredSession as boolean}
+            phone={phone}
+            onStartCall={makeCallNotKnown}
+            onEndCall={hangUpNotKnown}
+            callStarted={false}
           />
-        ) : (
+        )}
+
+        {!autoStart && manualSession && (
+          <SingleCallCampaignPanel
+            session={manualSession}
+            answeredSession={answeredSession as Contact}
+            onStartCall={makeCallBatch}
+            onNextCall={() => {}}
+            onEndCall={hangUp}
+            manual={true}
+            phone={phone}
+          />
+        )}
+
+        {!phone && !manualSession && !autoStart && (
           <>
-            {!isCampaignFinished && !answeredSession && (
-              <DialingCards
-                sessions={getDialingSessionsWithStatuses(
-                  currentBatch,
-                  ringingSessions,
-                  pendingResultContacts
+            {!isCampaignFinished &&
+            isCampaignRunning &&
+            mode === TelephonyConnection.SOFT_CALL &&
+            singleSession ? (
+              <SingleCallCampaignPanel
+                session={singleSession}
+                answeredSession={answeredSession as Contact}
+                onNextCall={makeCallBatch}
+                onEndCall={hangUp}
+                manual={false}
+              />
+            ) : (
+              <>
+                {!isCampaignFinished && !answeredSession && (
+                  <DialingCards
+                    sessions={getDialingSessionsWithStatuses(
+                      currentBatch,
+                      ringingSessions,
+                      pendingResultContacts
+                    )}
+                  />
                 )}
-              />
-            )}
-            {!isCampaignFinished && answeredSession && (
-              <ActiveDialingCard
-                session={answeredSession}
-                inputVolume={inputVolume}
-                outputVolume={outputVolume}
-                hangUp={hangUp}
-              />
+                {!isCampaignFinished && answeredSession && (
+                  <ActiveDialingCard
+                    session={answeredSession as Contact}
+                    inputVolume={inputVolume}
+                    outputVolume={outputVolume}
+                    hangUp={hangUp}
+                  />
+                )}
+              </>
             )}
           </>
         )}
@@ -237,8 +301,9 @@ const Campaign = () => {
         setShowContinueDialog={setShowContinueDialog}
         setContactNotes={setContactNotes}
         maybeProceedWithNextBatch={maybeProceedWithNextBatch}
-        handleStopCampaign={handleStopCampaign}
+        handleStopAndSkip={handleStopCampaign}
         handleResult={handleResult}
+        isCampaign={!manualSession}
       />
       {isCampaignFinished && (
         <Alert severity="success" sx={{ mt: 3 }}>

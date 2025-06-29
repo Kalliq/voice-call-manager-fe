@@ -41,45 +41,45 @@ const schema = {
         },
       ],
     },
-    {
-      title: "CROSS FILTERS",
-      fields: [
-        {
-          type: "dynamic", // another dynamic field group
-          name: "crossFilters",
-          label: "Cross Filters",
-          addButtonLabel: "Add Cross Filter",
-          nestedFields: [
-            {
-              type: "select",
-              name: "taskField",
-              label: "Task Field",
-              options: [
-                { label: "Due Date", value: "dueDate" },
-                { label: "Priority", value: "priority" },
-                { label: "Status", value: "status" },
-              ],
-            },
-            {
-              type: "select",
-              name: "operator",
-              label: "Operator",
-              options: [
-                { label: "Equals", value: "equals" },
-                { label: "Not Equals", value: "notEquals" },
-                { label: "Contains", value: "contains" },
-              ],
-            },
-            {
-              type: "text",
-              name: "value",
-              label: "Value",
-              placeholder: "Enter value",
-            },
-          ],
-        },
-      ],
-    },
+    // {
+    //   title: "CROSS FILTERS",
+    //   fields: [
+    //     {
+    //       type: "dynamic", // another dynamic field group
+    //       name: "crossFilters",
+    //       label: "Cross Filters",
+    //       addButtonLabel: "Add Cross Filter",
+    //       nestedFields: [
+    //         {
+    //           type: "select",
+    //           name: "taskField",
+    //           label: "Task Field",
+    //           options: [
+    //             { label: "Due Date", value: "dueDate" },
+    //             { label: "Priority", value: "priority" },
+    //             { label: "Status", value: "status" },
+    //           ],
+    //         },
+    //         {
+    //           type: "select",
+    //           name: "operator",
+    //           label: "Operator",
+    //           options: [
+    //             { label: "Equals", value: "equals" },
+    //             { label: "Not Equals", value: "notEquals" },
+    //             { label: "Contains", value: "contains" },
+    //           ],
+    //         },
+    //         {
+    //           type: "text",
+    //           name: "value",
+    //           label: "Value",
+    //           placeholder: "Enter value",
+    //         },
+    //       ],
+    //     },
+    //   ],
+    // },
     {
       fields: [
         {

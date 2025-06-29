@@ -117,8 +117,6 @@ const Dashboard = () => {
     const unsuccessful = Math.max(total - connected, 0);
     const semiSuccessful = Math.max(connected - successful, 0);
 
-    console.log("unsuccessful: ", unsuccessful);
-
     return [
       { name: "Successful", value: successful, color: "#2cb67d" },
       { name: "Short Connected", value: semiSuccessful, color: "#facc15" },
@@ -315,7 +313,7 @@ const Dashboard = () => {
                         mb={0.5}
                       />
                       <Typography variant="caption">
-                        {item.name} ({item.value}%)
+                        {item.name} ({item.value})
                       </Typography>
                     </Stack>
                   ))}

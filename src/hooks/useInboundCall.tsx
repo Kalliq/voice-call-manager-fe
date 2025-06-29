@@ -2,10 +2,9 @@ import { useEffect, useState, useRef } from "react";
 import { Call } from "@twilio/voice-sdk";
 
 import { useTwilio } from "../contexts/TwilioContext";
-import { getTwilioDevice } from "../utils/initTwilio";
 
 export const useInboundCall = () => {
-  const { twilioDevice } = useTwilio();
+  const { twilioDevice, setIncomingHandler } = useTwilio();
 
   const [inboundCall, setInboundCall] = useState<Call | null>(null);
   const [isInboundCallDialogOpen, setIsDialogOpen] = useState(false);
@@ -14,53 +13,6 @@ export const useInboundCall = () => {
   const hangupTimer = useRef<any>(null);
 
   const activeCallRef = useRef<Call | null>(null);
-
-  useEffect(() => {
-    if (!twilioDevice) return;
-
-    const device = getTwilioDevice();
-
-    const onIncomingHandler = (call: Call) => {
-      const params = new URLSearchParams(call.parameters?.Params || "");
-      const isOutbound = params.get("outbound") === "true";
-
-      if (isOutbound) {
-        console.log("Outbound call received in useInboundCall — skipping.");
-        return;
-      }
-
-      console.log("Inbound call received", call);
-      activeCallRef.current = call;
-      setInboundCall(call);
-      setIsDialogOpen(true);
-    };
-
-    const onRegisteredHandler = () => {
-      console.log("Twilio device registered");
-    };
-
-    const onErrorHandler = (err: Error) => {
-      console.error("Twilio error in useInboundCall:", err.message);
-    };
-
-    const attachTwilioHandlers = () => {
-      if (!device) {
-        console.warn("Twilio device not initialized");
-        return;
-      }
-
-      device.on("incoming", onIncomingHandler);
-      device.on("registered", onRegisteredHandler);
-      device.on("error", onErrorHandler);
-    };
-
-    attachTwilioHandlers();
-
-    return () => {
-      device!.off("incoming", onIncomingHandler);
-      device!.off("error", onErrorHandler);
-    };
-  }, [twilioDevice]);
 
   useEffect(() => {
     if (!inboundCall) return;
@@ -77,6 +29,28 @@ export const useInboundCall = () => {
     };
   }, [inboundCall]);
 
+  useEffect(() => {
+    if (!twilioDevice || !setIncomingHandler) return;
+
+    const onIncomingHandler = (call: Call) => {
+      console.log("useInboundCall");
+      const params = new URLSearchParams(call.parameters?.Params || "");
+      const isOutbound = params.get("outbound") === "true";
+
+      if (isOutbound) {
+        console.log("Outbound call received in useInboundCall — skipping.");
+        return;
+      }
+
+      console.log("Inbound call received", call);
+      activeCallRef.current = call;
+      setInboundCall(call);
+      setIsDialogOpen(true);
+    };
+
+    setIncomingHandler(() => onIncomingHandler);
+  }, [twilioDevice]);
+
   const stagedClose = () => {
     if (hangupTimer.current) clearTimeout(hangupTimer.current);
 
@@ -90,7 +64,7 @@ export const useInboundCall = () => {
   const acceptCall = () => {
     if (activeCallRef.current) {
       activeCallRef.current.accept();
-      setIsDialogOpen(false);
+      setAccepted(true);
     }
   };
 

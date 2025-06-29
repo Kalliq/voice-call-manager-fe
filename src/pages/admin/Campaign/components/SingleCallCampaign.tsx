@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Grid,
@@ -10,13 +10,18 @@ import {
   Tabs,
   Tab,
   Divider,
-  Chip,
   Link,
   Stack,
   Paper,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   TextField,
 } from "@mui/material";
 import {
+  Animation,
   ArrowBack,
   CallEnd,
   SkipNext,
@@ -26,11 +31,13 @@ import {
   Phone,
   Email,
   PlaylistAdd,
-  AccessTime,
+  Person,
+  Close,
 } from "@mui/icons-material";
 
 import { CallSession, Contact } from "../../../../types/contact";
 import ContactOverview from "./ContactOverview";
+import ContactStageChip from "./ContactStageChip";
 import api from "../../../../utils/axiosInstance";
 
 interface SingleCallCampaignPanelProps {
@@ -39,8 +46,10 @@ interface SingleCallCampaignPanelProps {
   onStartCall?: () => void;
   onEndCall: () => void;
   onNextCall: () => void;
-  talkingPoints?: string[];
   onAddTalkingPoint?: () => void;
+  manual?: boolean;
+  phone?: string;
+  autoStart?: boolean;
 }
 
 const tabLabels = [
@@ -57,14 +66,21 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   onStartCall,
   onEndCall,
   onNextCall,
-  talkingPoints,
   onAddTalkingPoint,
+  manual,
+  phone,
+  autoStart,
 }) => {
   const [callStartTime, setCallStartTime] = useState<Date | null>(new Date());
   const [elapsedTime, setElapsedTime] = useState("00:00");
   const [activeTab, setActiveTab] = useState(0);
   const [editingPhone, setEditingPhone] = useState(false);
   const [newPhone, setNewPhone] = useState("");
+  const [talkingPoints, setTalkingPoints] = useState<string[]>(
+    Array.isArray(session.talkingPoints) ? session.talkingPoints : []
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newTalkingPoint, setNewTalkingPoint] = useState("");
 
   useEffect(() => {
     if (!callStartTime) return;
@@ -83,17 +99,48 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
     }
   }, [session.id, answeredSession]);
 
-  const handlePhoneSubmit = async () => {
+  useEffect(() => {
+    if (autoStart) {
+      onStartCall?.();
+    }
+  }, [session.id]);
+
+  const onPhoneSubmitHandler = async () => {
     try {
-      await api.patch(`/contacts/${session.id}`, {
-        mobile_phone: newPhone,
+      await api.patch(`/contacts/basic/${session.id}`, {
+        phone: newPhone,
       });
 
-      session.mobile_phone = newPhone;
+      session.phone = newPhone;
       setEditingPhone(false);
       setNewPhone("");
     } catch (err) {
       console.error("Failed to update phone number", err);
+    }
+  };
+
+  const onStageChangeHandler = async (status: string) => {
+    console.log("status: ", typeof status);
+    try {
+      await api.patch(`/contacts/basic/${session.id}`, {
+        status,
+      });
+
+      session.status = status;
+    } catch (err) {
+      console.error("Failed to update phone number", err);
+    }
+  };
+
+  const handleRemoveTalkingPoint = async (index: number) => {
+    const updated = talkingPoints.filter((_, i) => i !== index);
+    try {
+      await api.patch(`/contacts/basic/${session.id}`, {
+        talkingPoints: updated,
+      });
+      setTalkingPoints(updated);
+    } catch (err) {
+      console.error("Failed to remove talking point", err);
     }
   };
 
@@ -125,7 +172,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                 <ArrowBack />
               </IconButton>
               <Typography fontWeight={600}>
-                {session.mobile_phone ?? "(no number)"}
+                {session.phone || "no number"}
               </Typography>
               <Typography variant="body2" sx={{ opacity: 0.8, ml: 2 }}>
                 Call started at{" "}
@@ -182,51 +229,36 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
         }}
       >
         <Grid container spacing={2} padding={2}>
-          <Grid item xs={12} md={7}>
+          <Grid item xs={12} md={8}>
             <Box display="flex" alignItems="center" mb={2}>
               <Avatar sx={{ width: 56, height: 56, marginRight: 2 }}>
-                {session.first_name?.[0] ?? "?"}
+                <Person sx={{ fontSize: 36 }} />
               </Avatar>
               <Box>
                 <Typography variant="h5" fontWeight="bold">
                   {session.first_name} {session.last_name}
                 </Typography>
-                {(session.capacity || session.company) && (
+                {(session.title || session.company) && (
                   <Typography variant="body2" color="text.secondary">
-                    {session.capacity ?? ""}{" "}
-                    {session.company ? ` at ${session.company}` : ""}
+                    {session.title ?? ""}
+                    {session.title ? " at " : ""}
+                    {session.company ?? ""}
                   </Typography>
                 )}
               </Box>
             </Box>
-          </Grid>
-          <Grid item xs={12} md={5}>
-            <Box display="flex" gap={1} justifyContent="flex-end">
-              <Button variant="outlined" startIcon={<PlaylistAdd />}>
-                Add to list
-              </Button>
-              <Button variant="outlined" startIcon={<Email />}>
-                Send email
-              </Button>
-              <Button variant="contained" disableElevation>
-                Add to sequence
-              </Button>
-            </Box>
-          </Grid>
-          <Grid item xs={12}>
             <Box>
               <Stack spacing={1}>
                 {/* Chips */}
                 <Stack direction="row" spacing={1} flexWrap="wrap">
-                  <Chip
-                    label="Cold"
-                    size="small"
-                    color="default"
-                    variant="outlined"
+                  <ContactStageChip
+                    contact={session}
+                    onStageChange={onStageChangeHandler}
                   />
-                  <Chip label="Owner" size="small" variant="outlined" />
+                  {/* TO DO -- think how to handle this section */}
+                  {/* <Chip label="Owner" size="small" variant="outlined" />
                   <Chip label="C-Suite" size="small" variant="outlined" />
-                  <Chip label="US-based" size="small" variant="outlined" />
+                  <Chip label="US-based" size="small" variant="outlined" /> */}
                 </Stack>
 
                 {/* Email + Phone + Time */}
@@ -257,67 +289,123 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                     flexWrap="wrap"
                   >
                     <Phone fontSize="small" />
-                    {editingPhone ? (
+                    {(!editingPhone && session.phone) || session.phone ? (
                       <>
-                        <Box
-                          component="input"
-                          type="tel"
-                          value={newPhone}
-                          onChange={(e) => setNewPhone(e.target.value)}
-                          placeholder="Enter phone"
-                          sx={{
-                            fontSize: "12px",
-                            padding: "2px 6px",
-                            border: "1px solid #ccc",
-                            borderRadius: 1,
-                            height: 24,
-                            lineHeight: 1.2,
-                            display: "inline-block",
-                          }}
-                        />
+                        <Typography fontSize="12px" color="text.secondary">
+                          {session.phone}
+                        </Typography>
                         <Button
                           size="small"
-                          onClick={handlePhoneSubmit}
+                          onClick={() => setEditingPhone(true)}
                           sx={{ minWidth: "auto", fontSize: "11px", px: 1 }}
                         >
-                          Add
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => setEditingPhone(false)}
-                          sx={{ minWidth: "auto", fontSize: "11px", px: 1 }}
-                          color="inherit"
-                        >
-                          Cancel
+                          Change
                         </Button>
                       </>
                     ) : (
                       <>
-                        <Typography fontSize="12px" color="text.secondary">
-                          No phone number
-                        </Typography>
-                        <Typography
-                          fontSize="0.9rem"
-                          color="primary"
-                          sx={{ cursor: "pointer", ml: 0.5 }}
-                          onClick={() => setEditingPhone(true)}
-                        >
-                          • Add phone
-                        </Typography>
+                        {editingPhone ? (
+                          <>
+                            <Box
+                              component="input"
+                              type="tel"
+                              value={newPhone}
+                              onChange={(e) => setNewPhone(e.target.value)}
+                              placeholder="Enter phone"
+                              sx={{
+                                fontSize: "12px",
+                                padding: "2px 6px",
+                                border: "1px solid #ccc",
+                                borderRadius: 1,
+                                height: 24,
+                                lineHeight: 1.2,
+                                display: "inline-block",
+                              }}
+                            />
+                            <Button
+                              size="small"
+                              onClick={onPhoneSubmitHandler}
+                              sx={{
+                                minWidth: "auto",
+                                fontSize: "11px",
+                                px: 1,
+                              }}
+                            >
+                              Add
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={() => setEditingPhone(false)}
+                              sx={{
+                                minWidth: "auto",
+                                fontSize: "11px",
+                                px: 1,
+                              }}
+                              color="inherit"
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Typography fontSize="12px" color="text.secondary">
+                              No phone number
+                            </Typography>
+                            <Typography
+                              fontSize="0.9rem"
+                              color="primary"
+                              sx={{ cursor: "pointer", ml: 0.5 }}
+                              onClick={() => setEditingPhone(true)}
+                            >
+                              • Add phone
+                            </Typography>
+                          </>
+                        )}
                       </>
                     )}
-                  </Stack>
-
-                  {/* Time */}
-                  <Stack direction="row" spacing={0.5} alignItems="center">
-                    <AccessTime fontSize="small" />
-                    <Typography fontSize="12px" color="text.secondary">
-                      Jun 24, 2025 02:50 PM
-                    </Typography>
                   </Stack>
                 </Stack>
               </Stack>
             </Box>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Paper
+              variant="outlined"
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+                justifyContent: "center",
+                borderRadius: 3,
+                p: 2,
+                mt: 2,
+                backgroundColor: "#fff",
+                boxShadow: 0,
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Quick Actions
+              </Typography>
+              <Button variant="outlined" startIcon={<PlaylistAdd />}>
+                Add to list
+              </Button>
+              <Button variant="outlined" startIcon={<Email />}>
+                Send email
+              </Button>
+              <Button variant="outlined" startIcon={<Animation />}>
+                Add to sequence
+              </Button>
+              {manual && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Phone />}
+                  onClick={onStartCall}
+                >
+                  Call
+                </Button>
+              )}
+            </Paper>
           </Grid>
         </Grid>
 
@@ -333,14 +421,14 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
 
         {activeTab === 0 && (
           <Grid container spacing={2} padding={2}>
-            <Grid item xs={12} md={7}>
+            <Grid item xs={12} md={8}>
               <ContactOverview contact={session} />
             </Grid>
 
             <Grid
               item
               xs={12}
-              md={5}
+              md={4}
               display="flex"
               flexDirection="column"
               justifyContent="space-between"
@@ -358,51 +446,55 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                 <Typography variant="h6" gutterBottom>
                   Talking Points
                 </Typography>
-                <Box sx={{ maxHeight: 180, overflowY: "auto", pr: 1 }}>
-                  {talkingPoints && talkingPoints.length > 0 ? (
-                    <ul>
-                      {talkingPoints.map((point, idx) => (
-                        <li key={idx}>
-                          <Typography variant="body2">{point}</Typography>
-                        </li>
-                      ))}
-                    </ul>
+                <Stack direction="row" flexWrap="wrap">
+                  {talkingPoints.length > 0 ? (
+                    talkingPoints.map((point, idx) => (
+                      <Chip
+                        key={idx}
+                        label={point}
+                        onDelete={() => handleRemoveTalkingPoint(idx)}
+                        deleteIcon={<Close />}
+                        sx={{ m: 0.5 }}
+                      />
+                    ))
                   ) : (
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography variant="body2" color="text.secondary">
                       No talking points available.
                     </Typography>
                   )}
-                </Box>
+                </Stack>
                 <Button
                   size="small"
                   startIcon={<Add />}
-                  onClick={onAddTalkingPoint}
+                  onClick={() => setIsModalOpen(true)}
                   sx={{ mt: 1 }}
                 >
                   Add talking point
                 </Button>
               </Paper>
 
-              <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<CallEnd />}
-                  onClick={onEndCall}
-                  disabled={!answeredSession}
-                >
-                  End Call
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  endIcon={<SkipNext />}
-                  onClick={onNextCall}
-                  disabled={!!answeredSession}
-                >
-                  Next Call
-                </Button>
-              </Box>
+              {!manual && (
+                <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<CallEnd />}
+                    onClick={onEndCall}
+                    disabled={!answeredSession}
+                  >
+                    End Call
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    endIcon={<SkipNext />}
+                    onClick={onNextCall}
+                    disabled={!!answeredSession}
+                  >
+                    Next Call
+                  </Button>
+                </Box>
+              )}
             </Grid>
           </Grid>
         )}
@@ -418,6 +510,36 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
 
         <Divider sx={{ my: 2 }} />
       </Paper>
+      <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <DialogTitle>Add Talking Point</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            variant="outlined"
+            label="Talking Point"
+            value={newTalkingPoint}
+            onChange={(e) => setNewTalkingPoint(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+          <Button
+            onClick={async () => {
+              const updatedPoints = [...talkingPoints, newTalkingPoint.trim()];
+              setTalkingPoints(updatedPoints);
+              setIsModalOpen(false);
+              setNewTalkingPoint("");
+              await api.patch(`/contacts/basic/${session.id}`, {
+                talkingPoints: updatedPoints,
+              });
+            }}
+            disabled={!newTalkingPoint.trim()}
+          >
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

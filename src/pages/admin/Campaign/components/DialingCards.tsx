@@ -64,7 +64,7 @@ const DialingCards = ({ sessions }: DialingCardsProps) => {
               >
                 <Phone fontSize="small" sx={{ mr: 1 }} />
                 <Typography variant="body2" fontWeight="bold">
-                  {session.mobile_phone}
+                  {session.phone}
                 </Typography>
               </Box>
             </CardContent>

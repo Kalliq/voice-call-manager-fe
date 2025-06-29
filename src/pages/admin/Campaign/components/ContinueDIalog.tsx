@@ -32,11 +32,12 @@ interface ContinueDialogInterface {
     React.SetStateAction<{ [key: string]: string }>
   >;
   maybeProceedWithNextBatch: () => void;
-  handleStopCampaign: () => void;
+  handleStopAndSkip: () => void;
   handleResult: (
     c: CallSession,
     selectedResult: string
   ) => Promise<void> | void;
+  isCampaign: boolean;
 }
 
 const ContinueDialog = ({
@@ -52,8 +53,9 @@ const ContinueDialog = ({
   setShowContinueDialog,
   setContactNotes,
   maybeProceedWithNextBatch,
-  handleStopCampaign,
+  handleStopAndSkip,
   handleResult,
+  isCampaign,
 }: ContinueDialogInterface) => {
   return (
     <Dialog open={showContinueDialog} onClose={handleDialogClose}>
@@ -66,7 +68,7 @@ const ContinueDialog = ({
                 <Typography variant="h6">
                   {contact.first_name} {contact.last_name}
                 </Typography>
-                <Typography variant="body2">{contact.mobile_phone}</Typography>
+                <Typography variant="body2">{contact.phone}</Typography>
                 <Select
                   value={selectedResults[contact.id] || ""}
                   onChange={(e) =>
@@ -124,8 +126,8 @@ const ContinueDialog = ({
         >
           Save and continue
         </Button>
-        <Button onClick={handleStopCampaign} color="error" variant="outlined">
-          Stop campaign
+        <Button onClick={handleStopAndSkip} color="error" variant="outlined">
+          {isCampaign ? "Stop campaign" : "Skip without save"}
         </Button>
       </DialogActions>
     </Dialog>

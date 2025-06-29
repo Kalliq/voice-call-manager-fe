@@ -122,7 +122,7 @@ const CotactOverview = ({ contact }: { contact: Contact }) => {
               <FieldItem
                 icon={<Phone color="primary" />}
                 label="Direct Phone"
-                value={contact.mobile_phone || contact.phone || ""}
+                value={contact.phone || contact.phone || ""}
               />
               <FieldItem
                 icon={<LocationOn color="primary" />}
@@ -148,7 +148,7 @@ const CotactOverview = ({ contact }: { contact: Contact }) => {
               <FieldItem
                 icon={<Phone color="primary" />}
                 label="Phone"
-                value={contact.mobile_phone || contact.phone || ""}
+                value={contact.phone || contact.phone || ""}
               />
               <FieldItem
                 icon={<LinkedIn color="primary" />}

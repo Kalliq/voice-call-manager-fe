@@ -2,6 +2,8 @@ import FormRenderer from "../../../FormRenderer";
 import { getListExitStrategySchema } from "../../../../schemas/create-list/schema_step_3";
 import useAppStore from "../../../../store/useAppStore";
 
+import { transformToSnakeCase } from "../../../../utils/transformCase";
+
 const CreateList_step_3 = ({
   onPrevious,
   onConfirm,
@@ -11,10 +13,6 @@ const CreateList_step_3 = ({
 }) => {
   const settings = useAppStore((state) => state.settings);
   const { callResults } = settings!["Phone Settings"];
-
-  function transformToSnakeCase(str: string) {
-    return str.trim().toLowerCase().replace(/\s+/g, "_");
-  }
 
   const extendedCallResults = callResults.map((callResult: any) => {
     return { ...callResult, value: transformToSnakeCase(callResult.label) };

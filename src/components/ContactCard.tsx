@@ -88,7 +88,7 @@ const ContactCard = ({ contact, onDeleteClick }: ContactCardProps) => {
                   pl: 1,
                 }}
               >
-                {contact.mobile_phone}
+                {contact.phone}
               </Typography>
             </Box>
 

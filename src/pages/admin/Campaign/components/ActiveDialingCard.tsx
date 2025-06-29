@@ -101,7 +101,7 @@ const ActiveDialingCard = ({
               <ArrowBack />
             </IconButton>
             <Typography fontWeight={600}>
-              {session.mobile_phone ?? "(no number)"}
+              {session.phone ?? "(no number)"}
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.8, ml: 2 }}>
               Call started at{" "}
@@ -182,7 +182,7 @@ const ActiveDialingCard = ({
             <Typography variant="body2" color="text.secondary">
               Phone:
             </Typography>
-            <Typography gutterBottom>{session.mobile_phone ?? "—"}</Typography>
+            <Typography gutterBottom>{session.phone ?? "—"}</Typography>
 
             <Button
               fullWidth
