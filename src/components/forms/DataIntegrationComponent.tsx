@@ -13,15 +13,20 @@ const sfdcFieldOptions: MappedFieldsState = {
     { id: "last_name", name: "Last Name" },
     { id: "company", name: "Company" },
     { id: "email", name: "Email" },
-    { id: "mobile_phone", name: "Mobile Phone" },
+    { id: "phone", name: "Phone" },
+    { id: "linkedIn", name: "LinkedIn" },
+    { id: "city", name: "City" },
+    { id: "timezone", name: "Timezone" },
+    { id: "state", name: "State" },
+    { id: "title", name: "Title" },
   ],
   leads: [
     { id: "first_name", name: "First Name" },
     { id: "last_name", name: "Last Name" },
     { id: "company", name: "Company" },
     { id: "email", name: "Email" },
+    { id: "personal_phone", name: "Personal Phone" },
     { id: "corporate_phone", name: "Corporate Phone" },
-    { id: "mobile_phone", name: "Mobile Phone" },
   ],
   accounts: [
     { id: "account_name", name: "Account Name" },
@@ -112,8 +117,7 @@ export default function FieldMapper() {
         <Tab label="Accounts" value="accounts" />
         <Tab label="Opportunities" value="opportunities" />
       </Tabs>
-
-      <Box sx={{ display: "flex", gap: 4, mt: 3 }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4, mt: 3 }}>
         {/* Custom Fields (Mapped Fields) */}
         <Box sx={{ flex: 1 }}>
           <Typography variant="h6">Mapped Fields</Typography>

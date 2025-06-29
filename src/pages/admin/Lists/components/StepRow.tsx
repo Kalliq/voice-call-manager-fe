@@ -17,6 +17,7 @@ import WobblingIconButton from "../../../../components/UI/WobblingArrowIcon";
 import { connectionDisplayMap, TelephonyConnection } from "../constants";
 import ContactDialog from "./ContactDialog";
 import { Step } from "../../../../interfaces/list-dialing-step";
+import { transformToNormalCase } from "../../../../utils/transformCase";
 
 interface StepRowProps {
   step: Step;
@@ -46,7 +47,8 @@ const StepRow = ({
         <TableCell>
           <Typography fontWeight={500}>{step.stepName}</Typography>
           <Typography variant="body2" color="text.secondary">
-            {step.defaultAction ?? ""}
+            Default action:{" "}
+            {transformToNormalCase(step.defaultAction) ?? "none"}
           </Typography>
         </TableCell>
         <TableCell>
@@ -99,7 +101,7 @@ const StepRow = ({
                 sx={{ cursor: "pointer" }}
                 onClick={() =>
                   navigate("/campaign", {
-                    state: { contacts, mode },
+                    state: { contacts, mode, autoStart: false },
                   })
                 }
               >

@@ -6,7 +6,7 @@ export const useRingingTone = ({
   answeredSession,
 }: {
   ringingSessions: CallSession[];
-  answeredSession: Contact | null;
+  answeredSession: Contact | boolean | null;
 }) => {
   const ringtoneAudioRef = useRef<HTMLAudioElement | null>(null);
 

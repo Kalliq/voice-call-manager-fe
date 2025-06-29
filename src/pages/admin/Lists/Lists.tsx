@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Container,
   Box,
   Paper,
   Table,
@@ -9,7 +8,22 @@ import {
   TableContainer,
   Typography,
   CircularProgress,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableFooter,
+  TablePagination,
+  Stack,
+  Tooltip,
+  useTheme,
+  IconButton,
 } from "@mui/material";
+import {
+  Call as CallIcon,
+  Edit as EditIcon,
+  Search as SearchIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
 
 import { SimpleButton } from "../../../components/UI/SimpleButton";
 import useAppStore from "../../../store/useAppStore";
@@ -17,6 +31,9 @@ import { useSnackbar } from "../../../hooks/useSnackbar";
 import useListManager from "./useListManager";
 import ListCard from "./components/ListCard";
 import { DeleteDialog } from "../../../components/DeleteDialog";
+import { Contact } from "../../../types/contact";
+
+import api from "../../../utils/axiosInstance";
 
 const Lists = () => {
   const navigate = useNavigate();
@@ -25,6 +42,14 @@ const Lists = () => {
   const { enqueue } = useSnackbar();
 
   const [loading, setLoading] = useState(false);
+  const [showDropped, setShowDropped] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [search, setSearch] = useState("");
+
+  const theme = useTheme();
 
   const {
     selectedCalls,
@@ -54,9 +79,31 @@ const Lists = () => {
     }
   }, []);
 
+  const loadContacts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/contacts?status=dropped", {
+        params: { search, page: page + 1, limit: rowsPerPage },
+      });
+      setContacts(res.data.data);
+      setTotal(res.data.total);
+    } catch {
+      enqueue("Failed to load lists", { variant: "error" });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadContacts();
+  }, [load, loadContacts]);
+
+  const onCall = (c: Contact) => {
+    navigate("/campaign", {
+      state: { contactId: c.id, autoStart: false },
+    });
+  };
 
   return (
     <Box p={3}>
@@ -80,6 +127,11 @@ const Lists = () => {
             onClick={() => navigate("/create-new-list")}
             color="info"
           />
+          <SimpleButton
+            label="Show Dropped"
+            onClick={() => setShowDropped(!showDropped)}
+            color="warning"
+          />
         </Box>
       </Box>
 
@@ -96,27 +148,118 @@ const Lists = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <TableContainer sx={{ width: "100%", mb: 1 }}>
-            <Table size="medium" sx={{ width: "100%" }}>
-              {lists &&
-                lists.map((list) => (
-                  <ListCard
-                    key={list.id}
-                    list={list}
-                    selectedCall={selectedCalls[list.id]}
-                    expanded={expandedListId === list.id}
-                    eligibleContacts={eligibleContacts[list.id]}
-                    onExpand={handleExpand}
-                    onConnectionClick={openMenu}
-                    onConnectionChange={handleConnectionChange}
-                    anchorEl={anchorEl}
-                    menuListId={menuListId}
-                    closeMenu={closeMenu}
-                    onDeleteClick={handleDeleteClick}
-                  />
-                ))}
-            </Table>
-          </TableContainer>
+          <>
+            {!showDropped ? (
+              <TableContainer sx={{ width: "100%", mb: 1 }}>
+                <Table size="medium" sx={{ width: "100%" }}>
+                  {lists &&
+                    lists.map((list) => (
+                      <ListCard
+                        key={list.id}
+                        list={list}
+                        selectedCall={selectedCalls[list.id]}
+                        expanded={expandedListId === list.id}
+                        eligibleContacts={eligibleContacts[list.id]}
+                        onExpand={handleExpand}
+                        onConnectionClick={openMenu}
+                        onConnectionChange={handleConnectionChange}
+                        anchorEl={anchorEl}
+                        menuListId={menuListId}
+                        closeMenu={closeMenu}
+                        onDeleteClick={handleDeleteClick}
+                      />
+                    ))}
+                </Table>
+              </TableContainer>
+            ) : (
+              <TableContainer
+                component={Paper}
+                elevation={1}
+                sx={{
+                  width: "100%",
+                  "& .MuiTable-root": { minWidth: 650 },
+                }}
+              >
+                <Table size="small">
+                  <TableHead>
+                    <TableRow
+                      sx={{ backgroundColor: theme.palette.action.hover }}
+                    >
+                      {["Name", "Company", "Email", "Number", "Actions"].map(
+                        (header) => (
+                          <TableCell
+                            key={header}
+                            sx={{
+                              fontWeight: 600,
+                              textTransform: "uppercase",
+                              py: 1.5,
+                            }}
+                          >
+                            {header}
+                          </TableCell>
+                        )
+                      )}
+                    </TableRow>
+                  </TableHead>
+
+                  <TableBody>
+                    {contacts.map((c) => (
+                      <TableRow key={c.id} hover sx={{ cursor: "pointer" }}>
+                        <TableCell sx={{ py: 1.5 }}>
+                          {c.first_name} {c.last_name}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>{c.company}</TableCell>
+                        <TableCell sx={{ py: 1.5 }}>{c.email}</TableCell>
+                        <TableCell sx={{ py: 1.5 }}>{c.phone}</TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            justifyContent="flex-end"
+                          >
+                            <Tooltip title="Call">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onCall(c);
+                                }}
+                              >
+                                <CallIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+
+                  <TableFooter>
+                    <TableRow>
+                      <TablePagination
+                        rowsPerPageOptions={[10, 25, 50]}
+                        count={total}
+                        page={page}
+                        rowsPerPage={rowsPerPage}
+                        component="td"
+                        onPageChange={(_, p) => setPage(p)}
+                        onRowsPerPageChange={(e) => {
+                          setRowsPerPage(+e.target.value);
+                          setPage(0);
+                        }}
+                        sx={{
+                          "& .MuiTablePagination-toolbar": {
+                            px: 2,
+                            py: 1,
+                          },
+                        }}
+                      />
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              </TableContainer>
+            )}
+          </>
         )}
       </Box>
 

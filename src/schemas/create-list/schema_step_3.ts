@@ -82,9 +82,8 @@ export const getListExitStrategySchema = (
               name: "gapUnit",
               label: "Gap unit",
               options: [
-                { label: "Seconds", value: "seconds" },
-                { label: "Minutes", value: "minutes" },
                 { label: "Hours", value: "hours" },
+                { label: "Days", value: "days" },
               ],
               required: true,
             },

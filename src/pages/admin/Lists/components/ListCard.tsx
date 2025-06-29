@@ -9,8 +9,15 @@ import {
   TableBody,
   Typography,
   useTheme,
+  Tooltip,
 } from "@mui/material";
-import { ExpandMore, Edit, Delete, GroupOutlined } from "@mui/icons-material";
+import {
+  ExpandMore,
+  Edit,
+  Delete,
+  GroupOutlined,
+  HelpOutline,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import ConnectionMenu from "./ConnectionMenu";
 import StepRow from "./StepRow";
@@ -74,21 +81,22 @@ const ListCard = ({
             </Typography>
           </Box>
         </TableCell>
-
         <TableCell>
-          <Typography
-            component="span"
-            variant="body2"
-            sx={{
-              px: 1,
-              py: 0.25,
-              borderRadius: 1,
-            }}
-          >
-            {list.status}
-          </Typography>
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <Typography
+              component="span"
+              variant="body2"
+              sx={{ px: 1, py: 0.25, borderRadius: 1 }}
+            >
+              {list.exitStrategy ? "Exit strategy" : "No exit strategy"}
+            </Typography>
+            {list.exitStrategyDescription && (
+              <Tooltip title={list.exitStrategyDescription} arrow>
+                <HelpOutline fontSize="small" color="action" />
+              </Tooltip>
+            )}
+          </Box>
         </TableCell>
-
         <TableCell align="right">
           <IconButton
             size="small"

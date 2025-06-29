@@ -31,8 +31,6 @@ import "./App.css";
 
 function App() {
   const { isAuthenticated, isSuperadmin } = useAuth();
-  console.log("isAuthenticated: ", isAuthenticated);
-  console.log("isSuperadmin: ", isSuperadmin);
 
   const {
     isInboundCallDialogOpen,

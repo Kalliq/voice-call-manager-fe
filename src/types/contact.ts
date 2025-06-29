@@ -14,7 +14,6 @@ type ContactBase = {
   last_name: string;
   email: string;
   company: string;
-  mobile_phone: string;
   phone: string;
   capacity?: string;
   title?: string;

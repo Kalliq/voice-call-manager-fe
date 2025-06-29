@@ -1,8 +1,7 @@
-// src/pages/admin/Contacts/ContactsPage.tsx
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
-  Button,
   Stack,
   TextField,
   TableContainer,
@@ -21,7 +20,6 @@ import {
   CircularProgress,
 } from "@mui/material";
 import {
-  Add as AddIcon,
   Call as CallIcon,
   Edit as EditIcon,
   Search as SearchIcon,
@@ -35,13 +33,11 @@ import ContactDrawer from "../../../components/ContactDrawer";
 import { DeleteDialog } from "../../../components/DeleteDialog";
 import DialPad from "../../../components/DialPad";
 import { useSnackbar } from "../../../hooks/useSnackbar";
-import { useTwilio } from "../../../contexts/TwilioContext";
-import { startSingleCall } from "../../../utils/startSingleCall";
 
 const ContactsPage = () => {
   const theme = useTheme();
-  const { twilioDevice } = useTwilio();
   const { enqueue } = useSnackbar();
+  const navigate = useNavigate();
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [total, setTotal] = useState(0);
@@ -83,9 +79,9 @@ const ContactsPage = () => {
   };
 
   const onCall = (c: Contact) => {
-    if (!twilioDevice) return enqueue("Not connected", { variant: "warning" });
-    enqueue(`Dialling ${c.mobile_phone}…`);
-    startSingleCall(twilioDevice, c.id);
+    navigate("/campaign", {
+      state: { contactId: c.id, autoStart: false },
+    });
   };
 
   useEffect(() => {
@@ -141,7 +137,7 @@ const ContactsPage = () => {
           <Table size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: theme.palette.action.hover }}>
-                {["Name", "Company", "Email", "Mobile", "Actions"].map(
+                {["Name", "Company", "Email", "Number", "Actions"].map(
                   (header) => (
                     <TableCell
                       key={header}
@@ -174,7 +170,7 @@ const ContactsPage = () => {
                   </TableCell>
                   <TableCell sx={{ py: 1.5 }}>{c.company}</TableCell>
                   <TableCell sx={{ py: 1.5 }}>{c.email}</TableCell>
-                  <TableCell sx={{ py: 1.5 }}>{c.mobile_phone}</TableCell>
+                  <TableCell sx={{ py: 1.5 }}>{c.phone}</TableCell>
                   <TableCell sx={{ py: 1.5 }}>
                     <Stack
                       direction="row"
@@ -269,12 +265,7 @@ const ContactsPage = () => {
       <DialPad
         open={dialOpen}
         onClose={() => setDialOpen(false)}
-        onCall={(num) => {
-          if (!twilioDevice)
-            return enqueue("Not connected", { variant: "warning" });
-          enqueue(`Dialling ${num}…`);
-          twilioDevice.connect({ params: { To: num, outbound: "true" } });
-        }}
+        onCall={(num) => {}}
       />
     </Box>
   );

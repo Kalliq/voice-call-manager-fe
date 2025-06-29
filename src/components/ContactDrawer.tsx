@@ -47,7 +47,7 @@ export default function ContactDrawer({
       last_name: "",
       company: "",
       email: "",
-      mobile_phone: "",
+      phone: "",
     },
   });
 
@@ -93,7 +93,7 @@ export default function ContactDrawer({
               ["Last Name", "last_name"],
               ["Company", "company"],
               ["Email", "email"],
-              ["Mobile", "mobile_phone"],
+              ["Number", "phone"],
             ].map(([label, name]) => (
               <Controller
                 key={name}

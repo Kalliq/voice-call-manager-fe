@@ -17,6 +17,9 @@ export const useAdminPhone = () => {
   const [devices, setDevices] = useState<AudioDevice[] | null>(null);
   const [inputVolume, setInputVolume] = useState<number>(0);
   const [outputVolume, setOutputVolume] = useState<number>(0);
+  const [incomingHandler, setIncomingHandler] = useState<
+    ((call: any) => void) | null
+  >(null);
 
   const twilioDeviceRef = useRef<Device | null>(null);
 
@@ -33,6 +36,22 @@ export const useAdminPhone = () => {
   };
 
   const hangUpHandler = () => {};
+
+  useEffect(() => {
+    const device = twilioDevice;
+    console.log("twilioDeviceRef.current: ", twilioDevice);
+    if (!device) return;
+
+    const onIncoming = (call: any) => {
+      if (incomingHandler) {
+        incomingHandler(call);
+      } else {
+        console.warn("No incoming handler set");
+      }
+    };
+
+    device.on("incoming", onIncoming);
+  }, [incomingHandler]);
 
   useEffect(() => {
     if (twilioDevice && userId) {
@@ -74,5 +93,6 @@ export const useAdminPhone = () => {
     twilioDevice,
     socket,
     devices,
+    setIncomingHandler,
   };
 };

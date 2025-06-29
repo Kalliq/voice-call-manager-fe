@@ -27,14 +27,12 @@ import {
   useTheme,
 } from "@mui/material";
 import {
-  Menu as MenuIcon,
   Search,
   List as ListsIcon,
   Contacts as ContactsIcon,
   BarChart as ReportsIcon,
   Task as TasksIcon,
   MenuBook as CoachingIcon,
-  Add,
   Phone,
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
@@ -46,6 +44,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { useSettingsContext } from "../contexts/SettingsContext";
 import { translateToTitleCase } from "../utils/translateToTitle";
 import { useGlobalSearch } from "../hooks/useGlobalSearch";
+import PhoneDialerPopover from "../components/PhoneDialPopover";
+
+import api from "../utils/axiosInstance";
 
 type SearchResult = { id: string; label: string };
 
@@ -86,7 +87,40 @@ export default function AdminLayout() {
 
   const onSearchSelect = (_: any, value: { id: string; label: string }) => {
     if (!value) return;
-    navigate(`/contact?id=${value.id}`);
+    navigate("/campaign", {
+      state: { contactId: value.id, autoStart: false },
+    });
+  };
+
+  const [phoneAnchorEl, setPhoneAnchorEl] = useState<null | HTMLElement>(null);
+
+  const openPhoneDialer = (e: React.MouseEvent<HTMLElement>) =>
+    setPhoneAnchorEl(e.currentTarget);
+  const closePhoneDialer = () => setPhoneAnchorEl(null);
+
+  const onCall = async (phone: string) => {
+    let contactId: string | null = null;
+    try {
+      const { data } = await api.get(
+        `/contacts/lookup-by-phone?phone=${phone}`
+      );
+      contactId = data.id;
+    } catch (err: any) {
+      if (err.response?.status !== 404) {
+        // Handle or rethrow unexpected errors
+        console.error("Unexpected error:", err);
+        return;
+      }
+    }
+    setPhoneAnchorEl(null);
+
+    navigate("/campaign", {
+      state: {
+        contactId: contactId,
+        phone: phone,
+        autoStart: false,
+      },
+    });
   };
 
   return (
@@ -189,7 +223,6 @@ export default function AdminLayout() {
       </Drawer>
 
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-        {/* Top AppBar */}
         <AppBar
           position="fixed"
           elevation={0}
@@ -240,7 +273,7 @@ export default function AdminLayout() {
               />
             </Box>
             <Box sx={{ flexGrow: 1 }} />
-            <IconButton onClick={() => console.log("open dialer")}>
+            <IconButton onClick={openPhoneDialer}>
               <Phone />
             </IconButton>
             <IconButton onClick={openNotifMenu}>
@@ -277,6 +310,11 @@ export default function AdminLayout() {
           <Outlet />
         </Box>
       </Box>
+      <PhoneDialerPopover
+        anchorEl={phoneAnchorEl}
+        onClose={closePhoneDialer}
+        onCall={onCall}
+      />
     </Box>
   );
 }

@@ -5,6 +5,6 @@ export const schema = z.object({
   last_name: z.string().min(1),
   company: z.string().optional(),
   email: z.string().email().optional(),
-  mobile_phone: z.string().min(10),
+  phone: z.string().min(10),
   tags: z.string().optional(),
 });

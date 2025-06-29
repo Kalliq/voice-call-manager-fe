@@ -1,5 +1,5 @@
 import { useState, MouseEvent } from "react";
-import { useNavigate, NavLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   AppBar,
   Avatar,
@@ -25,14 +25,9 @@ import {
   Notifications as NotificationsIcon,
   Settings,
   Menu as MenuIcon,
-  List as ListIcon,
-  Assignment,
-  BarChart as BarChartIcon,
   Add,
   Phone,
   Search,
-  Contacts as ContactsIcon,
-  Person,
   PersonAdd,
   PlaylistAdd,
 } from "@mui/icons-material";
@@ -49,12 +44,6 @@ export const colors = {
   headline: "#ffffff",
   buttonText: "#ffffff",
 };
-
-const menuItems = [
-  { text: "Lists", path: "/lists", icon: <ListIcon /> },
-  { text: "Contacts", path: "/contacts", icon: <ContactsIcon /> },
-  { text: "Reports", path: "/reports", icon: <BarChartIcon /> },
-];
 
 // Mock notifications data
 const notifications = [
@@ -89,10 +78,6 @@ const Header = () => {
   const handleNotificationsOpen = (event: MouseEvent<HTMLElement>) =>
     setNotificationsAnchorEl(event.currentTarget);
   const handleNotificationsClose = () => setNotificationsAnchorEl(null);
-
-  const onClickSettingsHandler = () => {
-    navigate("/dashboard/settings");
-  };
 
   const onClickProfileHandler = () => {};
 
@@ -212,41 +197,6 @@ const Header = () => {
                   }}
                 />
               </Box>
-
-              {/* Navigation Links - Centered after search */}
-              <Box sx={{ display: "flex", gap: 1 }}>
-                {menuItems.map((item) => (
-                  <Typography
-                    key={item.text}
-                    component={NavLink}
-                    to={item.path}
-                    sx={{
-                      px: 2,
-                      py: 1,
-                      borderRadius: 2,
-                      color: colors.headline,
-                      textDecoration: "none",
-                      display: "inline-block",
-                      transition: "background-color 0.2s ease-in-out",
-                      "&.active": {
-                        fontWeight: "bold",
-                        color: colors.buttonText,
-                        backgroundColor: theme.palette.info.main,
-                      },
-                      "&:hover": {
-                        backgroundColor: theme.palette.info.main,
-                        color: colors.buttonText,
-                        textDecoration: "none",
-                      },
-                      "&:visited": {
-                        color: colors.headline,
-                      },
-                    }}
-                  >
-                    {item.text}
-                  </Typography>
-                ))}
-              </Box>
             </Box>
 
             {/* Right side - Action icons */}
@@ -344,9 +294,6 @@ const Header = () => {
                 )}
               </Menu>
 
-              <IconButton sx={{ color: colors.headline }}>
-                <Settings onClick={onClickSettingsHandler} />
-              </IconButton>
               <IconButton
                 sx={{ color: colors.headline }}
                 onClick={handleMenuOpen}
@@ -436,47 +383,7 @@ const Header = () => {
           </Box>
 
           <List>
-            {menuItems.map((item) => (
-              <ListItem
-                key={item.text}
-                component={NavLink}
-                to={item.path}
-                onClick={toggleDrawer(false)}
-                sx={{
-                  color: colors.headline,
-                  "&:hover": {
-                    backgroundColor: theme.palette.info.main,
-                    color: colors.buttonText,
-                  },
-                  "&.active": {
-                    backgroundColor: theme.palette.info.main,
-                    color: colors.buttonText,
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ color: theme.palette.info.main }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItem>
-            ))}
-
             {/* Add Actions - Mobile */}
-            <ListItem
-              onClick={handleAddContact}
-              sx={{
-                color: colors.headline,
-                "&:hover": {
-                  backgroundColor: theme.palette.info.main,
-                  color: colors.buttonText,
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: theme.palette.info.main }}>
-                <PersonAdd />
-              </ListItemIcon>
-              <ListItemText primary="Add Contact" />
-            </ListItem>
             <ListItem
               onClick={handleAddList}
               sx={{
