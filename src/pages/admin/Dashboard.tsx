@@ -227,7 +227,14 @@ const Dashboard = () => {
                 </Typography>
               </Stack>
               <Divider sx={{ my: 1 }} />
-              <Stack spacing={1}>
+              <Stack
+                spacing={1}
+                sx={{
+                  overflowY: "scroll",
+                  maxHeight: "220px",
+                }}
+                className="hide-scrollbar"
+              >
                 {tasks.map((task: any) => (
                   <Box
                     key={task.id}

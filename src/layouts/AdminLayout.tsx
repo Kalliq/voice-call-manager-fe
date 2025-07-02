@@ -37,6 +37,7 @@ import {
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   ExpandMore as ExpandMoreIcon,
+  ContactPhone as ContactPhoneIcon,
 } from "@mui/icons-material";
 
 import logo from "../assets/logo_text.svg";
@@ -57,6 +58,7 @@ const navItems = [
   { label: "Contacts", path: "/contacts", icon: <ContactsIcon /> },
   { label: "Tasks", path: "/tasks", icon: <TasksIcon /> },
   { label: "Coaching", path: "/coaching", icon: <CoachingIcon /> },
+  { label: "My Numbers", path: "/my-numbers", icon: <ContactPhoneIcon /> },
 ];
 
 export default function AdminLayout() {

@@ -57,6 +57,7 @@ const Campaign = () => {
 
   const callResults = settings["Phone Settings"].callResults as CallResult[];
   const [manualSession, setManualSession] = useState<CallSession | null>(null);
+  const [callStarted, setCallStarted] = useState(false);
 
   useEffect(() => {
     if (contactId && !contacts && !mode) {
@@ -83,6 +84,7 @@ const Campaign = () => {
     pendingResultContacts,
     currentBatch,
     currentBatchRef,
+    lastAnsweredId,
     setCurrentBatch,
     setIsCampaignRunning,
     setIsCampaignFinished,
@@ -93,6 +95,7 @@ const Campaign = () => {
     setRingingSessions,
     handleHangUp,
     handleHangUpNotKnown,
+    handleNumpadClick,
   } = useCampaign({
     userId: user!.id,
     socket,
@@ -113,12 +116,14 @@ const Campaign = () => {
   const singleSession = getSingleDialingSessionWithStatus(currentBatch);
 
   const makeCallNotKnown = async (phone: string) => {
+    setCallStarted(true);
     await api.post("/campaign/call-notknown", {
       phone,
     });
   };
 
   const makeCallBatch = async () => {
+    setCallStarted(true);
     // TO-DO implement try-catch
     let slice: Contact[];
     if (contacts) {
@@ -202,11 +207,13 @@ const Campaign = () => {
   const hangUpNotKnown = () => {
     api.post("/campaign/stop-campaign");
     handleHangUpNotKnown();
+    setCallStarted(false);
   };
 
   const hangUp = () => {
     api.post("/campaign/stop-campaign");
     handleHangUp();
+    setCallStarted(false);
   };
 
   return (
@@ -233,7 +240,8 @@ const Campaign = () => {
             phone={phone}
             onStartCall={makeCallNotKnown}
             onEndCall={hangUpNotKnown}
-            callStarted={false}
+            callStarted={callStarted}
+            handleNumpadClick={handleNumpadClick}
           />
         )}
 
@@ -241,11 +249,13 @@ const Campaign = () => {
           <SingleCallCampaignPanel
             session={manualSession}
             answeredSession={answeredSession as Contact}
-            onStartCall={makeCallBatch}
-            onNextCall={() => {}}
+            onStartCall={handleStartCampaign}
+            onNextCall={makeCallBatch}
             onEndCall={hangUp}
             manual={true}
             phone={phone}
+            callStarted={callStarted}
+            handleNumpadClick={handleNumpadClick}
           />
         )}
 
@@ -261,6 +271,8 @@ const Campaign = () => {
                 onNextCall={makeCallBatch}
                 onEndCall={hangUp}
                 manual={false}
+                callStarted={callStarted}
+                handleNumpadClick={handleNumpadClick}
               />
             ) : (
               <>
@@ -279,6 +291,7 @@ const Campaign = () => {
                     inputVolume={inputVolume}
                     outputVolume={outputVolume}
                     hangUp={hangUp}
+                    handleNumpadClick={handleNumpadClick}
                   />
                 )}
               </>
@@ -304,6 +317,8 @@ const Campaign = () => {
         handleStopAndSkip={handleStopCampaign}
         handleResult={handleResult}
         isCampaign={!manualSession}
+        answeredSessionId={lastAnsweredId}
+        mode={mode}
       />
       {isCampaignFinished && (
         <Alert severity="success" sx={{ mt: 3 }}>

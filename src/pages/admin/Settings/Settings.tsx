@@ -1,25 +1,10 @@
-import { useState, useEffect } from "react";
-import {
-  Box,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  List,
-  ListItemButton,
-  ListItemText,
-  Typography,
-  useTheme,
-} from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { ResizableBox } from "react-resizable";
+import { Box, Typography } from "@mui/material";
 
 import { settingsComponentRegistry } from "../../../registry/settings-component-registry";
 import SettingsTypeWrapper from "../../../components/SettingsTypeWrapper";
-import useAppStore from "../../../store/useAppStore";
 
 import "react-resizable/css/styles.css";
 import "./Settings.css";
-import { translateToTitleCase } from "../../../utils/translateToTitle";
 import { useSettingsContext } from "../../../contexts/SettingsContext";
 
 const Settings: React.FC = () => {

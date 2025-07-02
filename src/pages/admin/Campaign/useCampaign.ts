@@ -4,7 +4,6 @@ import { Socket } from "socket.io-client";
 import { normalizePhone, TwilioFinalStatus } from "voice-javascript-common";
 
 import { CallSession, Contact } from "../../../types/contact";
-import { getTwilioDevice } from "../../../utils/initTwilio";
 import { useTwilio } from "../../../contexts/TwilioContext";
 
 interface useTwilioCampaignProps {
@@ -35,6 +34,7 @@ export const useCampaign = ({
     CallSession[]
   >([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [lastAnsweredId, setLastAnsweredId] = useState<string | null>(null);
 
   const { twilioDevice, setIncomingHandler } = useTwilio();
 
@@ -97,6 +97,7 @@ export const useCampaign = ({
       setRingingSessions((prev) => prev.filter((c) => c.id !== contact.id));
       // Set current active call
       setAnsweredSession(contact);
+      setLastAnsweredId(contact.id);
     } else if (!contact && status === "in-progress") {
       setAnsweredSession(true);
     }
@@ -132,6 +133,16 @@ export const useCampaign = ({
     }
   };
 
+  const handleNumpadClick = (digit: string) => {
+    const call = activeCallRef.current;
+    if (!call) {
+      console.warn("No active call to send digit");
+      return;
+    }
+
+    call.sendDigits(digit);
+  };
+
   const bindCallEventHandlers = (
     call: Call,
     contact: CallSession | null = null
@@ -153,7 +164,6 @@ export const useCampaign = ({
     if (!twilioDevice || !setIncomingHandler) return;
 
     const onIncomingHandler = (call: Call) => {
-      console.log("useCampaign");
       const params = new URLSearchParams(call.parameters?.Params || "");
       const contactId = params.get("contactId");
       const isOutbound = params.get("outbound") === "true";
@@ -235,6 +245,7 @@ export const useCampaign = ({
     pendingResultContacts,
     currentBatch,
     currentBatchRef,
+    lastAnsweredId,
     setStatus,
     setCurrentBatch,
     setIsCampaignRunning,
@@ -245,5 +256,6 @@ export const useCampaign = ({
     setRingingSessions,
     handleHangUp,
     handleHangUpNotKnown,
+    handleNumpadClick,
   };
 };

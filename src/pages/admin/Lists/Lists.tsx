@@ -128,7 +128,7 @@ const Lists = () => {
             color="info"
           />
           <SimpleButton
-            label="Show Dropped"
+            label={`${!showDropped ? "Show" : "Hide"} Dropped Calls`}
             onClick={() => setShowDropped(!showDropped)}
             color="warning"
           />

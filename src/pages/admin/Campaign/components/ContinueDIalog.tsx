@@ -38,6 +38,8 @@ interface ContinueDialogInterface {
     selectedResult: string
   ) => Promise<void> | void;
   isCampaign: boolean;
+  answeredSessionId: string | null;
+  mode: string;
 }
 
 const ContinueDialog = ({
@@ -47,6 +49,7 @@ const ContinueDialog = ({
   pendingResultContacts,
   selectedResults,
   showContinueDialog,
+  answeredSessionId,
   handleDialogClose,
   setSelectedResults,
   setPendingResultContacts,
@@ -56,76 +59,102 @@ const ContinueDialog = ({
   handleStopAndSkip,
   handleResult,
   isCampaign,
+  mode,
 }: ContinueDialogInterface) => {
+  const saveHandler = async () => {
+    await Promise.all(
+      currentBatch.map((c) => {
+        const result =
+          selectedResults[c.id] ||
+          (c.id !== answeredSessionId ? "No Answer" : "");
+        return handleResult(c, result);
+      })
+    );
+    setPendingResultContacts([]);
+    setSelectedResults({});
+    setShowContinueDialog(false);
+  };
+
   return (
     <Dialog open={showContinueDialog} onClose={handleDialogClose}>
       <DialogTitle>Call Results</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
-          {currentBatch.map((contact) => (
-            <Card key={contact.id} variant="outlined" sx={{ my: 1 }}>
-              <CardContent>
-                <Typography variant="h6">
-                  {contact.first_name} {contact.last_name}
-                </Typography>
-                <Typography variant="body2">{contact.phone}</Typography>
-                <Select
-                  value={selectedResults[contact.id] || ""}
-                  onChange={(e) =>
-                    setSelectedResults((prev) => ({
-                      ...prev,
-                      [contact.id]: e.target.value,
-                    }))
-                  }
-                  displayEmpty
-                  fullWidth
-                  sx={{ mt: 1 }}
-                >
-                  <MenuItem value="" disabled>
-                    Select result
-                  </MenuItem>
-                  {callResults.map((callResult) => (
-                    <MenuItem key={callResult.label} value={callResult.label}>
-                      {callResult.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <Typography>Short description</Typography>
-                <CustomTextField
-                  value={contactNotes[contact.id] || ""}
-                  onChange={(e) =>
-                    setContactNotes((prev) => ({
-                      ...prev,
-                      [contact.id]: e.target.value,
-                    }))
-                  }
-                />
-              </CardContent>
-            </Card>
-          ))}
+          {currentBatch.map((contact) => {
+            const isAnswered = contact.id === answeredSessionId;
+            return (
+              <>
+                {isAnswered ? (
+                  <Card key={contact.id} variant="outlined" sx={{ my: 1 }}>
+                    <CardContent>
+                      <Typography variant="h6">
+                        {contact.first_name} {contact.last_name}
+                      </Typography>
+                      <Typography variant="body2">{contact.phone}</Typography>
+
+                      <Select
+                        value={
+                          selectedResults[contact.id] ||
+                          (isAnswered ? "" : "No Answer")
+                        }
+                        onChange={(e) =>
+                          setSelectedResults((prev) => ({
+                            ...prev,
+                            [contact.id]: e.target.value,
+                          }))
+                        }
+                        displayEmpty
+                        fullWidth
+                        sx={{ mt: 1 }}
+                      >
+                        <MenuItem value="" disabled>
+                          Select result
+                        </MenuItem>
+                        {callResults.map((callResult) => (
+                          <MenuItem
+                            key={callResult.label}
+                            value={callResult.label}
+                          >
+                            {callResult.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <Typography>Short description</Typography>
+                      <CustomTextField
+                        value={contactNotes[contact.id] || ""}
+                        onChange={(e) =>
+                          setContactNotes((prev) => ({
+                            ...prev,
+                            [contact.id]: e.target.value,
+                          }))
+                        }
+                      />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Typography>Dispositions saved automatically!</Typography>
+                )}
+              </>
+            );
+          })}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ justifyContent: "space-between", px: 3, py: 2 }}>
         <Button
           variant="contained"
-          onClick={async () => {
-            await Promise.all(
-              currentBatch.map((c) => {
-                handleResult(c, selectedResults[c.id]);
-              })
-            );
-            setPendingResultContacts([]);
-            setSelectedResults({});
-            setShowContinueDialog(false);
+          onClick={() => {
+            saveHandler();
             maybeProceedWithNextBatch();
           }}
-          disabled={
-            pendingResultContacts.length === 0 ||
-            pendingResultContacts.some((c) => !selectedResults[c.id])
-          }
         >
-          Save and continue
+          {answeredSessionId ? "Save and continue" : "Continue"}
         </Button>
+        {mode !== "Soft call" && (
+          <Button variant="contained" onClick={() => saveHandler()}>
+            Save and stop
+          </Button>
+        )}
+
         <Button onClick={handleStopAndSkip} color="error" variant="outlined">
           {isCampaign ? "Stop campaign" : "Skip without save"}
         </Button>

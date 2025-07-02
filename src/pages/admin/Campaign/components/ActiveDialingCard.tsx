@@ -9,6 +9,7 @@ import {
   Grid,
   IconButton,
   Paper,
+  Stack,
   Tab,
   Tabs,
   TextField,
@@ -16,13 +17,17 @@ import {
   styled,
 } from "@mui/material";
 import {
-  ArrowBack,
-  CallEnd,
-  VolumeOff,
-  Pause,
   Info,
+  Business,
+  Person,
+  Phone,
+  Email,
+  Title,
 } from "@mui/icons-material";
+
 import { Contact } from "../../../../types/contact";
+import { FieldItem } from "../../../../components/atoms/FieldItem";
+import { CallBar } from "./molecules/CallBar";
 
 const LightPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -35,6 +40,7 @@ interface ActiveDialingCardProps {
   inputVolume: number;
   outputVolume: number;
   hangUp: () => void;
+  handleNumpadClick: (char: string) => void;
 }
 
 /* talking‑point mock */
@@ -51,6 +57,7 @@ const ActiveDialingCard = ({
   inputVolume,
   outputVolume,
   hangUp,
+  handleNumpadClick,
 }: ActiveDialingCardProps) => {
   const [callStartTime, setCallStartTime] = useState<Date | null>(new Date());
   const [elapsedTime, setElapsedTime] = useState("00:00");
@@ -83,107 +90,44 @@ const ActiveDialingCard = ({
 
   return (
     <Box>
-      <AppBar
-        position="static"
-        elevation={0}
-        sx={{
-          borderRadius: 2,
-          mb: 3,
-          px: 2,
-          py: 1,
-          background:
-            "linear-gradient(90deg,#0a4ddb 0%,#0f59ff 50%,#166bff 100%)",
-        }}
-      >
-        <Grid container alignItems="center" color="#fff">
-          <Grid item xs={12} md={6} display="flex" alignItems="center" gap={1}>
-            <IconButton sx={{ color: "#fff" }}>
-              <ArrowBack />
-            </IconButton>
-            <Typography fontWeight={600}>
-              {session.phone ?? "(no number)"}
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8, ml: 2 }}>
-              Call started at{" "}
-              {callStartTime?.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Typography>
-          </Grid>
-
-          <Grid
-            item
-            xs={12}
-            md={6}
-            display="flex"
-            justifyContent={{ xs: "flex-start", md: "flex-end" }}
-            alignItems="center"
-            gap={1.5}
-            flexWrap="wrap"
-          >
-            {/* timer pill */}
-            <Box
-              sx={{
-                bgcolor: "rgba(255,255,255,.15)",
-                px: 1.5,
-                py: 0.5,
-                borderRadius: 4,
-                fontWeight: 600,
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {elapsedTime}
-            </Box>
-            {/* call controls (icons only – real logic unchanged) */}
-            <IconButton sx={{ color: "#fff" }}>
-              <VolumeOff />
-            </IconButton>
-            <IconButton sx={{ color: "#fff" }}>
-              <Pause />
-            </IconButton>
-            <IconButton sx={{ color: "#fff" }} onClick={hangUp}>
-              <CallEnd color="error" />
-            </IconButton>
-          </Grid>
-        </Grid>
-      </AppBar>
+      <CallBar
+        session={session}
+        callStartTime={callStartTime}
+        elapsedTime={elapsedTime}
+        onEndCall={hangUp}
+        handleNumpadClick={handleNumpadClick}
+      />
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} md={3} overflow="scroll" className="hide-scrollbar">
           <LightPaper>
-            <Typography fontWeight={600} gutterBottom>
-              Prospect
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-
-            <Typography variant="body2" color="text.secondary">
-              Name:
-            </Typography>
-            <Typography fontWeight={500} gutterBottom>
-              {session.first_name} {session.last_name}
-            </Typography>
-
-            <Typography variant="body2" color="text.secondary">
-              Title:
-            </Typography>
-            <Typography gutterBottom>{session.capacity ?? "—"}</Typography>
-
-            <Typography variant="body2" color="text.secondary">
-              Company:
-            </Typography>
-            <Typography gutterBottom>{session.company ?? "—"}</Typography>
-
-            <Typography variant="body2" color="text.secondary">
-              Email:
-            </Typography>
-            <Typography gutterBottom>{session.email ?? "—"}</Typography>
-
-            <Typography variant="body2" color="text.secondary">
-              Phone:
-            </Typography>
-            <Typography gutterBottom>{session.phone ?? "—"}</Typography>
-
+            <FieldItem
+              icon={<Person color="primary" />}
+              label="Name"
+              value={`${session.first_name ?? ""} ${
+                session.last_name ?? ""
+              }`.trim()}
+            />
+            <FieldItem
+              icon={<Title color="primary" />}
+              label="Title"
+              value={session.capacity ?? ""}
+            />
+            <FieldItem
+              icon={<Business color="primary" />}
+              label="Company"
+              value={session.company ?? ""}
+            />
+            <FieldItem
+              icon={<Email color="primary" />}
+              label="Email"
+              value={session.email ?? ""}
+            />
+            <FieldItem
+              icon={<Phone color="primary" />}
+              label="Phone"
+              value={session.phone ?? ""}
+            />
             <Button
               fullWidth
               variant="contained"

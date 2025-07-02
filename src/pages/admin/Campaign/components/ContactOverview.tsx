@@ -15,31 +15,12 @@ import {
 import { format } from "date-fns";
 
 import { Contact } from "../../../../types/contact";
+import { FieldItem } from "../../../../components/atoms/FieldItem";
 
 interface Action {
   result: string;
   timestamp: string;
 }
-
-const FieldItem = ({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value?: string;
-}) => (
-  <Stack direction="row" spacing={1} alignItems="center">
-    {icon}
-    <Box>
-      <Typography fontSize={13} fontWeight={500} color="text.secondary">
-        {label}
-      </Typography>
-      <Typography fontSize={13}>{value || "—"}</Typography>
-    </Box>
-  </Stack>
-);
 
 const ActivityRow = ({ entry }: { entry: Action }) => {
   const formattedTime = format(new Date(parseInt(entry.timestamp)), "PPpp");
