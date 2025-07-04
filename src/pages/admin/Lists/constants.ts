@@ -1,8 +1,4 @@
-export enum TelephonyConnection {
-  SOFT_CALL = "Soft call",
-  PARALLEL_CALL = "Two Parallel calls",
-  ADVANCED_PARALLEL_CALL = "Four Parallel calls",
-}
+import { TelephonyConnection } from "voice-javascript-common";
 
 export const connectionDisplayMap: { [key: string]: string } = {
   [TelephonyConnection.SOFT_CALL]: "x1",

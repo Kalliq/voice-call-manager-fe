@@ -20,7 +20,7 @@ import { Contact } from "../types/contact";
 
 type FormData = z.infer<typeof validationSchema>;
 
-interface Props {
+interface ContactDrawerProps {
   open: boolean;
   contact: Contact | null;
   onClose: () => void;
@@ -32,9 +32,8 @@ export default function ContactDrawer({
   contact,
   onClose,
   onSaved,
-}: Props) {
+}: ContactDrawerProps) {
   const { enqueue } = useSnackbar();
-
   const {
     control,
     handleSubmit,

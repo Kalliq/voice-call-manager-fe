@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import { Call } from "@twilio/voice-sdk";
 
-import { useTwilio } from "../contexts/TwilioContext";
+import { useAuth } from "../contexts/AuthContext";
 
 export const useInboundCall = () => {
-  const { twilioDevice, setIncomingHandler } = useTwilio();
+  const { phoneState } = useAuth();
+  const { twilioDevice, setIncomingHandler } = phoneState;
 
   const [inboundCall, setInboundCall] = useState<Call | null>(null);
   const [isInboundCallDialogOpen, setIsDialogOpen] = useState(false);

@@ -1,10 +1,5 @@
 import { PowerDialerMode } from "voice-javascript-common";
-
-enum TelephonyConnection {
-  SOFT_CALL = "Soft call",
-  PARALLEL_CALL = "Two Parallel calls",
-  ADVANCED_PARALLEL_CALL = "Four Parallel calls",
-}
+import { TelephonyConnection } from "voice-javascript-common";
 
 const schema = {
   title: "POWER DIALER MANAGEMENT",
@@ -17,7 +12,7 @@ const schema = {
           name: "telephonyConnection",
           label: "TELEPHONY CONNECTION",
           options: [
-            { label: "Soft Call", value: TelephonyConnection.SOFT_CALL },
+            { label: "Power dialer", value: TelephonyConnection.SOFT_CALL },
             {
               label: "Parallel Dialing",
               value: TelephonyConnection.PARALLEL_CALL,

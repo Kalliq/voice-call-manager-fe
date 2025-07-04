@@ -33,8 +33,7 @@ import {
 } from "@mui/icons-material";
 
 import { useAuth } from "../contexts/AuthContext";
-import logo from "../assets/logo_text.svg";
-
+import Logo from "../assets/logo_text.svg?react";
 import cfg from "../config";
 
 const version = import.meta.env.VITE_APP_VERSION;
@@ -81,10 +80,10 @@ const Header = () => {
 
   const onClickProfileHandler = () => {};
 
-  const onClickSignOutHandler = () => {
+  const onClickSignOutHandler = async () => {
     try {
       handleMenuClose();
-      signout();
+      await signout();
       navigate("/");
     } catch (error) {
       console.error("Signout failed: ", error);
@@ -143,9 +142,6 @@ const Header = () => {
                 <MenuIcon />
               </IconButton>
               <Box
-                component="img"
-                src={logo}
-                alt="App Logo"
                 sx={{
                   height: 80,
                   cursor: "pointer",
@@ -156,7 +152,9 @@ const Header = () => {
                     ? navigate("/superdashboard")
                     : navigate("/dashboard")
                 }
-              />
+              >
+                <Logo style={{ height: "100%" }} />
+              </Box>
             </Box>
             {/* Center area - Search and navigation (desktop only) */}
             <Box
@@ -344,12 +342,9 @@ const Header = () => {
               justifyContent: "center",
             }}
           >
-            <Box
-              component="img"
-              src={logo}
-              alt="App Logo"
-              sx={{ height: 40 }}
-            />
+            <Box component="img" alt="Echo" sx={{ height: 40 }}>
+              <Logo style={{ height: "100%" }} />
+            </Box>
           </Box>
           <Divider />
 

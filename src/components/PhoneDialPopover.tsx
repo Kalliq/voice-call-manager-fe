@@ -7,20 +7,13 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import { Phone } from "@mui/icons-material";
+import { phoneDials } from "../utils/dials";
 
 interface PhoneDialerPopoverProps {
   anchorEl: HTMLElement | null;
   onClose: () => void;
   onCall: (phone: string) => void;
 }
-
-const numberPad = [
-  ["1", "2", "3"],
-  ["4", "5", "6"],
-  ["7", "8", "9"],
-  ["*", "0", "#"],
-];
 
 const PhoneDialerPopover = ({
   anchorEl,
@@ -55,7 +48,7 @@ const PhoneDialerPopover = ({
           sx={{ mb: 2 }}
         />
         <Grid container spacing={1}>
-          {numberPad.flat().map((digit, idx) => (
+          {phoneDials.flat().map((digit, idx) => (
             <Grid item xs={4} key={idx}>
               <Button
                 variant="outlined"

@@ -15,8 +15,7 @@ import { UserRole } from "voice-javascript-common";
 
 import useAppStore from "../store/useAppStore";
 import { useAuth } from "../contexts/AuthContext";
-
-import logo from "../assets/logo_text.svg";
+import Logo from "../assets/logo_text.svg?react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email").min(1, "Email is required"),
@@ -50,10 +49,9 @@ const Login: React.FC = () => {
     try {
       const res = await signin(data);
       console.log("Login successful: ", res.data);
-
       setUser(res.data);
 
-      if (res.data.role === UserRole.SUPER_ADMIN) {
+      if (res.data.role == UserRole.SUPER_ADMIN) {
         navigate("/superdashboard");
       } else {
         navigate("/dashboard");
@@ -70,14 +68,13 @@ const Login: React.FC = () => {
     <Container maxWidth="xs">
       <Box display="flex" justifyContent="center" my={1}>
         <Box
-          component="img"
-          src={logo}
-          alt="App Logo"
           sx={{
-            height: { xs: 80, sm: 100, md: 120 },
+            height: { xs: 40, sm: 60, md: 80 },
             maxWidth: "100%",
           }}
-        />
+        >
+          <Logo style={{ height: "100%" }} />
+        </Box>
       </Box>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Controller

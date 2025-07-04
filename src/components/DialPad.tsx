@@ -1,4 +1,3 @@
-// src/components/DialPad.tsx
 import { useState } from "react";
 import {
   Dialog,
@@ -8,22 +7,16 @@ import {
   Button,
   Typography,
   Box,
-  IconButton,
 } from "@mui/material";
 import DialpadIcon from "@mui/icons-material/Dialpad";
+
+import { phoneDials } from "../utils/dials";
 
 interface DialPadProps {
   open: boolean;
   onClose: () => void;
   onCall: (number: string) => void;
 }
-
-const KEYS = [
-  ["1", "2", "3"],
-  ["4", "5", "6"],
-  ["7", "8", "9"],
-  ["*", "0", "#"],
-];
 
 export default function DialPad({ open, onClose, onCall }: DialPadProps) {
   const [number, setNumber] = useState("");
@@ -43,7 +36,7 @@ export default function DialPad({ open, onClose, onCall }: DialPadProps) {
           <Typography variant="h5">{number || " "}</Typography>
         </Box>
         <Stack spacing={1}>
-          {KEYS.map((row) => (
+          {phoneDials.map((row) => (
             <Stack
               direction="row"
               spacing={1}

@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { createContext, useContext, useState, ReactNode } from "react";
 import { UserRole } from "voice-javascript-common";
 
 import api from "../utils/axiosInstance";
 import cfg from "../config";
 import useAppStore from "../store/useAppStore";
+import { useAdminPhone } from "../hooks/useAdminPhone";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -12,6 +14,7 @@ interface AuthContextType {
   signin: (creds: Record<string, unknown>) => Promise<any>;
   signout: () => Promise<void>;
   setIsSuperadmin?: React.Dispatch<React.SetStateAction<boolean>>;
+  phoneState: any;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,10 +24,11 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    cfg.isDevMode ? true : false
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isSuperadmin, setIsSuperadmin] = useState<boolean>(false);
+  const { user, setUser } = useAppStore();
+
+  const phoneState = useAdminPhone(user?.id);
 
   const signin = async (creds: Record<string, unknown>) => {
     useAppStore.getState().resetStore();
@@ -43,6 +47,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     useAppStore.getState().resetStore();
   };
 
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data } = await api.get("/auth/me");
+        if (data.user) {
+          console.log("user from me: ", data.user);
+          setIsAuthenticated(true);
+          setUser(data.user);
+          if (data.user.role === UserRole.SUPER_ADMIN) setIsSuperadmin(true);
+        }
+      } catch (err) {
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkSession();
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -51,6 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsAuthenticated,
         signin,
         signout,
+        phoneState,
       }}
     >
       {children}

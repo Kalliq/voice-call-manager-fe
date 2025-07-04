@@ -2,12 +2,28 @@ import { useState } from "react";
 import { Box, Tabs, Tab, Chip, IconButton, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
+import { Contact } from "voice-javascript-common";
 
 import useAppStore from "../../store/useAppStore";
 import { SimpleButton } from "../UI/SimpleButton";
+
 import api from "../../utils/axiosInstance";
 
-const sfdcFieldOptions: MappedFieldsState = {
+type ContactField = keyof Contact;
+type AppField = { id: string; name: string };
+type ContactFieldOption = {
+  id: ContactField;
+  name: string;
+};
+type FieldOptionsMap = {
+  contacts: ContactFieldOption[];
+  leads: AppField[];
+  accounts: AppField[];
+  opportunities: AppField[];
+};
+type TabType = "contacts" | "leads" | "accounts" | "opportunities";
+
+const fieldOptions: FieldOptionsMap = {
   contacts: [
     { id: "first_name", name: "First Name" },
     { id: "last_name", name: "Last Name" },
@@ -42,18 +58,6 @@ const sfdcFieldOptions: MappedFieldsState = {
   ],
 };
 
-type AppField = { id: string; name: string };
-
-type MappedFieldsState = {
-  contacts: AppField[];
-  leads: AppField[];
-  accounts: AppField[];
-  opportunities: AppField[];
-};
-
-const tabOptions = ["contacts", "leads", "accounts", "opportunities"] as const;
-type TabType = (typeof tabOptions)[number];
-
 export default function FieldMapper() {
   const settings = useAppStore((state) => state.settings);
   const user = useAppStore((state) => state.user);
@@ -62,7 +66,7 @@ export default function FieldMapper() {
   const { integrationSettings } = settings!["Phone Settings"];
 
   const [activeTab, setActiveTab] = useState<TabType>("contacts");
-  const [mappedFields, setMappedFields] = useState<MappedFieldsState>(
+  const [mappedFields, setMappedFields] = useState<FieldOptionsMap>(
     integrationSettings ?? {
       contacts: [],
       leads: [],
@@ -71,20 +75,26 @@ export default function FieldMapper() {
     }
   );
 
-  const handleAddField = (field: any) => {
-    setMappedFields((prev) => {
-      const updated = { ...prev };
-      updated[activeTab] = [...prev[activeTab], field];
-      return updated;
-    });
+  const handleAddField = <K extends TabType>(
+    field: FieldOptionsMap[K][number],
+    tab: K
+  ) => {
+    setMappedFields((prev) => ({
+      ...prev,
+      [tab]: [...prev[tab], field] as FieldOptionsMap[K],
+    }));
   };
 
-  const handleRemoveField = (field: any) => {
-    setMappedFields((prev) => {
-      const updated = { ...prev };
-      updated[activeTab] = prev[activeTab].filter((f) => f !== field);
-      return updated;
-    });
+  const handleRemoveField = <K extends TabType>(
+    field: FieldOptionsMap[K][number],
+    tab: K
+  ) => {
+    setMappedFields((prev) => ({
+      ...prev,
+      [tab]: (prev[tab] as FieldOptionsMap[K]).filter(
+        (f) => (f as { id: string }).id !== (field as { id: string }).id
+      ),
+    }));
   };
 
   const onSubmit = async () => {
@@ -133,7 +143,7 @@ export default function FieldMapper() {
               <Chip
                 key={field.id}
                 label={field.name}
-                onDelete={() => handleRemoveField(field)}
+                onDelete={() => handleRemoveField(field, activeTab)}
                 deleteIcon={<CloseIcon />}
                 color="info"
               />
@@ -152,7 +162,7 @@ export default function FieldMapper() {
             marginTop={1}
             gap={1}
           >
-            {sfdcFieldOptions[activeTab].map((field) => (
+            {fieldOptions[activeTab].map((field) => (
               <Chip
                 key={field.id}
                 label={field.name}
@@ -160,10 +170,10 @@ export default function FieldMapper() {
                   (f) => f.id === field.id
                 )}
                 icon={
-                  !mappedFields[activeTab].includes(field) ? (
+                  !mappedFields[activeTab].some((f) => f.id === field.id) ? (
                     <IconButton
                       size="small"
-                      onClick={() => handleAddField(field)}
+                      onClick={() => handleAddField(field, activeTab)}
                     >
                       <AddIcon fontSize="small" />
                     </IconButton>

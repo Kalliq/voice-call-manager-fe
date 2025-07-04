@@ -12,11 +12,11 @@ import {
   Chip,
 } from "@mui/material";
 import styled from "@emotion/styled";
+import { Task } from "voice-javascript-common";
+
 import api from "../../utils/axiosInstance";
 import useAppStore from "../../store/useAppStore";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-
-import { Task } from "../../types/task";
 
 const colors = {
   background: "#fff",
@@ -227,7 +227,14 @@ const Dashboard = () => {
                 </Typography>
               </Stack>
               <Divider sx={{ my: 1 }} />
-              <Stack spacing={1}>
+              <Stack
+                spacing={1}
+                sx={{
+                  overflowY: "scroll",
+                  maxHeight: "220px",
+                }}
+                className="hide-scrollbar"
+              >
                 {tasks.map((task: any) => (
                   <Box
                     key={task.id}

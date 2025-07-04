@@ -37,9 +37,10 @@ import {
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   ExpandMore as ExpandMoreIcon,
+  ContactPhone as ContactPhoneIcon,
 } from "@mui/icons-material";
 
-import logo from "../assets/logo_text.svg";
+import Logo from "../assets/logo_text.svg?react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSettingsContext } from "../contexts/SettingsContext";
 import { translateToTitleCase } from "../utils/translateToTitle";
@@ -57,6 +58,7 @@ const navItems = [
   { label: "Contacts", path: "/contacts", icon: <ContactsIcon /> },
   { label: "Tasks", path: "/tasks", icon: <TasksIcon /> },
   { label: "Coaching", path: "/coaching", icon: <CoachingIcon /> },
+  { label: "My Numbers", path: "/my-numbers", icon: <ContactPhoneIcon /> },
 ];
 
 export default function AdminLayout() {
@@ -75,8 +77,8 @@ export default function AdminLayout() {
     setNotifAnchor(e.currentTarget);
   const closeNotifMenu = () => setNotifAnchor(null);
 
-  const handleSignOut = () => {
-    signout();
+  const handleSignOut = async () => {
+    await signout();
     navigate("/");
   };
 
@@ -140,14 +142,13 @@ export default function AdminLayout() {
       >
         <Toolbar sx={{ justifyContent: "center" }}>
           <Box
-            component="img"
-            src={logo}
-            alt="Logo"
             sx={{ height: 60, cursor: "pointer" }}
             onClick={() =>
               navigate(isSuperadmin ? "/superdashboard" : "/dashboard")
             }
-          />
+          >
+            <Logo style={{ height: "100%" }} />
+          </Box>
         </Toolbar>
         <Divider />
         <List>

@@ -12,9 +12,10 @@ import {
   Typography,
 } from "@mui/material";
 import { GroupOutlined, PhoneForwardedOutlined } from "@mui/icons-material";
+import { TelephonyConnection } from "voice-javascript-common";
 
 import WobblingIconButton from "../../../../components/UI/WobblingArrowIcon";
-import { connectionDisplayMap, TelephonyConnection } from "../constants";
+import { connectionDisplayMap } from "../constants";
 import ContactDialog from "./ContactDialog";
 import { Step } from "../../../../interfaces/list-dialing-step";
 import { transformToNormalCase } from "../../../../utils/transformCase";
