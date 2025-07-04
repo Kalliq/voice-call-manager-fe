@@ -1,34 +1,7 @@
-type Action = {
-  id: string; // MongoDB ObjectId is string when serialized
-  result: string;
-  timestamp: string;
-  subject?: string;
-};
-
-type ContactBase = {
-  id: string;
-  userId: string;
-  listId: string;
-  status?: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  company: string;
-  phone: string;
-  capacity?: string;
-  title?: string;
-  accountName?: string;
-  recordType?: string;
-  linkedIn?: string;
-  state?: string;
-  subject?: string;
-  actions: Action[];
-  city?: string;
-  timezone?: string;
-};
+import { Contact as ContactBase } from "voice-javascript-common";
 
 type Contact = ContactBase & {
-  [key: string]: unknown; // allow future extensions safely
+  [key: string]: unknown;
 };
 
 type CallSession = Contact & {

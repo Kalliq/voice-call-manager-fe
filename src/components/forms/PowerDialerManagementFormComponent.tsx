@@ -18,7 +18,7 @@ const PowerDialerManagementFormComponent = (data: any) => {
       telephonyConnection,
       powerDialer,
     },
-    resolver: zodResolver(powerDialerManagementValidationSchema),
+    // resolver: zodResolver(powerDialerManagementValidationSchema),
   });
 
   const onSubmit = async (formData: any) => {

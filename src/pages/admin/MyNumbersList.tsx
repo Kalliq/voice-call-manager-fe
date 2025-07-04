@@ -10,11 +10,11 @@ import {
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
+import { PhoneNumber } from "voice-javascript-common";
 
 import { useSnackbar } from "../../hooks/useSnackbar";
 
 import api from "../../utils/axiosInstance";
-import { PhoneNumber } from "../../types/number";
 
 export default function PhoneNumbersPage() {
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>([]);

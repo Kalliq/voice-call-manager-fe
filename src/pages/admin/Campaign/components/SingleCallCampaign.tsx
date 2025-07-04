@@ -434,15 +434,6 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                   >
                     End Call
                   </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    endIcon={<SkipNext />}
-                    onClick={onNextCall}
-                    disabled={!!answeredSession}
-                  >
-                    Next Call
-                  </Button>
                 </Box>
               )}
             </Grid>

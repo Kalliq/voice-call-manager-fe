@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { useAuth } from "./contexts/AuthContext";
 
@@ -22,6 +24,7 @@ import Tasks from "./pages/admin/Tasks/Tasks";
 import ImportContacts from "./pages/admin/ImportContacts";
 import CreateNewList from "./pages/admin/CreateNewList";
 import Coaching from "./pages/admin/Coaching/Coaching";
+import MyPhoneNumbersList from "./pages/admin/MyNumbersList";
 
 // Superadmin pages
 import SuperDashboard from "./pages/superadmin/SuperDashboard";
@@ -31,6 +34,18 @@ import "./App.css";
 
 function App() {
   const { isAuthenticated, isSuperadmin } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (isAuthenticated && location.pathname === "/") {
+      if (isSuperadmin) {
+        navigate("/superdashboard", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [isAuthenticated, isSuperadmin, location.pathname, navigate]);
 
   const {
     isInboundCallDialogOpen,
@@ -42,7 +57,7 @@ function App() {
   } = useInboundCall();
 
   return (
-    <Router>
+    <>
       <Routes>
         <Route path="/" element={<SignIn />} />
         {/* Private routes */}
@@ -58,6 +73,7 @@ function App() {
               <Route path="/create-new-list/:id?" element={<CreateNewList />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/coaching" element={<Coaching />} />
+              <Route path="/my-numbers" element={<MyPhoneNumbersList />} />
             </Route>
           </Route>
         )}
@@ -79,7 +95,7 @@ function App() {
         onReject={rejectCall}
         onHangUp={hangUp}
       />
-    </Router>
+    </>
   );
 }
 

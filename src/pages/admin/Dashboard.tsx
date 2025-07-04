@@ -12,11 +12,11 @@ import {
   Chip,
 } from "@mui/material";
 import styled from "@emotion/styled";
+import { Task } from "voice-javascript-common";
+
 import api from "../../utils/axiosInstance";
 import useAppStore from "../../store/useAppStore";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-
-import { Task } from "../../types/task";
 
 const colors = {
   background: "#fff",

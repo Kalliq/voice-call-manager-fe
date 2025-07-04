@@ -8,10 +8,7 @@ import { getAudioDevices } from "../utils/audioDevice";
 import useAppStore from "../store/useAppStore";
 import { AudioDevice } from "../interfaces/audio-device";
 
-export const useAdminPhone = () => {
-  const user = useAppStore((state) => state.user);
-  const userId = user?.id;
-
+export const useAdminPhone = (userId: string | undefined) => {
   const [twilioDevice, setTwilioDevice] = useState<Device | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [devices, setDevices] = useState<AudioDevice[] | null>(null);
@@ -60,6 +57,7 @@ export const useAdminPhone = () => {
   }, [twilioDevice, getDevices]);
 
   useEffect(() => {
+    console.log("userId inside useAdminPhone: ", userId);
     if (!userId) return;
 
     (async () => {

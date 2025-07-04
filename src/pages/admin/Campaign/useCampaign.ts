@@ -4,7 +4,7 @@ import { Socket } from "socket.io-client";
 import { normalizePhone, TwilioFinalStatus } from "voice-javascript-common";
 
 import { CallSession, Contact } from "../../../types/contact";
-import { useTwilio } from "../../../contexts/TwilioContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
 interface useTwilioCampaignProps {
   userId: string;
@@ -36,7 +36,8 @@ export const useCampaign = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lastAnsweredId, setLastAnsweredId] = useState<string | null>(null);
 
-  const { twilioDevice, setIncomingHandler } = useTwilio();
+  const { phoneState } = useAuth();
+  const { twilioDevice, setIncomingHandler } = phoneState;
 
   // Refs
   const answeredSessionRef = useRef<Contact | boolean | null>(null);
@@ -82,7 +83,7 @@ export const useCampaign = ({
   // Handle Call status
   const handleCallStatus = ({ to, status }: { to: string; status: string }) => {
     const contact = currentBatch.find(
-      (c) => normalizePhone(c.phone) === normalizePhone(to)
+      (c) => normalizePhone(c.phone!) === normalizePhone(to)
     );
 
     if (contact && status === "ringing") {
@@ -108,7 +109,7 @@ export const useCampaign = ({
     ) {
       const isWinner =
         (answeredSessionRef.current as Contact) &&
-        normalizePhone((answeredSessionRef.current as Contact).phone) ===
+        normalizePhone((answeredSessionRef.current as Contact).phone!) ===
           normalizePhone(to);
       if (isWinner && activeCallRef.current) {
         // The WebRTC side is still up → this "completed" is just Twilio handing off. Ignore it.

@@ -1,5 +1,5 @@
 import { Menu, MenuItem } from "@mui/material";
-import { TelephonyConnection } from "../constants";
+import { TelephonyConnection } from "voice-javascript-common";
 
 const ConnectionMenu = ({ anchorEl, open, onClose, onSelect }: any) => (
   <Menu anchorEl={anchorEl} open={open} onClose={onClose}>

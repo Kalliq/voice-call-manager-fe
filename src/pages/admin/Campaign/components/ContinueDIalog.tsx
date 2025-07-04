@@ -149,7 +149,7 @@ const ContinueDialog = ({
         >
           {answeredSessionId ? "Save and continue" : "Continue"}
         </Button>
-        {mode !== "Soft call" && (
+        {mode !== "Power dialer" && (
           <Button variant="contained" onClick={() => saveHandler()}>
             Save and stop
           </Button>

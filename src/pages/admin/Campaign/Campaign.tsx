@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, Stack, Container } from "@mui/material";
+import { TelephonyConnection } from "voice-javascript-common";
 
 import api from "../../../utils/axiosInstance";
 import useAppStore from "../../../store/useAppStore";
@@ -18,15 +19,9 @@ import {
   getSingleDialingSessionWithStatus,
 } from "../../../utils/getDialingSessionsWithStatuses";
 import { useRingingTone } from "./useRingingTone";
-import { useTwilio } from "../../../contexts/TwilioContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import MinimalCallPanel from "./components/MinimalCallPanel";
-
-enum TelephonyConnection {
-  SOFT_CALL = "Soft call",
-  PARALLEL_CALL = "Two Parallel calls",
-  ADVANCED_PARALLEL_CALL = "Four Parallel calls",
-}
 
 interface LocationState {
   contacts: any[];
@@ -38,13 +33,16 @@ interface LocationState {
 
 const Campaign = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { contacts, mode, contactId, phone, autoStart } = (location.state ||
     {}) as LocationState;
+  const { phoneState } = useAuth();
   const { socket, inputVolume, outputVolume, volumeHandler, hangUpHandler } =
-    useTwilio();
+    phoneState;
   const { enqueue } = useSnackbar();
   if (!socket) {
-    throw new Error("Socket not initialized properly!");
+    navigate("/dashboard");
+    return;
   }
 
   const { user, settings } = useAppStore((state) => state);
@@ -199,7 +197,7 @@ const Campaign = () => {
   };
 
   const maybeProceedWithNextBatch = () => {
-    if (isCampaignRunning && mode !== TelephonyConnection.SOFT_CALL) {
+    if (isCampaignRunning) {
       handleContinue();
     }
   };
