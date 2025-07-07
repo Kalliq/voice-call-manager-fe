@@ -1,5 +1,4 @@
-// src/pages/admin/Contacts/ContactDrawer.tsx
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Drawer,
   Box,
@@ -10,19 +9,22 @@ import {
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { List } from "voice-javascript-common";
 import { z } from "zod";
 
-import api from "../utils/axiosInstance";
+import api from "../../../../utils/axiosInstance";
 
-import { schema as validationSchema } from "../schemas/contsct-create/validation-schema";
-import { useSnackbar } from "../hooks/useSnackbar";
-import { Contact } from "../types/contact";
+import { schema as validationSchema } from "../../../../schemas/contsct-create/validation-schema";
+import { useSnackbar } from "../../../../hooks/useSnackbar";
+import { Contact } from "../../../../types/contact";
+import SelectField from "../../../../components/UI/SelectField";
 
 type FormData = z.infer<typeof validationSchema>;
 
 interface ContactDrawerProps {
   open: boolean;
   contact: Contact | null;
+  lists: List[];
   onClose: () => void;
   onSaved: () => void;
 }
@@ -30,6 +32,7 @@ interface ContactDrawerProps {
 export default function ContactDrawer({
   open,
   contact,
+  lists,
   onClose,
   onSaved,
 }: ContactDrawerProps) {
@@ -49,6 +52,7 @@ export default function ContactDrawer({
       phone: "",
     },
   });
+  const [selectedListId, setSelectedListId] = useState<string>();
 
   useEffect(() => {
     if (contact) {
@@ -68,8 +72,9 @@ export default function ContactDrawer({
         });
         enqueue("Updated", { variant: "success" });
       } else {
+        const contactData = { ...data, listId: selectedListId };
         await api.post("/contacts", {
-          ...data,
+          ...contactData,
         });
         enqueue("Created", { variant: "success" });
       }
@@ -109,6 +114,19 @@ export default function ContactDrawer({
                 )}
               />
             ))}
+            {!contact && (
+              <SelectField
+                items={lists}
+                label="Select List"
+                value={selectedListId ?? ""}
+                onChange={(val) => {
+                  setSelectedListId(val);
+                }}
+                getValue={(l) => l.id}
+                getLabel={(l) => l.listName}
+                placeholder=""
+              />
+            )}
             <Box sx={{ textAlign: "right" }}>
               <Button onClick={onClose} sx={{ mr: 1 }}>
                 Cancel

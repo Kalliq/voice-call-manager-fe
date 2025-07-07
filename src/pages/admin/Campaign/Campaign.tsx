@@ -7,7 +7,6 @@ import api from "../../../utils/axiosInstance";
 import useAppStore from "../../../store/useAppStore";
 
 import DialingCards from "./components/DialingCards";
-import ActiveDialingCard from "./components/ActiveDialingCard";
 import SingleCallCampaignPanel from "./components/SingleCallCampaign";
 import { useCampaign } from "./useCampaign";
 import { SimpleButton } from "../../../components/UI";
@@ -37,8 +36,7 @@ const Campaign = () => {
   const { contacts, mode, contactId, phone, autoStart } = (location.state ||
     {}) as LocationState;
   const { phoneState } = useAuth();
-  const { socket, inputVolume, outputVolume, volumeHandler, hangUpHandler } =
-    phoneState;
+  const { socket, volumeHandler, hangUpHandler } = phoneState;
   const { enqueue } = useSnackbar();
   if (!socket) {
     navigate("/dashboard");
@@ -50,7 +48,8 @@ const Campaign = () => {
     throw new Error("Problem with authentication. Missing user!");
   }
   if (!settings) {
-    throw new Error("Missing settings!");
+    navigate("/dashboard");
+    return;
   }
 
   const callResults = settings["Phone Settings"].callResults as CallResult[];
@@ -214,6 +213,9 @@ const Campaign = () => {
     setCallStarted(false);
   };
 
+  // TO DO -- in the campaign mode answeredSession is passed to two props
+  // fix that redundancy in the whole component
+
   return (
     <Container sx={{ py: 4 }}>
       <Stack spacing={3}>
@@ -248,7 +250,6 @@ const Campaign = () => {
             session={manualSession}
             answeredSession={answeredSession as Contact}
             onStartCall={handleStartCampaign}
-            onNextCall={makeCallBatch}
             onEndCall={hangUp}
             manual={true}
             phone={phone}
@@ -266,7 +267,6 @@ const Campaign = () => {
               <SingleCallCampaignPanel
                 session={singleSession}
                 answeredSession={answeredSession as Contact}
-                onNextCall={makeCallBatch}
                 onEndCall={hangUp}
                 manual={false}
                 callStarted={callStarted}
@@ -284,11 +284,12 @@ const Campaign = () => {
                   />
                 )}
                 {!isCampaignFinished && answeredSession && (
-                  <ActiveDialingCard
-                    session={answeredSession as Contact}
-                    inputVolume={inputVolume}
-                    outputVolume={outputVolume}
-                    hangUp={hangUp}
+                  <SingleCallCampaignPanel
+                    session={answeredSession as CallSession}
+                    answeredSession={answeredSession as Contact}
+                    onEndCall={hangUp}
+                    manual={false}
+                    callStarted={callStarted}
                     handleNumpadClick={handleNumpadClick}
                   />
                 )}

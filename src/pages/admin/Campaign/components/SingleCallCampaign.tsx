@@ -4,9 +4,7 @@ import {
   Grid,
   Typography,
   Button,
-  IconButton,
   Avatar,
-  AppBar,
   Tabs,
   Tab,
   Divider,
@@ -22,11 +20,7 @@ import {
 } from "@mui/material";
 import {
   Animation,
-  ArrowBack,
   CallEnd,
-  SkipNext,
-  VolumeOff,
-  Pause,
   Add,
   Phone,
   Email,
@@ -41,14 +35,13 @@ import { CallBar } from "./molecules/CallBar";
 
 import api from "../../../../utils/axiosInstance";
 import { CallSession, Contact } from "../../../../types/contact";
+import AudioWaveform from "../../../../components/AudioWaveform";
 
 interface SingleCallCampaignPanelProps {
   session: CallSession;
   answeredSession: Contact | null;
   onStartCall?: () => void;
   onEndCall: () => void;
-  onNextCall: () => void;
-  onAddTalkingPoint?: () => void;
   manual?: boolean;
   phone?: string;
   autoStart?: boolean;
@@ -69,8 +62,6 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   answeredSession,
   onStartCall,
   onEndCall,
-  onNextCall,
-  onAddTalkingPoint,
   manual,
   phone,
   autoStart,
@@ -87,6 +78,31 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTalkingPoint, setNewTalkingPoint] = useState("");
+
+  // Recording
+  const [recordings, setRecordings] = useState<
+    {
+      recordingUrl: string;
+      startedAt?: string;
+      durationSec?: number;
+      recordingSid?: string;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchRecordings = async () => {
+      try {
+        const res = await api.get(`/call-logs`, {
+          params: { contactId: session.id },
+        });
+        setRecordings(res.data.recordings || []);
+      } catch (err) {
+        console.error("Failed to fetch call recordings", err);
+      }
+    };
+
+    fetchRecordings();
+  }, [session.id]);
 
   useEffect(() => {
     let int: NodeJS.Timeout;
@@ -200,7 +216,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
             <Box>
               <Stack spacing={1}>
                 {/* Chips */}
-                <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Stack direction="row" spacing={2} flexWrap="wrap">
                   <ContactStageChip
                     contact={session}
                     onStageChange={onStageChangeHandler}
@@ -209,17 +225,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                   {/* <Chip label="Owner" size="small" variant="outlined" />
                   <Chip label="C-Suite" size="small" variant="outlined" />
                   <Chip label="US-based" size="small" variant="outlined" /> */}
-                </Stack>
-
-                {/* Email + Phone + Time */}
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  spacing={2}
-                  flexWrap="wrap"
-                >
-                  {/* Email */}
-                  <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Stack direction="row" spacing={1} alignItems="center">
                     <Email fontSize="small" />
                     <Link
                       href="mailto:mike@bdm-pro.com"
@@ -230,8 +236,6 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                       {session.email}
                     </Link>
                   </Stack>
-
-                  {/* Phone */}
                   <Stack
                     direction="row"
                     spacing={1}
@@ -239,7 +243,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                     flexWrap="wrap"
                   >
                     <Phone fontSize="small" />
-                    {(!editingPhone && session.phone) || session.phone ? (
+                    {!editingPhone && session.phone ? (
                       <>
                         <Typography fontSize="12px" color="text.secondary">
                           {session.phone}
@@ -317,6 +321,29 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                 </Stack>
               </Stack>
             </Box>
+            <Tabs
+              value={activeTab}
+              onChange={(_, val) => setActiveTab(val)}
+              sx={{ mt: 2, mb: 1 }}
+            >
+              {tabLabels.map((label, idx) => (
+                <Tab key={idx} label={label} />
+              ))}
+            </Tabs>
+            {activeTab === 0 && (
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <ContactOverview contact={session} />
+                </Grid>
+              </Grid>
+            )}
+            {activeTab !== 0 && (
+              <Box px={3} py={2}>
+                <Typography variant="body1" color="text.secondary">
+                  "{tabLabels[activeTab]}" tab content goes here.
+                </Typography>
+              </Box>
+            )}
           </Grid>
           <Grid item xs={12} md={4}>
             <Paper
@@ -356,29 +383,9 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                 </Button>
               )}
             </Paper>
-          </Grid>
-        </Grid>
-
-        <Tabs
-          value={activeTab}
-          onChange={(_, val) => setActiveTab(val)}
-          sx={{ mb: 2 }}
-        >
-          {tabLabels.map((label, idx) => (
-            <Tab key={idx} label={label} />
-          ))}
-        </Tabs>
-
-        {activeTab === 0 && (
-          <Grid container spacing={2} padding={2}>
-            <Grid item xs={12} md={8}>
-              <ContactOverview contact={session} />
-            </Grid>
-
             <Grid
               item
               xs={12}
-              md={4}
               display="flex"
               flexDirection="column"
               justifyContent="space-between"
@@ -422,7 +429,6 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                   Add talking point
                 </Button>
               </Paper>
-
               {!manual && (
                 <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
                   <Button
@@ -438,19 +444,34 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
               )}
             </Grid>
           </Grid>
-        )}
-
-        {/* Placeholder for other tabs */}
-        {activeTab !== 0 && (
-          <Box px={3} py={2}>
-            <Typography variant="body1" color="text.secondary">
-              "{tabLabels[activeTab]}" tab content goes here.
-            </Typography>
-          </Box>
-        )}
-
+        </Grid>
         <Divider sx={{ my: 2 }} />
       </Paper>
+      {recordings.length > 0 && (
+        <Box mt={3}>
+          <Typography variant="h6" gutterBottom>
+            Call Recordings
+          </Typography>
+          <Stack spacing={2}>
+            {recordings.map((rec, idx) => (
+              <Paper
+                key={rec.recordingSid || idx}
+                variant="outlined"
+                sx={{ p: 2, borderRadius: 2 }}
+              >
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  {rec.startedAt
+                    ? `Started at: ${new Date(rec.startedAt).toLocaleString()}`
+                    : "Recording"}
+                  {rec.durationSec ? ` • Duration: ${rec.durationSec}s` : ""}
+                </Typography>
+                <AudioWaveform url={rec.recordingUrl} />
+              </Paper>
+            ))}
+          </Stack>
+        </Box>
+      )}
+
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <DialogTitle>Add Talking Point</DialogTitle>
         <DialogContent>
