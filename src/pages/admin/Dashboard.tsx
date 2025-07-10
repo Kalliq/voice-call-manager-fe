@@ -18,6 +18,8 @@ import api from "../../utils/axiosInstance";
 import useAppStore from "../../store/useAppStore";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
+import CalendarPage from "../../components/CalendarPage";
+
 const colors = {
   background: "#fff",
   headline: "#1f1f1f",
@@ -61,7 +63,7 @@ const Dashboard = () => {
     "In Progress": [] as Task[],
     Completed: [] as Task[],
   });
-
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   useEffect(() => {
     if (!user) return;
     api
@@ -125,12 +127,11 @@ const Dashboard = () => {
   }, [callStats, settings]);
 
   return (
-    <Box p={3}>
+    <Box p={3} sx={{backgroundColor: "white", width:"100%"}}>
       <Box>
         <Typography variant="h5" fontWeight="bold" mb={3}>
           Dashboard
-        </Typography>
-      </Box>
+        </Typography>      </Box>
       <Grid container spacing={2} mb={3}>
         <Grid item xs={12} md={3} sx={{ display: "flex" }}>
           <Card
@@ -325,6 +326,17 @@ const Dashboard = () => {
                     </Stack>
                   ))}
               </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+       <Grid container spacing={2} mt={3}>
+        <Grid item xs={12} md={6}>
+          <Card elevation={0} sx={{ ...cardStyle }}>
+            <CardContent>
+              <Typography fontWeight="bold" mb={1}>Your Calendar</Typography>
+              <Divider sx={{ mb: 2 }} />
+              <CalendarPage />
             </CardContent>
           </Card>
         </Grid>

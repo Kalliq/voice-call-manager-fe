@@ -39,7 +39,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ContactPhone as ContactPhoneIcon,
 } from "@mui/icons-material";
-
+import MenuIcon from "@mui/icons-material/Menu";
 import Logo from "../assets/logo_text.svg?react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSettingsContext } from "../contexts/SettingsContext";
@@ -52,6 +52,7 @@ import api from "../utils/axiosInstance";
 type SearchResult = { id: string; label: string };
 
 const DRAWER_WIDTH = 240;
+const COLLAPSED_WIDTH = 80;
 const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: <ReportsIcon /> },
   { label: "Lists", path: "/lists", icon: <ListsIcon /> },
@@ -66,6 +67,9 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signout, isSuperadmin } = useAuth();
+
+  const [collapsed, setCollapsed] = useState(false);
+  const drawerWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
 
   const [avatarAnchor, setAvatarAnchor] = useState<null | HTMLElement>(null);
   const openAvatarMenu = (e: React.MouseEvent<HTMLElement>) =>
@@ -130,13 +134,14 @@ export default function AdminLayout() {
       <Drawer
         variant="permanent"
         sx={{
-          width: DRAWER_WIDTH,
+          width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
           flexShrink: 0,
           "& .MuiDrawer-paper": {
-            width: DRAWER_WIDTH,
+            width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
             boxSizing: "border-box",
             backgroundColor: "#fff",
             borderRight: `1px solid ${theme.palette.divider}`,
+            overflowX: "hidden",
           },
         }}
       >
@@ -165,12 +170,14 @@ export default function AdminLayout() {
                       fontWeight: "bold",
                     },
                     "&:hover": { backgroundColor: theme.palette.action.hover },
+                    justifyContent: collapsed ? "center" : "flex-start",
+                    px: collapsed ? 2 : 3,
                   }}
                 >
-                  <ListItemIcon sx={{ color: "inherit" }}>
+                  <ListItemIcon sx={{ color: "inherit", minWidth: "auto", justifyContent: "center",}}>
                     {item.icon}
                   </ListItemIcon>
-                  <ListItemText primary={item.label} />
+                    {!collapsed && <ListItemText primary={item.label} />}
                 </ListItem>
               ))
             : settingsKeys.map((category) => (
@@ -228,14 +235,17 @@ export default function AdminLayout() {
           position="fixed"
           elevation={0}
           sx={{
-            width: `calc(100% - ${DRAWER_WIDTH}px)`,
-            ml: `${DRAWER_WIDTH}px`,
+            width: `calc(100% - ${drawerWidth}px)`,
+            ml: `${drawerWidth}px`,
             backgroundColor: "#fff",
             color: theme.palette.text.primary,
             borderBottom: `1px solid ${theme.palette.divider}`,
           }}
         >
           <Toolbar>
+            <IconButton onClick={() => setCollapsed(!collapsed)} sx={{ mr: 2 }}>
+              <MenuIcon />
+            </IconButton>
             <Box sx={{ width: 300 }}>
               <Autocomplete<SearchResult, false, false, false>
                 freeSolo={false}
