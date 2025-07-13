@@ -65,7 +65,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
     api
-      .get(`/settings/${user.id}`)
+      .get(`/settings`)
       .then(({ data }) => setSettings(data))
       .catch((err) => console.error("[dashboard] settings:", err));
   }, [user, setSettings]);

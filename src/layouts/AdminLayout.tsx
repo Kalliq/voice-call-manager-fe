@@ -30,7 +30,7 @@ import {
   Search,
   List as ListsIcon,
   Contacts as ContactsIcon,
-  BarChart as ReportsIcon,
+  BarChart as DashboardIcon,
   Task as TasksIcon,
   MenuBook as CoachingIcon,
   Phone,
@@ -38,6 +38,7 @@ import {
   Settings as SettingsIcon,
   ExpandMore as ExpandMoreIcon,
   ContactPhone as ContactPhoneIcon,
+  Summarize as ReportsIcon,
 } from "@mui/icons-material";
 
 import Logo from "../assets/logo_text.svg?react";
@@ -53,12 +54,13 @@ type SearchResult = { id: string; label: string };
 
 const DRAWER_WIDTH = 240;
 const navItems = [
-  { label: "Dashboard", path: "/dashboard", icon: <ReportsIcon /> },
+  { label: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
   { label: "Lists", path: "/lists", icon: <ListsIcon /> },
   { label: "Contacts", path: "/contacts", icon: <ContactsIcon /> },
   { label: "Tasks", path: "/tasks", icon: <TasksIcon /> },
-  { label: "Coaching", path: "/coaching", icon: <CoachingIcon /> },
   { label: "My Numbers", path: "/my-numbers", icon: <ContactPhoneIcon /> },
+  { label: "Coaching", path: "/coaching", icon: <CoachingIcon /> },
+  { label: "Reports", path: "/reports", icon: <ReportsIcon /> },
 ];
 
 export default function AdminLayout() {

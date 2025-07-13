@@ -27,7 +27,7 @@ const CallManagementFormComponent = (data: any) => {
         throw new Error("Missing settings!");
       }
       const existingPhoneSettings = { ...settings["Phone Settings"] };
-      const { data } = await api.patch(`/settings/${user!.id}`, {
+      const { data } = await api.patch(`/settings`, {
         "Phone Settings": {
           ...existingPhoneSettings,
           callManagement: { ...formData },
