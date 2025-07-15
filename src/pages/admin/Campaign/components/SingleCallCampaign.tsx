@@ -35,7 +35,6 @@ import { CallBar } from "./molecules/CallBar";
 
 import api from "../../../../utils/axiosInstance";
 import { CallSession, Contact } from "../../../../types/contact";
-import AudioWaveform from "../../../../components/AudioWaveform";
 
 interface SingleCallCampaignPanelProps {
   session: CallSession;
@@ -78,31 +77,6 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTalkingPoint, setNewTalkingPoint] = useState("");
-
-  // Recording
-  const [recordings, setRecordings] = useState<
-    {
-      recordingUrl: string;
-      startedAt?: string;
-      durationSec?: number;
-      recordingSid?: string;
-    }[]
-  >([]);
-
-  useEffect(() => {
-    const fetchRecordings = async () => {
-      try {
-        const res = await api.get(`/call-logs`, {
-          params: { contactId: session.id },
-        });
-        setRecordings(res.data.recordings || []);
-      } catch (err) {
-        console.error("Failed to fetch call recordings", err);
-      }
-    };
-
-    fetchRecordings();
-  }, [session.id]);
 
   useEffect(() => {
     let int: NodeJS.Timeout;
@@ -447,30 +421,6 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
         </Grid>
         <Divider sx={{ my: 2 }} />
       </Paper>
-      {recordings.length > 0 && (
-        <Box mt={3}>
-          <Typography variant="h6" gutterBottom>
-            Call Recordings
-          </Typography>
-          <Stack spacing={2}>
-            {recordings.map((rec, idx) => (
-              <Paper
-                key={rec.recordingSid || idx}
-                variant="outlined"
-                sx={{ p: 2, borderRadius: 2 }}
-              >
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {rec.startedAt
-                    ? `Started at: ${new Date(rec.startedAt).toLocaleString()}`
-                    : "Recording"}
-                  {rec.durationSec ? ` • Duration: ${rec.durationSec}s` : ""}
-                </Typography>
-                <AudioWaveform url={rec.recordingUrl} />
-              </Paper>
-            ))}
-          </Stack>
-        </Box>
-      )}
 
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <DialogTitle>Add Talking Point</DialogTitle>

@@ -32,7 +32,7 @@ import {
 } from "@mui/icons-material";
 
 import { useAuth } from "../contexts/AuthContext";
-import Logo from "../assets/logo_text.svg?react";
+import Logo from "../assets/kalliq_grey.png";
 import cfg from "../config";
 
 const version = import.meta.env.VITE_APP_VERSION;
@@ -146,7 +146,7 @@ const Header = () => {
                     : navigate("/dashboard")
                 }
               >
-                <Logo style={{ height: "100%" }} />
+                <img src={Logo} style={{ height: "100%" }} alt="Logo" />
               </Box>
             </Box>
 
@@ -296,7 +296,7 @@ const Header = () => {
             }}
           >
             <Box component="img" alt="Echo" sx={{ height: 40 }}>
-              <Logo style={{ height: "100%" }} />
+              <img src={Logo} style={{ height: "100%" }} alt="Logo" />
             </Box>
           </Box>
           <Divider />

@@ -10,6 +10,7 @@ interface CustomTextFieldProps {
   fullWidth?: boolean;
   size?: "small" | "medium";
   type?: string;
+  InputProps?: any;
   sx?: object;
 }
 
@@ -23,6 +24,7 @@ const CustomTextField = ({
   fullWidth = false,
   size = "medium",
   type = "text",
+  InputProps = {},
   sx = {},
 }: CustomTextFieldProps) => {
   return (
@@ -37,6 +39,7 @@ const CustomTextField = ({
       size={size}
       variant="outlined"
       type={type}
+      InputProps={InputProps}
       sx={sx}
     />
   );

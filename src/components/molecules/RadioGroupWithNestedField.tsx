@@ -18,6 +18,7 @@ interface RadioGroupWithNestedFieldProps {
   control: Control<any, any>;
   errors: FieldErrors;
   selectedOption: any;
+  isReadonly: boolean;
 }
 
 const RadioGroupWithNestedField = ({
@@ -26,6 +27,7 @@ const RadioGroupWithNestedField = ({
   control,
   errors,
   selectedOption,
+  isReadonly,
 }: RadioGroupWithNestedFieldProps) => {
   return (
     <Controller
@@ -66,12 +68,29 @@ const RadioGroupWithNestedField = ({
                         label={option.nestedField!.label}
                         type={option.nestedField!.type}
                         error={error}
-                        helperText={helperText}
-                        sx={{
-                          mt: 1,
-                          display:
-                            selectedOption === option.value ? "block" : "none",
-                        }}
+                        helperText={
+                          !isReadonly ? helperText : "(Admin only field)"
+                        }
+                        InputProps={{ readOnly: isReadonly }}
+                        sx={
+                          isReadonly
+                            ? {
+                                opacity: 0.5,
+                                pointerEvents: "none",
+                                mt: 1,
+                                display:
+                                  selectedOption === option.value
+                                    ? "block"
+                                    : "none",
+                              }
+                            : {
+                                mt: 1,
+                                display:
+                                  selectedOption === option.value
+                                    ? "block"
+                                    : "none",
+                              }
+                        }
                       />
                     );
                   }}

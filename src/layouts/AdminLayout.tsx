@@ -41,7 +41,7 @@ import {
   Summarize as ReportsIcon,
 } from "@mui/icons-material";
 
-import Logo from "../assets/logo_text.svg?react";
+import Logo from "../assets/kalliq_grey.png";
 import { useAuth } from "../contexts/AuthContext";
 import { useSettingsContext } from "../contexts/SettingsContext";
 import { translateToTitleCase } from "../utils/translateToTitle";
@@ -59,15 +59,25 @@ const navItems = [
   { label: "Contacts", path: "/contacts", icon: <ContactsIcon /> },
   { label: "Tasks", path: "/tasks", icon: <TasksIcon /> },
   { label: "My Numbers", path: "/my-numbers", icon: <ContactPhoneIcon /> },
-  { label: "Coaching", path: "/coaching", icon: <CoachingIcon /> },
-  { label: "Reports", path: "/reports", icon: <ReportsIcon /> },
+  {
+    label: "Coaching",
+    path: "/coaching",
+    icon: <CoachingIcon />,
+    adminOnly: true,
+  },
+  {
+    label: "Reports",
+    path: "/reports",
+    icon: <ReportsIcon />,
+    adminOnly: true,
+  },
 ];
 
 export default function AdminLayout() {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signout, isSuperadmin } = useAuth();
+  const { signout, isAdmin, isSuperadmin } = useAuth();
 
   const [avatarAnchor, setAvatarAnchor] = useState<null | HTMLElement>(null);
   const openAvatarMenu = (e: React.MouseEvent<HTMLElement>) =>
@@ -149,32 +159,39 @@ export default function AdminLayout() {
               navigate(isSuperadmin ? "/superdashboard" : "/dashboard")
             }
           >
-            <Logo style={{ height: "100%" }} />
+            <img src={Logo} style={{ height: "100%" }} alt="Logo" />
           </Box>
         </Toolbar>
         <Divider />
         <List>
           {!isSettingsPage
-            ? navItems.map((item) => (
-                <ListItem
-                  key={item.label}
-                  component={NavLink}
-                  to={item.path}
-                  sx={{
-                    color: theme.palette.text.primary,
-                    "&.active": {
-                      backgroundColor: theme.palette.action.selected,
-                      fontWeight: "bold",
-                    },
-                    "&:hover": { backgroundColor: theme.palette.action.hover },
-                  }}
-                >
-                  <ListItemIcon sx={{ color: "inherit" }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItem>
-              ))
+            ? navItems
+                .filter((item) => {
+                  if (!item.adminOnly) return true;
+                  return isAdmin;
+                })
+                .map((item) => (
+                  <ListItem
+                    key={item.label}
+                    component={NavLink}
+                    to={item.path}
+                    sx={{
+                      color: theme.palette.text.primary,
+                      "&.active": {
+                        backgroundColor: theme.palette.action.selected,
+                        fontWeight: "bold",
+                      },
+                      "&:hover": {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: "inherit" }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText primary={item.label} />
+                  </ListItem>
+                ))
             : settingsKeys.map((category) => (
                 <Accordion
                   key={category}

@@ -9,6 +9,7 @@ import { useAdminPhone } from "../hooks/useAdminPhone";
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isSuperadmin?: boolean;
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>;
   signin: (creds: Record<string, unknown>) => Promise<any>;
@@ -25,7 +26,8 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isSuperadmin, setIsSuperadmin] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
   const { user, setUser } = useAppStore();
 
   const phoneState = useAdminPhone(user?.id);
@@ -35,7 +37,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const res = await api.post("/auth/signin", creds);
     setIsAuthenticated(true);
-    if (res.data.role === UserRole.SUPER_ADMIN) setIsSuperadmin(true);
+    if (res.data.role === UserRole.SUPER_ADMIN) {
+      setIsSuperadmin(true);
+    } else if (res.data.role === UserRole.ADMIN) {
+      setIsAdmin(true);
+    }
     return res;
   };
 
@@ -43,6 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await api.post("/auth/signout", {});
     setIsAuthenticated(false);
     setIsSuperadmin(false);
+    setIsAdmin(false);
 
     useAppStore.getState().resetStore();
   };
@@ -55,7 +62,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log("user from me: ", data.user);
           setIsAuthenticated(true);
           setUser(data.user);
-          if (data.user.role === UserRole.SUPER_ADMIN) setIsSuperadmin(true);
+          if (data.data.role === UserRole.SUPER_ADMIN) {
+            setIsSuperadmin(true);
+          } else if (data.data.role === UserRole.ADMIN) {
+            setIsAdmin(true);
+          }
         }
       } catch (err) {
         setIsAuthenticated(false);
@@ -69,6 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     <AuthContext.Provider
       value={{
         isAuthenticated,
+        isAdmin,
         isSuperadmin,
         setIsAuthenticated,
         signin,

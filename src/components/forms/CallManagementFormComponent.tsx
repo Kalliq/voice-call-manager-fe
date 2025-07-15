@@ -1,11 +1,21 @@
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { UserRole } from "voice-javascript-common";
+import { adminOnlySettings } from "voice-javascript-common";
 
 import FormRenderer from "../FormRenderer";
 import { callManagementSchema } from "../../schemas/phone-settings/call-management/schema";
 import { callManagementValidationSchema } from "../../schemas/phone-settings/call-management/validation-schema";
 import api from "../../utils/axiosInstance";
 import useAppStore from "../../store/useAppStore";
+import { applyAdminOnlyFlags } from "../../utils/applyAdminOnlyFlags";
+
+const enrichedSchema = applyAdminOnlyFlags(
+  callManagementSchema,
+  adminOnlySettings
+);
+
+console.log("enrichedSchema: ", enrichedSchema);
 
 const CallManagementFormComponent = (data: any) => {
   const { connectionDefinition, preventMultiple } = data;
@@ -42,8 +52,9 @@ const CallManagementFormComponent = (data: any) => {
   return (
     <FormProvider {...methods}>
       <FormRenderer
-        schema={callManagementSchema}
+        schema={enrichedSchema}
         onSubmit={(formData) => onSubmit(formData)}
+        isAdmin={user?.role === UserRole.ADMIN}
       />
     </FormProvider>
   );

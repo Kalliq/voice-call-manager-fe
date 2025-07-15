@@ -17,6 +17,7 @@ interface Field {
   placeholder?: string;
   fullWidth?: boolean;
   onClick?: (data: any) => {};
+  adminOnly?: boolean;
 }
 
 interface Section {
@@ -34,6 +35,7 @@ interface FormRendererProps {
   onSubmit?: SubmitHandler<FieldValues>;
   onNext?: (data: any) => void;
   onPrevious?: () => void;
+  isAdmin?: boolean;
 }
 
 export { FieldOption, Field, Section, FormSchema, FormRendererProps };
