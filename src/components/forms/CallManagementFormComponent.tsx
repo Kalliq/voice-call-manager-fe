@@ -8,12 +8,12 @@ import { callManagementSchema } from "../../schemas/phone-settings/call-manageme
 import { callManagementValidationSchema } from "../../schemas/phone-settings/call-management/validation-schema";
 import api from "../../utils/axiosInstance";
 import useAppStore from "../../store/useAppStore";
-import { applyAdminOnlyFlags } from "../../utils/applyAdminOnlyFlags";
+import { injectAdminOnly } from "../../utils/injectAdminOnly";
 
-const enrichedSchema = applyAdminOnlyFlags(
-  callManagementSchema,
-  adminOnlySettings
-);
+console.log("callManagementSchema: ", callManagementSchema);
+console.log("adminOnlySettings: ", adminOnlySettings);
+
+const enrichedSchema = injectAdminOnly(callManagementSchema, adminOnlySettings);
 
 console.log("enrichedSchema: ", enrichedSchema);
 
