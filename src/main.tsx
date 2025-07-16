@@ -1,6 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter as Router } from "react-router-dom";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
 import { ThemeProvider, CssBaseline } from "@mui/material";
 
@@ -18,9 +20,11 @@ createRoot(document.getElementById("root") as HTMLElement).render(
       <SnackbarProvider>
         <AuthProvider>
           <SettingsProvider>
-            <Router>
-              <App />
-            </Router>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <Router>
+                <App />
+              </Router>
+            </LocalizationProvider>
           </SettingsProvider>
         </AuthProvider>
       </SnackbarProvider>

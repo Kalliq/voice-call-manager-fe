@@ -11,6 +11,7 @@ interface CheckBoxWithNestedFieldProps {
   field: Field;
   control: Control<any, any>;
   errors: FieldErrors;
+  isReadonly: boolean;
 }
 
 const CheckBoxWithNestedField = ({
@@ -18,6 +19,7 @@ const CheckBoxWithNestedField = ({
   field,
   control,
   errors,
+  isReadonly,
 }: CheckBoxWithNestedFieldProps) => {
   return (
     <Controller
@@ -55,7 +57,6 @@ const CheckBoxWithNestedField = ({
                       type={field.nestedField!.type}
                       label={field.nestedField!.label}
                       error={error}
-                      helperText={helperText}
                       onChange={(e) => {
                         if (field.nestedField!.type === "number") {
                           const value =
@@ -65,10 +66,20 @@ const CheckBoxWithNestedField = ({
                           nestedControllerField.onChange(e.target.value);
                         }
                       }}
-                      sx={{
-                        mt: 1,
-                        display: isChecked ? "block" : "none",
-                      }}
+                      helperText={
+                        !isReadonly ? helperText : "(Admin only field)"
+                      }
+                      InputProps={{ readOnly: isReadonly }}
+                      sx={
+                        isReadonly
+                          ? {
+                              opacity: 0.5,
+                              pointerEvents: "none",
+                              mt: 1,
+                              display: isChecked ? "block" : "none",
+                            }
+                          : { mt: 1, display: isChecked ? "block" : "none" }
+                      }
                     />
                   );
                 }}

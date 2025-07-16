@@ -30,7 +30,7 @@ import {
   Search,
   List as ListsIcon,
   Contacts as ContactsIcon,
-  BarChart as ReportsIcon,
+  BarChart as DashboardIcon,
   Task as TasksIcon,
   MenuBook as CoachingIcon,
   Phone,
@@ -38,9 +38,11 @@ import {
   Settings as SettingsIcon,
   ExpandMore as ExpandMoreIcon,
   ContactPhone as ContactPhoneIcon,
+  Summarize as ReportsIcon,
 } from "@mui/icons-material";
 
-import Logo from "../assets/logo_text.svg?react";
+import MenuIcon from "@mui/icons-material/Menu";
+import Logo from "../assets/kalliq_grey.png";
 import { useAuth } from "../contexts/AuthContext";
 import { useSettingsContext } from "../contexts/SettingsContext";
 import { translateToTitleCase } from "../utils/translateToTitle";
@@ -52,20 +54,36 @@ import api from "../utils/axiosInstance";
 type SearchResult = { id: string; label: string };
 
 const DRAWER_WIDTH = 240;
+const COLLAPSED_WIDTH = 80;
+
 const navItems = [
-  { label: "Dashboard", path: "/dashboard", icon: <ReportsIcon /> },
+  { label: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
   { label: "Lists", path: "/lists", icon: <ListsIcon /> },
   { label: "Contacts", path: "/contacts", icon: <ContactsIcon /> },
   { label: "Tasks", path: "/tasks", icon: <TasksIcon /> },
-  { label: "Coaching", path: "/coaching", icon: <CoachingIcon /> },
   { label: "My Numbers", path: "/my-numbers", icon: <ContactPhoneIcon /> },
+  {
+    label: "Coaching",
+    path: "/coaching",
+    icon: <CoachingIcon />,
+    adminOnly: true,
+  },
+  {
+    label: "Reports",
+    path: "/reports",
+    icon: <ReportsIcon />,
+    adminOnly: true,
+  },
 ];
 
 export default function AdminLayout() {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signout, isSuperadmin } = useAuth();
+  const { signout, isAdmin, isSuperadmin } = useAuth();
+
+  const [collapsed, setCollapsed] = useState(false);
+  const drawerWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
 
   const [avatarAnchor, setAvatarAnchor] = useState<null | HTMLElement>(null);
   const openAvatarMenu = (e: React.MouseEvent<HTMLElement>) =>
@@ -130,13 +148,14 @@ export default function AdminLayout() {
       <Drawer
         variant="permanent"
         sx={{
-          width: DRAWER_WIDTH,
+          width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
           flexShrink: 0,
           "& .MuiDrawer-paper": {
-            width: DRAWER_WIDTH,
+            width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
             boxSizing: "border-box",
             backgroundColor: "#fff",
             borderRight: `1px solid ${theme.palette.divider}`,
+            overflowX: "hidden",
           },
         }}
       >
@@ -147,32 +166,48 @@ export default function AdminLayout() {
               navigate(isSuperadmin ? "/superdashboard" : "/dashboard")
             }
           >
-            <Logo style={{ height: "100%" }} />
+            <img src={Logo} style={{ height: "100%" }} alt="Logo" />
           </Box>
         </Toolbar>
         <Divider />
         <List>
           {!isSettingsPage
-            ? navItems.map((item) => (
-                <ListItem
-                  key={item.label}
-                  component={NavLink}
-                  to={item.path}
-                  sx={{
-                    color: theme.palette.text.primary,
-                    "&.active": {
-                      backgroundColor: theme.palette.action.selected,
-                      fontWeight: "bold",
-                    },
-                    "&:hover": { backgroundColor: theme.palette.action.hover },
-                  }}
-                >
-                  <ListItemIcon sx={{ color: "inherit" }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItem>
-              ))
+            ? navItems
+                .filter((item) => {
+                  if (!item.adminOnly) return true;
+                  return isAdmin;
+                })
+                .map((item) => (
+                  <ListItem
+                    key={item.label}
+                    component={NavLink}
+                    to={item.path}
+                    sx={{
+                      color: theme.palette.text.primary,
+                      "&.active": {
+                        backgroundColor: theme.palette.action.selected,
+                        fontWeight: "bold",
+                      },
+                      "&:hover": {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                      justifyContent: collapsed ? "center" : "flex-start",
+                      px: collapsed ? 2 : 3,
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        color: "inherit",
+                        minWidth: "auto",
+                        justifyContent: "center",
+                        marginRight: "10px",
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    {!collapsed && <ListItemText primary={item.label} />}
+                  </ListItem>
+                ))
             : settingsKeys.map((category) => (
                 <Accordion
                   key={category}
@@ -228,14 +263,17 @@ export default function AdminLayout() {
           position="fixed"
           elevation={0}
           sx={{
-            width: `calc(100% - ${DRAWER_WIDTH}px)`,
-            ml: `${DRAWER_WIDTH}px`,
+            width: `calc(100% - ${drawerWidth}px)`,
+            ml: `${drawerWidth}px`,
             backgroundColor: "#fff",
             color: theme.palette.text.primary,
             borderBottom: `1px solid ${theme.palette.divider}`,
           }}
         >
           <Toolbar>
+            <IconButton onClick={() => setCollapsed(!collapsed)} sx={{ mr: 2 }}>
+              <MenuIcon />
+            </IconButton>
             <Box sx={{ width: 300 }}>
               <Autocomplete<SearchResult, false, false, false>
                 freeSolo={false}

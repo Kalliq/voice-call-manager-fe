@@ -22,7 +22,7 @@ const MultiStepForm = () => {
   const navigate = useNavigate();
   const methods = useForm<ImportFormValues>({
     defaultValues: {
-      hasHeader: true, // or false
+      hasHeader: false,
       mapping: {},
       duplicateField: "",
       selectedListId: "",

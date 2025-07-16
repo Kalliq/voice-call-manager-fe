@@ -7,6 +7,7 @@ import {
   FormControlLabel,
   Typography,
 } from "@mui/material";
+import { Controller } from "react-hook-form";
 
 import { SimpleButton } from "../../../UI";
 import { DropzoneField } from "../../../molecules";
@@ -17,7 +18,7 @@ import { csvFileImportStep_1_ValidationSchema } from "../../../../schemas/contac
 
 const CsvImport_step_1 = ({ onNext }: { onNext: (data: any) => void }) => {
   const {
-    register,
+    control,
     watch,
     setValue,
     formState: { errors },
@@ -53,7 +54,15 @@ const CsvImport_step_1 = ({ onNext }: { onNext: (data: any) => void }) => {
           </Typography>
         )}
         <FormControlLabel
-          control={<Checkbox {...register("hasHeader")} />}
+          control={
+            <Controller
+              name="hasHeader"
+              control={control}
+              render={({ field }) => (
+                <Checkbox {...field} checked={field.value} />
+              )}
+            />
+          }
           label="CSV includes header row"
         />
 

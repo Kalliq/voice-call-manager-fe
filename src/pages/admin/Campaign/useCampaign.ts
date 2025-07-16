@@ -168,6 +168,7 @@ export const useCampaign = ({
       const params = new URLSearchParams(call.parameters?.Params || "");
       const contactId = params.get("contactId");
       const isOutbound = params.get("outbound") === "true";
+      const callSid = params.get("callSid");
 
       console.log("params.get outbound: ", params.get("outbound") === "true");
 
@@ -177,6 +178,14 @@ export const useCampaign = ({
         const contact = currentBatchRef.current.find(
           (c) => c.id === contactId
         ) as CallSession;
+
+        if (contact && callSid) {
+          contact.callSid = callSid;
+        }
+
+        setCurrentBatch((prev) =>
+          prev.map((c) => (c.id === contact.id ? { ...c, callSid } : c))
+        );
 
         activeCallRef.current = call;
         bindCallEventHandlers(call, contact);
