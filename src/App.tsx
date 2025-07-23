@@ -13,7 +13,7 @@ import { InboundCallDialog } from "./components/InboundCallDialog";
 
 // Main Pages
 import SignIn from "./pages/SignIn";
-
+import MyProfile from "./pages/MyProfile";
 // Admin pages
 import Dashboard from "./pages/admin/Dashboard";
 import Campaign from "./pages/admin/Campaign/Campaign";
@@ -65,6 +65,7 @@ function App() {
           <Route element={<PrivateRoute />}>
             <Route element={<AdminLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/auth/me" element={<MyProfile />} />
               <Route path="/campaign" element={<Campaign />} />
               <Route path="/lists" element={<Lists />} />
               <Route path="/contacts" element={<Contacts />} />

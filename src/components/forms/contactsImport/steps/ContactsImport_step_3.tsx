@@ -22,14 +22,26 @@ const CsvImport_step_3 = ({
   onNext: (data: any) => void;
   onPrevious: () => void;
 }) => {
-  const { control, handleSubmit, watch } = useFormContext();
+  const { control, handleSubmit, watch,formState: { errors },} = useFormContext();
   const [csvColumns, setCsvColumns] = useState<string[]>([]);
 
   const settings = useAppStore((state) => state.settings);
-  const { integrationSettings } = settings!["Phone Settings"];
+  const integrationSettings = settings && settings["Phone Settings"] && settings["Phone Settings"].integrationSettings;
+
+  if (!settings || !integrationSettings || !integrationSettings.contacts) {
+    return (
+      <Box display="flex" justifyContent="center" p={4}>
+        <Typography color="error">Loading integration settings...</Typography>
+      </Box>
+    );
+  }
 
   const hasHeader = watch("hasHeader");
   const selectedFile = watch("file");
+
+  // Debug logs
+  console.log("[Step 3] selectedFile:", selectedFile);
+  console.log("[Step 3] hasHeader:", hasHeader);
 
   useEffect(() => {
     if (selectedFile) {
@@ -38,6 +50,7 @@ const CsvImport_step_3 = ({
         preview: 1, // only read the first row
         skipEmptyLines: true,
         complete: (results: any) => {
+          console.log("[Step 3] PapaParse results:", results);
           if (hasHeader) {
             // If hasHeader is true, PapaParse gives data as object
             const headers = Object.keys(results.data[0] || {});
@@ -58,6 +71,16 @@ const CsvImport_step_3 = ({
     }
   }, [selectedFile, hasHeader]);
 
+  if (csvColumns.length === 0) {
+    return (
+      <Box display="flex" justifyContent="center" p={4}>
+        <Typography color="error">
+          No columns found in the uploaded CSV file. Please check your file and try again.
+        </Typography>
+      </Box>
+    );
+  }
+
   const onSubmit = (data: any) => {
     console.log("Step 1 Data:", data);
     onNext(data);
@@ -76,12 +99,12 @@ const CsvImport_step_3 = ({
       >
         <Typography variant="h6">Map CSV Columns to Data Fields</Typography>
         <Grid container spacing={2}>
-          {csvColumns.map((col, index) => (
+          {csvColumns.map((col) => (
             <Grid
               container
               item
               xs={12}
-              key={index}
+              key={col}
               alignItems="center"
               spacing={2}
             >
@@ -97,20 +120,24 @@ const CsvImport_step_3 = ({
 
               {/* Select input */}
               <Grid item xs={8}>
-                <FormControl fullWidth>
-                  <InputLabel id={`mapping-${index}-label`}>Field</InputLabel>
+                <FormControl fullWidth  error={!!(
+                    errors.mapping &&
+                    (errors.mapping as Record<string, any>)[col]
+                  )}>
+                  <InputLabel id={`mapping-${col}-label`}>Field</InputLabel>
                   <Controller
                     name={`mapping.${col}`}
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
                       <Select
-                        labelId={`mapping-${index}-label`}
+                        labelId={`mapping-${col}-label`}
                         label="Field"
                         {...field}
+                        value={field.value ?? ""}
                       >
                         {integrationSettings.contacts.map((contact: any) => (
-                          <MenuItem key={contact.id} value={contact.id}>
+                          <MenuItem key={String(contact.id)} value={contact.id}>
                             {contact.name}
                           </MenuItem>
                         ))}
@@ -118,6 +145,18 @@ const CsvImport_step_3 = ({
                     )}
                   />
                 </FormControl>
+                {(errors.mapping as Record<string, any>)?.message && (
+                  <Typography color="error" variant="caption" sx={{ mt: 1, ml: 1 }}>
+                    {
+                      (errors.mapping as Record<string, any>)[col].message
+                    }
+                  </Typography>
+                )}
+                {/* {errors.mapping?.[col] && (
+                  <Typography color="error" variant="caption" mt={1}>
+                    {errors.mapping[col]?.message as string}
+                  </Typography>
+                )} */}
               </Grid>
             </Grid>
           ))}

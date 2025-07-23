@@ -10,6 +10,8 @@ import {
   Divider,
   Stack,
   Chip,
+  Button,
+  CircularProgress,
 } from "@mui/material";
 import styled from "@emotion/styled";
 import { Task } from "voice-javascript-common";
@@ -18,7 +20,7 @@ import api from "../../utils/axiosInstance";
 import useAppStore from "../../store/useAppStore";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
-import CalendarPage from "../../components/CalendarPage";
+import { useGoogleCalendar } from "../../contexts/GoogleCalendarContext";
 
 const colors = {
   background: "#fff",
@@ -63,7 +65,8 @@ const Dashboard = () => {
     "In Progress": [] as Task[],
     Completed: [] as Task[],
   });
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const { isLoading, events, signIn, signOut } = useGoogleCalendar();
+
   useEffect(() => {
     if (!user) return;
     api
@@ -330,7 +333,44 @@ const Dashboard = () => {
           </Card>
         </Grid>
       </Grid>
-       <Grid container spacing={2} mt={3}>
+      <Grid container spacing={2} mt={3}>
+        <Grid item xs={12} md={6}>
+          <Card elevation={0} sx={{ ...cardStyle }}>
+            <CardContent>
+              <Typography fontWeight="bold" mb={1}>Your Google Calendar</Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              {isLoading ? (
+                <Box textAlign="center" py={4}><CircularProgress /></Box>
+              ) : events.length === 0 ? (
+                <Box textAlign="center">
+                  <Button variant="contained" onClick={signIn}>
+                    Sign in with Google
+                  </Button>
+                </Box>
+              ) : (
+                <>
+                  <Button variant="outlined" onClick={signOut} sx={{ mb: 2 }}>
+                    Sign out
+                  </Button>
+                  <Stack spacing={1}>
+                    {events.map((evt) => (
+                      <Box key={evt.id} p={2} border="1px solid #e0e0e0" borderRadius={2} sx={{ backgroundColor: "#fafafa" }}>
+                        <Typography fontWeight="bold">{evt.title}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {evt.start} → {evt.end}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+       {/* <Grid container spacing={2} mt={3}>
         <Grid item xs={12} md={6}>
           <Card elevation={0} sx={{ ...cardStyle }}>
             <CardContent>
@@ -340,7 +380,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-      </Grid>
+      </Grid> */}
     </Box>
   );
 };

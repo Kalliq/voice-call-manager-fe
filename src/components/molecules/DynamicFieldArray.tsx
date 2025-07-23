@@ -64,14 +64,15 @@ const DynamicFieldArray: React.FC<DynamicFieldArrayProps> = ({
               switch (nestedField.type) {
                 case "text":
                   return (
-                    <Grid item xs={12} sm={4} key={idx}>
+                    <Grid item xs={12} sm={4} key={nestedField.name}>
                       <Controller
                         name={fieldName}
                         control={control}
-                        defaultValue=""
+                        defaultValue={(item as any)[nestedField.name] ?? ""}
                         render={({ field }) => (
                           <TextField
                             {...field}
+                            value={field.value ?? ""}
                             label={nestedField.label}
                             placeholder={nestedField.placeholder}
                             fullWidth
@@ -84,21 +85,22 @@ const DynamicFieldArray: React.FC<DynamicFieldArrayProps> = ({
                   );
                 case "select":
                   return (
-                    <Grid item xs={12} sm={4} key={idx}>
+                    <Grid item xs={12} sm={4} key={nestedField.name}>
                       <Controller
                         name={fieldName}
                         control={control}
-                        defaultValue=""
+                        defaultValue={(item as any)[nestedField.name] ?? ""}
                         render={({ field }) => (
                           <TextField
                             {...field}
+                            value={field.value ?? ""}
                             select
                             fullWidth
                             label={nestedField.label}
                           >
-                            {nestedField.options?.map((option, j) => (
+                            {nestedField.options?.map((option) => (
                               <MenuItem
-                                key={j}
+                                key={String(option.value)}
                                 value={option.value as string | number}
                               >
                                 {option.label}

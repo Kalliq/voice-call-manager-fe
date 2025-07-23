@@ -3,6 +3,8 @@ import { Box, Typography } from "@mui/material";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useParams } from "react-router-dom";
+import { ZodError } from "zod";
+import { z } from "zod";
 
 import useAppStore from "../../../store/useAppStore";
 import CreateList_step_1 from "./steps/CreateList_step_1";
@@ -12,6 +14,7 @@ import CreateList_step_3 from "./steps/CreateList_step_3";
 import {
   listSettingsValidationSchema,
   listFiltersValidationSchema,
+  listExitStrategyValidationSchema,
 } from "../../../schemas/create-list/validation-schema";
 
 import api from "../../../utils/axiosInstance";
@@ -22,8 +25,11 @@ const getValidationSchemaForStep = (step: number) => {
       return listSettingsValidationSchema;
     case 2:
       return listFiltersValidationSchema;
+    case 3:
+      return listExitStrategyValidationSchema;
     default:
-      return undefined;
+      // Return a pass-through schema for steps without validation
+      return z.object({});
   }
 };
 
@@ -39,9 +45,23 @@ const MultiStepForm = () => {
       listPriority: "medium",
       listType: "static",
       listSharing: "notShared",
+      filters: [{ field: "", operator: "equals", value: "" }],
+      crossFilters: [],
     } as any,
-    // resolver: zodResolver(schema),
+    resolver: zodResolver(getValidationSchemaForStep(step)),
+    mode: 'onTouched',
   });
+
+  // Dynamically update resolver when step changes
+  useEffect(() => {
+    methods.reset(methods.getValues(), {
+      keepErrors: false,
+      keepDirty: true,
+      keepValues: true,
+    });
+    // @ts-ignore
+    methods.control._options.resolver = zodResolver(getValidationSchemaForStep(step));
+  }, [step]);
 
   useEffect(() => {
     if (id) {
@@ -67,28 +87,12 @@ const MultiStepForm = () => {
     }
   }, [id]);
 
-  const updateResolver = (newStep: number) => {
-    const newSchema = getValidationSchemaForStep(newStep);
-    if (newSchema) {
-      methods.reset(methods.getValues(), {
-        keepErrors: false,
-        keepDirty: true,
-        keepValues: true,
-      });
-      methods.reset(methods.getValues(), { keepDefaultValues: true });
-      // methods.control._options.resolver = zodResolver(newSchema);
-    }
-  };
-
-  const onNextStepHandler = async (data: any) => {
-    const nextStep = step + 1;
-    updateResolver(nextStep);
-    setStep((prev) => prev + 1);
+  const onNextStepHandler = (data: any) => {
+    setStep(prev => prev + 1);
   };
 
   const onPreviousStepHandler = () => {
     const previousStep = step - 1;
-    updateResolver(previousStep);
     setStep(previousStep);
   };
 
@@ -126,7 +130,7 @@ const MultiStepForm = () => {
           {id ? "EDIT LIST" : "CREATE NEW LIST"}
         </Typography>
         <Box>
-          <FormProvider {...methods}>
+          <FormProvider {...methods} key={step}>
             {step === 1 && <CreateList_step_1 onNext={onNextStepHandler} />}
             {step === 2 && (
               <CreateList_step_2

@@ -18,7 +18,7 @@ const CsvImport_step_2 = ({
   onNext: (data: any) => void;
   onPrevious: () => void;
 }) => {
-  const { control, handleSubmit } = useFormContext();
+  const { control, handleSubmit, formState: { errors } } = useFormContext();
   const [fields, setFields] = useState<string[]>([]);
 
   useEffect(() => {
@@ -50,15 +50,20 @@ const CsvImport_step_2 = ({
             control={control}
             defaultValue=""
             render={({ field }) => (
-              <Select labelId="filter-label" label="Field" {...field}>
+              <Select labelId="filter-label" label="Field" {...field} value={field.value ?? ""}>
                 {fields.map((f) => (
-                  <MenuItem key={f} value={f}>
+                  <MenuItem key={String(f)} value={f}>
                     {f}
                   </MenuItem>
                 ))}
               </Select>
             )}
           />
+          {errors.duplicateField && (
+            <Typography color="error" mt={1}>
+              {errors.duplicateField.message as string}
+            </Typography>
+          )}
         </FormControl>
         <Box display="flex" flexDirection="row">
           <SimpleButton label="Next" type="submit" />

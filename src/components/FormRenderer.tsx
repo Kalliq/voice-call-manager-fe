@@ -47,6 +47,7 @@ const FormRenderer = ({
   return (
     <>
       <form
+        key={schema.title + (schema.sections?.[0]?.fields?.length || 0)}
         onSubmit={
           onSubmit
             ? handleSubmit(onSubmit as SubmitHandler<FieldValues>)
@@ -75,13 +76,14 @@ const FormRenderer = ({
             gap={1}
           >
             {schema.sections.map((section, idx) => {
+              const sectionKey = section.title ? `${section.title}-${idx}` : `section-${idx}`;
               const isButtonSection = section.fields.every(
                 (f) => f.type === "button"
               );
 
               return (
                 <Box
-                  key={`${section}.${idx}`}
+                  key={sectionKey}
                   display={isButtonSection ? "flex" : "block"}
                   flexDirection={isButtonSection ? "row" : "column"}
                   gap={0}
@@ -98,11 +100,12 @@ const FormRenderer = ({
                     </Typography>
                   )}
                   {section.fields.map((field, fIdx) => {
+                    const fieldKey = field.name ? `${field.name}-${fIdx}` : `field-${fIdx}`;
                     switch (field.type) {
                       case "text":
                         return (
                           <Controller
-                            key={fIdx}
+                            key={fieldKey}
                             name={field.name || ""}
                             control={control}
                             render={({ field: controllerField }) => (
@@ -125,7 +128,7 @@ const FormRenderer = ({
                         const selectedOption = watch(field.name || "");
                         return (
                           <RadioGroupWithNestedField
-                            controllerKey={fIdx}
+                            controllerKey={fieldKey as any}
                             field={field}
                             control={control}
                             errors={errors}
@@ -135,7 +138,7 @@ const FormRenderer = ({
                       case "checkbox":
                         return (
                           <CheckBoxWithNestedField
-                            controllerKey={fIdx}
+                            controllerKey={fieldKey as any}
                             field={field}
                             control={control}
                             errors={errors}
@@ -143,7 +146,7 @@ const FormRenderer = ({
                         );
                       case "button":
                         return (
-                          <Box key={fIdx}>
+                          <Box key={fieldKey}>
                             <SimpleButton
                               type={
                                 field.action === "submit" ? "submit" : "button"
@@ -160,7 +163,7 @@ const FormRenderer = ({
                       case "toggle":
                         return (
                           <Controller
-                            key={fIdx}
+                            key={fieldKey}
                             name={field.name || ""}
                             control={control}
                             render={({ field: controllerField }) => (
@@ -182,7 +185,7 @@ const FormRenderer = ({
                       case "dynamic":
                         return (
                           <DynamicFieldArray
-                            key={fIdx}
+                            key={fieldKey}
                             fieldConfig={field as any} // Pass the config (includes addButtonLabel, nestedFields, etc.)
                             control={control}
                             errors={errors}
