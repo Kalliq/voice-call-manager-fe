@@ -119,7 +119,7 @@ const Dashboard = () => {
 
     return [
       { name: "Successful", value: successful, color: "#2cb67d" },
-      { name: "Short Connected", value: semiSuccessful, color: "#facc15" },
+      { name: "Connected", value: semiSuccessful, color: "#facc15" },
       { name: "Unanswered", value: unsuccessful, color: "#ef4444" },
     ];
   }, [callStats, settings]);
