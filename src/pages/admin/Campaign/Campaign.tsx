@@ -188,10 +188,6 @@ const Campaign = () => {
   };
 
   const handleResult = async (contact: Contact, result: string) => {
-    console.log("result: ", result);
-    console.log("contact.id: ", contact.id);
-    console.log("callSid: ", contact.callSid);
-
     await api.patch(`/contacts/${contact.id}`, {
       result,
       notes: contactNotes[contact.id] || "",

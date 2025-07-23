@@ -41,7 +41,6 @@ const ReportsPage = () => {
   const [selectedListId, setSelectedListId] = useState("");
 
   useEffect(() => {
-    // load users and lists once
     const loadFilters = async () => {
       try {
         const [usersRes, adminsRes, listsRes] = await Promise.all([
@@ -50,7 +49,6 @@ const ReportsPage = () => {
           api.get("/lists"),
         ]);
         const allUsers = usersRes.data.concat(adminsRes.data);
-
         setUsers(allUsers);
         setLists(listsRes.data);
       } catch (err) {
@@ -77,8 +75,6 @@ const ReportsPage = () => {
           params: { start, end, userIds },
         }),
       ]);
-
-      console.log("listRes.data:", listRes.data);
 
       setListPerformance(listRes.data);
       setActivityData(activityRes.data);
@@ -179,6 +175,7 @@ const ReportsPage = () => {
                   <TableCell>Calls Out</TableCell>
                   <TableCell>Connects</TableCell>
                   <TableCell>Connect Rate</TableCell>
+                  <TableCell>Success Rate</TableCell>
                   <TableCell>Avg Talk Time</TableCell>
                 </TableRow>
               </TableHead>
@@ -196,6 +193,7 @@ const ReportsPage = () => {
                       <TableCell>{row.callsOut}</TableCell>
                       <TableCell>{row.connects}</TableCell>
                       <TableCell>{row.connectRate}%</TableCell>
+                      <TableCell>{row.successRate ?? "-"}%</TableCell>
                       <TableCell>{row.avgTalkTime}</TableCell>
                     </TableRow>
                   ))
@@ -219,6 +217,7 @@ const ReportsPage = () => {
                   <TableCell>Inbound</TableCell>
                   <TableCell>Connects</TableCell>
                   <TableCell>Connect Rate</TableCell>
+                  <TableCell>Success Rate</TableCell>
                   <TableCell>Total Talk</TableCell>
                   <TableCell>Avg Talk</TableCell>
                 </TableRow>
@@ -226,7 +225,7 @@ const ReportsPage = () => {
               <TableBody>
                 {activityData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
+                    <TableCell colSpan={9} align="center">
                       No data available
                     </TableCell>
                   </TableRow>
@@ -239,6 +238,7 @@ const ReportsPage = () => {
                       <TableCell>{user.inboundCalls}</TableCell>
                       <TableCell>{user.connects}</TableCell>
                       <TableCell>{user.connectRate}%</TableCell>
+                      <TableCell>{user.successRate ?? "-"}%</TableCell>
                       <TableCell>{user.totalTalkTime}</TableCell>
                       <TableCell>{user.avgTalkTime}</TableCell>
                     </TableRow>
