@@ -3,7 +3,7 @@ import { Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, But
 import { FormProvider, Resolver, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import React from "react";
-
+import * as z from 'zod';
 import type { ZodType } from 'zod';
 import { AnyZodObject } from 'zod';
 
@@ -17,7 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   csvFileImportStep_1_ValidationSchema,
   csvFileImportStep_2_ValidationSchema,
-  csvFileImportStep_3_ValidationSchema,
+  // csvFileImportStep_3_ValidationSchema,
   csvFileImportStep_4_ValidationSchema,
 } from '../../../schemas/contacts-import/csv-file-import/validation-schema';
 
@@ -36,7 +36,8 @@ const getValidationSchemaForStep = (step: number) => {
     case 2:
       return csvFileImportStep_2_ValidationSchema;
     case 3:
-      return csvFileImportStep_3_ValidationSchema;
+      return z.object({});
+      //return csvFileImportStep_3_ValidationSchema;
     case 4:
       return csvFileImportStep_4_ValidationSchema;
     default:
