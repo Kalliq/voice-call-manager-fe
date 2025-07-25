@@ -1,7 +1,9 @@
 const schema = {
+  backendFriendlyName: "callManagement",
   title: "CALL MANAGEMENT",
   sections: [
     {
+      backendFriendlyName: "connectionDefinition",
       title: "CONNECTION DEFINITION",
       fields: [
         {
@@ -22,6 +24,7 @@ const schema = {
       ],
     },
     {
+      backendFriendlyName: "preventMultiple",
       title: "PREVENT MULTIPLE CALLS TO THE SAME CONTACT",
       fields: [
         {

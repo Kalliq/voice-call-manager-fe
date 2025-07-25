@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   TextField,
@@ -14,15 +14,37 @@ import useAppStore from "../../store/useAppStore";
 import { CallResult } from "../../types/call-results";
 
 import api from "../../utils/axiosInstance";
+import { UserRole } from "voice-javascript-common";
+
+const generateId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).substr(2, 9);
 
 export default function CallResultsManager() {
-  const settings = useAppStore((state) => state.settings);
   const user = useAppStore((state) => state.user);
+  const settings = useAppStore((state) => state.settings);
   const setSettings = useAppStore((state) => state.setSettings);
-  const [callResults, setCallResults] = useState<CallResult[]>(
-    settings ? settings["Phone Settings"].callResults : []
-  );
+
+  const isReadOnly = user?.role !== UserRole.ADMIN;
+
+  const [callResults, setCallResults] = useState<CallResult[]>([]);
   const [newResult, setNewResult] = useState("");
+
+  // Clone on mount/update
+  useEffect(() => {
+    if (settings?.["Phone Settings"]?.callResults) {
+      const cloned = settings["Phone Settings"].callResults.map(
+        (item: CallResult) => ({
+          id: item.id || generateId(),
+          label: item.label || "",
+          checked: !!item.checked,
+          considerPositive: !!item.considerPositive,
+        })
+      );
+      setCallResults(cloned);
+    }
+  }, [settings]);
 
   const toggleCheckbox = (id: string) => {
     setCallResults((prev) =>
@@ -32,11 +54,26 @@ export default function CallResultsManager() {
     );
   };
 
+  const togglePositive = (id: string) => {
+    setCallResults((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, considerPositive: !item.considerPositive }
+          : item
+      )
+    );
+  };
+
   const handleAdd = () => {
     if (!newResult.trim()) return;
     setCallResults((prev) => [
       ...prev,
-      { id: Date.now().toString(), label: newResult, checked: false },
+      {
+        id: generateId(),
+        label: newResult,
+        checked: false,
+        considerPositive: false,
+      },
     ]);
     setNewResult("");
   };
@@ -57,7 +94,7 @@ export default function CallResultsManager() {
         throw new Error("Missing settings!");
       }
       const existingPhoneSettings = { ...settings["Phone Settings"] };
-      const { data } = await api.patch(`/settings/${user!.id}`, {
+      const { data } = await api.patch(`/settings`, {
         "Phone Settings": {
           ...existingPhoneSettings,
           callResults,
@@ -73,6 +110,11 @@ export default function CallResultsManager() {
     <Box>
       <Typography variant="h6" fontWeight="bold" color="info" mb={4}>
         CALL RESULTS LIST
+        {isReadOnly && (
+          <Typography variant="body2" color="textSecondary" mb={2}>
+            You do not have permission to edit call results.
+          </Typography>
+        )}
       </Typography>
       <Box
         display="flex"
@@ -84,9 +126,9 @@ export default function CallResultsManager() {
         width="70%"
         gap={1}
       >
-        {callResults.map((item, index) => (
+        {callResults.map((item) => (
           <Stack
-            key={item.id || index}
+            key={item.id}
             direction="row"
             spacing={1}
             alignItems="center"
@@ -96,6 +138,7 @@ export default function CallResultsManager() {
               checked={item.checked}
               onChange={() => toggleCheckbox(item.id)}
               color="info"
+              disabled={isReadOnly}
             />
             <TextField
               size="small"
@@ -103,8 +146,20 @@ export default function CallResultsManager() {
               value={item.label}
               onChange={(e) => handleEdit(item.id, e.target.value)}
               sx={{ flexGrow: 1 }}
+              disabled={isReadOnly}
             />
-            <IconButton color="error" onClick={() => handleDelete(item.id)}>
+            <Typography variant="body2">Consider positive</Typography>
+            <Checkbox
+              checked={item.considerPositive || false}
+              onChange={() => togglePositive(item.id)}
+              color="success"
+              disabled={isReadOnly}
+            />
+            <IconButton
+              color="error"
+              onClick={() => handleDelete(item.id)}
+              disabled={isReadOnly}
+            >
               <Delete />
             </IconButton>
           </Stack>
@@ -115,13 +170,13 @@ export default function CallResultsManager() {
             value={newResult}
             onChange={(e) => setNewResult(e.target.value)}
           />
-          <IconButton color="info" onClick={handleAdd}>
+          <IconButton color="info" onClick={handleAdd} disabled={isReadOnly}>
             <Add />
           </IconButton>
         </Stack>
       </Box>
 
-      <SimpleButton label="Save" onClick={onSubmit} />
+      <SimpleButton label="Save" onClick={onSubmit} disabled={isReadOnly} />
     </Box>
   );
 }

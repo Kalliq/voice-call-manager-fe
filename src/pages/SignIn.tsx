@@ -15,7 +15,7 @@ import { UserRole } from "voice-javascript-common";
 
 import useAppStore from "../store/useAppStore";
 import { useAuth } from "../contexts/AuthContext";
-import Logo from "../assets/logo_text.svg?react";
+import Logo from "../assets/kalliq_grey.png";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email").min(1, "Email is required"),
@@ -73,7 +73,7 @@ const Login: React.FC = () => {
             maxWidth: "100%",
           }}
         >
-          <Logo style={{ height: "100%" }} />
+          <img src={Logo} style={{ height: "100%" }} alt="Logo" />
         </Box>
       </Box>
       <form onSubmit={handleSubmit(onSubmit)}>

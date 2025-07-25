@@ -54,8 +54,7 @@ const MultiStepForm = () => {
   const currentSchema = getValidationSchemaForStep(step) as AnyZodObject | undefined;
   const methods = useForm<ImportFormValues>({
     defaultValues: {
-      file: undefined as unknown as File,
-      hasHeader: true,
+      hasHeader: false,
       mapping: {},
       duplicateField: "",
       selectedListId: "",

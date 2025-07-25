@@ -25,10 +25,12 @@ import ImportContacts from "./pages/admin/ImportContacts";
 import CreateNewList from "./pages/admin/CreateNewList";
 import Coaching from "./pages/admin/Coaching/Coaching";
 import MyPhoneNumbersList from "./pages/admin/MyNumbersList";
+import Reports from "./pages/admin/Reports/Reports";
 
 // Superadmin pages
 import SuperDashboard from "./pages/superadmin/SuperDashboard";
 import NumberPoolSettings from "./pages/superadmin/NumberPoolSettings";
+import UsersManagement from "./pages/superadmin/UserManagement";
 
 import "./App.css";
 
@@ -73,8 +75,9 @@ function App() {
               <Route path="/import-contacts" element={<ImportContacts />} />
               <Route path="/create-new-list/:id?" element={<CreateNewList />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/coaching" element={<Coaching />} />
               <Route path="/my-numbers" element={<MyPhoneNumbersList />} />
+              <Route path="/coaching" element={<Coaching />} />
+              <Route path="/reports" element={<Reports />} />
             </Route>
           </Route>
         )}
@@ -84,6 +87,10 @@ function App() {
             <Route
               path="numbers-pool"
               element={<WithHeader component={NumberPoolSettings} />}
+            />
+            <Route
+              path="users"
+              element={<WithHeader component={UsersManagement} />}
             />
           </Route>
         </Route>

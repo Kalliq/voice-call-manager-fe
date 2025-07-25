@@ -27,13 +27,12 @@ import {
   Menu as MenuIcon,
   Add,
   Phone,
-  Search,
   PersonAdd,
   PlaylistAdd,
 } from "@mui/icons-material";
 
 import { useAuth } from "../contexts/AuthContext";
-import Logo from "../assets/logo_text.svg?react";
+import Logo from "../assets/kalliq_grey.png";
 import cfg from "../config";
 
 const version = import.meta.env.VITE_APP_VERSION;
@@ -63,7 +62,6 @@ const Header = () => {
   const [notificationsAnchorEl, setNotificationsAnchorEl] =
     useState<null | HTMLElement>(null);
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const toggleDrawer = (open: boolean) => () => setDrawerOpen(open);
   const handleMenuOpen = (event: MouseEvent<HTMLElement>) =>
@@ -104,11 +102,6 @@ const Header = () => {
   const handleAddList = () => {
     handleAddMenuClose();
     navigate("/lists/add");
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    // Implement search functionality
   };
 
   return (
@@ -153,47 +146,7 @@ const Header = () => {
                     : navigate("/dashboard")
                 }
               >
-                <Logo style={{ height: "100%" }} />
-              </Box>
-            </Box>
-            {/* Center area - Search and navigation (desktop only) */}
-            <Box
-              sx={{
-                display: { xs: "none", md: "flex" },
-                alignItems: "center",
-                flexGrow: 1,
-                justifyContent: "center",
-                gap: 4,
-                mx: 4,
-              }}
-            >
-              {/* Search Field */}
-              <Box sx={{ width: 220 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search sx={{ color: theme.palette.info.main }} />
-                      </InputAdornment>
-                    ),
-                    sx: {
-                      color: "#fff",
-                      backgroundColor: "rgba(255, 255, 255, 0.1)",
-                      borderRadius: 2,
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "transparent",
-                      },
-                      "&:hover .MuiOutlinedInput-notchedOutline": {
-                        borderColor: theme.palette.info.main,
-                      },
-                    },
-                  }}
-                />
+                <img src={Logo} style={{ height: "100%" }} alt="Logo" />
               </Box>
             </Box>
 
@@ -343,39 +296,10 @@ const Header = () => {
             }}
           >
             <Box component="img" alt="Echo" sx={{ height: 40 }}>
-              <Logo style={{ height: "100%" }} />
+              <img src={Logo} style={{ height: "100%" }} alt="Logo" />
             </Box>
           </Box>
           <Divider />
-
-          {/* Search Field - Mobile */}
-          <Box sx={{ p: 2 }}>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={handleSearch}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search sx={{ color: colors.headline }} />
-                  </InputAdornment>
-                ),
-                sx: {
-                  color: colors.headline,
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  borderRadius: 2,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "transparent",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: theme.palette.info.main,
-                  },
-                },
-              }}
-            />
-          </Box>
 
           <List>
             {/* Add Actions - Mobile */}

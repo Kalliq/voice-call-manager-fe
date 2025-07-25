@@ -1,11 +1,21 @@
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { UserRole } from "voice-javascript-common";
+import { adminOnlySettings } from "voice-javascript-common";
 
 import FormRenderer from "../FormRenderer";
 import { callManagementSchema } from "../../schemas/phone-settings/call-management/schema";
 import { callManagementValidationSchema } from "../../schemas/phone-settings/call-management/validation-schema";
 import api from "../../utils/axiosInstance";
 import useAppStore from "../../store/useAppStore";
+import { injectAdminOnly } from "../../utils/injectAdminOnly";
+
+console.log("callManagementSchema: ", callManagementSchema);
+console.log("adminOnlySettings: ", adminOnlySettings);
+
+const enrichedSchema = injectAdminOnly(callManagementSchema, adminOnlySettings);
+
+console.log("enrichedSchema: ", enrichedSchema);
 
 const CallManagementFormComponent = (data: any) => {
   const { connectionDefinition, preventMultiple } = data;
@@ -27,7 +37,7 @@ const CallManagementFormComponent = (data: any) => {
         throw new Error("Missing settings!");
       }
       const existingPhoneSettings = { ...settings["Phone Settings"] };
-      const { data } = await api.patch(`/settings/${user!.id}`, {
+      const { data } = await api.patch(`/settings`, {
         "Phone Settings": {
           ...existingPhoneSettings,
           callManagement: { ...formData },
@@ -42,8 +52,9 @@ const CallManagementFormComponent = (data: any) => {
   return (
     <FormProvider {...methods}>
       <FormRenderer
-        schema={callManagementSchema}
+        schema={enrichedSchema}
         onSubmit={(formData) => onSubmit(formData)}
+        isAdmin={user?.role === UserRole.ADMIN}
       />
     </FormProvider>
   );

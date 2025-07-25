@@ -6,6 +6,7 @@ import {
 } from "react-hook-form";
 import { Box, Typography, Switch } from "@mui/material";
 
+import { useAuth } from "../contexts/AuthContext";
 import { FormRendererProps } from "../interfaces/form-renderer";
 import { ButtonAction } from "../enums/form-buttons-actions";
 import { SimpleButton, CustomTextField } from "./UI";
@@ -28,6 +29,7 @@ const FormRenderer = ({
     watch,
     formState: { errors },
   } = useFormContext();
+  const { isAdmin } = useAuth();
 
   const handleButtonClick = (action?: string) => {
     console.log("action: ", action);
@@ -101,6 +103,8 @@ const FormRenderer = ({
                   )}
                   {section.fields.map((field, fIdx) => {
                     const fieldKey = field.name ? `${field.name}-${fIdx}` : `field-${fIdx}`;
+                    const isReadonly = field.adminOnly && !isAdmin;
+
                     switch (field.type) {
                       case "text":
                         return (
@@ -117,7 +121,16 @@ const FormRenderer = ({
                                 fullWidth={field.fullWidth}
                                 error={!!errors[field.name || ""]}
                                 helperText={
-                                  errors[field.name || ""]?.message as string
+                                  !isReadonly
+                                    ? (errors[field.name || ""]
+                                        ?.message as string)
+                                    : "(Admin only field)"
+                                }
+                                InputProps={{ readOnly: isReadonly }}
+                                sx={
+                                  isReadonly
+                                    ? { opacity: 0.5, pointerEvents: "none" }
+                                    : {}
                                 }
                               />
                             )}
@@ -133,6 +146,7 @@ const FormRenderer = ({
                             control={control}
                             errors={errors}
                             selectedOption={selectedOption}
+                            isReadonly={isReadonly || false}
                           />
                         );
                       case "checkbox":
@@ -142,6 +156,7 @@ const FormRenderer = ({
                             field={field}
                             control={control}
                             errors={errors}
+                            isReadonly={isReadonly || false}
                           />
                         );
                       case "button":

@@ -70,7 +70,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
     api
-      .get(`/settings/${user.id}`)
+      .get(`/settings`)
       .then(({ data }) => setSettings(data))
       .catch((err) => console.error("[dashboard] settings:", err));
   }, [user, setSettings]);
@@ -124,7 +124,7 @@ const Dashboard = () => {
 
     return [
       { name: "Successful", value: successful, color: "#2cb67d" },
-      { name: "Short Connected", value: semiSuccessful, color: "#facc15" },
+      { name: "Connected", value: semiSuccessful, color: "#facc15" },
       { name: "Unanswered", value: unsuccessful, color: "#ef4444" },
     ];
   }, [callStats, settings]);

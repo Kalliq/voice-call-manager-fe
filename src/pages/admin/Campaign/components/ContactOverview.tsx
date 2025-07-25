@@ -1,5 +1,15 @@
-import { useState } from "react";
-import { Box, Grid, Paper, Typography, Stack, Tabs, Tab } from "@mui/material";
+import { useEffect, useState } from "react";
+import {
+  Box,
+  Button,
+  Grid,
+  Paper,
+  Typography,
+  Stack,
+  Tabs,
+  Tab,
+  Tooltip,
+} from "@mui/material";
 import {
   Business,
   Person,
@@ -11,40 +21,91 @@ import {
   Title,
   InsertDriveFile,
   CheckCircleOutline,
+  MenuBook,
 } from "@mui/icons-material";
 import { format } from "date-fns";
+import { CallLog } from "voice-javascript-common";
+
+import api from "../../../../utils/axiosInstance";
+
+import AudioWaveform from "../../../../components/AudioWaveform";
 
 import { Contact } from "../../../../types/contact";
 import { FieldItem } from "../../../../components/atoms/FieldItem";
 
-interface Action {
-  result: string;
-  timestamp: string;
-}
-
-const ActivityRow = ({ entry }: { entry: Action }) => {
-  const formattedTime = format(new Date(parseInt(entry.timestamp)), "PPpp");
+// TO DO change any to CallLog
+const ActivityRow = ({ entry }: { entry: CallLog }) => {
+  console.log("entry: ", entry);
+  let formattedTime = "";
+  if (entry.action) {
+    formattedTime = format(new Date(parseInt(entry.action.timestamp)), "PPpp");
+  }
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <Box
-      display="flex"
-      alignItems="center"
-      justifyContent="space-between"
-      py={1}
-    >
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <CheckCircleOutline color="primary" />
-        <Typography fontWeight={500}>{entry.result}</Typography>
-      </Stack>
-      <Typography color="text.secondary" fontSize={13}>
-        {formattedTime}
-      </Typography>
+    <Box>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        py={1}
+      >
+        <Stack>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <CheckCircleOutline color="primary" />
+            <Typography fontWeight={500}>{entry.action?.result}</Typography>
+            {entry.action?.notes && (
+              <Tooltip title={entry.action.notes} arrow placement="top">
+                <MenuBook
+                  fontSize="small"
+                  sx={{ cursor: "pointer", color: "primary.main" }}
+                />
+              </Tooltip>
+            )}
+          </Stack>
+        </Stack>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Typography color="text.secondary" fontSize={13}>
+            {formattedTime}
+          </Typography>
+          <Button size="small" onClick={() => setIsOpen((prev) => !prev)}>
+            {isOpen ? "Hide" : "Show"} Voice Recording
+          </Button>
+        </Stack>
+      </Box>
+
+      {isOpen && (
+        <Box pl={4} pb={2}>
+          {entry && entry.recordingUrl ? (
+            <AudioWaveform url={entry.recordingUrl} />
+          ) : (
+            <Typography fontSize={12} color="text.secondary">
+              No call recording available for this call.
+            </Typography>
+          )}
+        </Box>
+      )}
     </Box>
   );
 };
 
-const CotactOverview = ({ contact }: { contact: Contact }) => {
+const ContactOverview = ({ contact }: { contact: Contact }) => {
   const [tabIndex, setTabIndex] = useState(0);
+  const [callLogs, setCallLogs] = useState<CallLog[]>([]);
+
+  useEffect(() => {
+    const fetchCallLogs = async () => {
+      const callLogs = await api.get("/call-logs", {
+        params: { contactId: contact.id },
+      });
+
+      console.log("callLogs: ", callLogs);
+
+      setCallLogs(callLogs.data.recordings);
+    };
+
+    fetchCallLogs();
+  }, []);
 
   return (
     <Paper
@@ -156,10 +217,10 @@ const CotactOverview = ({ contact }: { contact: Contact }) => {
       ) : (
         <Box px={2}>
           <Typography variant="body2" color="text.secondary">
-            {contact.actions?.length > 0 ? (
+            {callLogs?.length > 0 ? (
               <Stack spacing={2}>
-                {contact.actions.map((action) => (
-                  <ActivityRow key={action.timestamp} entry={action} />
+                {callLogs.map((callLog) => (
+                  <ActivityRow key={callLog.id} entry={callLog} />
                 ))}
               </Stack>
             ) : (
@@ -174,4 +235,4 @@ const CotactOverview = ({ contact }: { contact: Contact }) => {
   );
 };
 
-export default CotactOverview;
+export default ContactOverview;
