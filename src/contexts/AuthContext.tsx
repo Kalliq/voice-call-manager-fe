@@ -6,6 +6,8 @@ import api from "../utils/axiosInstance";
 import cfg from "../config";
 import useAppStore from "../store/useAppStore";
 import { useAdminPhone } from "../hooks/useAdminPhone";
+import { destroySocket } from "../utils/initSocket";
+import { destroyTwilioDevice } from "../utils/initTwilio";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -16,6 +18,7 @@ interface AuthContextType {
   signout: () => Promise<void>;
   setIsSuperadmin?: React.Dispatch<React.SetStateAction<boolean>>;
   phoneState: any;
+  authLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +29,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const { user, setUser } = useAppStore();
@@ -47,6 +51,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signout = async () => {
     await api.post("/auth/signout", {});
+    try {
+      destroySocket();
+      destroyTwilioDevice();
+    } catch {}
     setIsAuthenticated(false);
     setIsSuperadmin(false);
     setIsAdmin(false);
@@ -56,20 +64,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const checkSession = async () => {
+      setAuthLoading(true);
       try {
         const { data } = await api.get("/auth/me");
         if (data.user) {
-          console.log("user from me: ", data.user);
           setIsAuthenticated(true);
           setUser(data.user);
-          if (data.data.role === UserRole.SUPER_ADMIN) {
+          if (data.user.role === UserRole.SUPER_ADMIN) {
             setIsSuperadmin(true);
-          } else if (data.data.role === UserRole.ADMIN) {
+          } else if (data.user.role === UserRole.ADMIN) {
             setIsAdmin(true);
           }
+        } else {
+          setIsAuthenticated(false);
         }
       } catch (err) {
         setIsAuthenticated(false);
+      } finally {
+        setAuthLoading(false);
       }
     };
 
@@ -86,6 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         signin,
         signout,
         phoneState,
+        authLoading,
       }}
     >
       {children}

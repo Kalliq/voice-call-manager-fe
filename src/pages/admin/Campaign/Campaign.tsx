@@ -27,14 +27,15 @@ interface LocationState {
   mode: TelephonyConnection;
   contactId: string;
   phone: string;
+  defaultDisposition: string;
   autoStart: boolean;
 }
 
 const Campaign = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { contacts, mode, contactId, phone, autoStart } = (location.state ||
-    {}) as LocationState;
+  const { contacts, mode, contactId, phone, defaultDisposition, autoStart } =
+    (location.state || {}) as LocationState;
   const { phoneState } = useAuth();
   const { socket, volumeHandler, hangUpHandler } = phoneState;
   const { enqueue } = useSnackbar();
@@ -319,6 +320,7 @@ const Campaign = () => {
         isCampaign={!manualSession}
         answeredSessionId={lastAnsweredId}
         mode={mode}
+        defaultDisposition={defaultDisposition}
       />
       {isCampaignFinished && (
         <Alert severity="success" sx={{ mt: 3 }}>

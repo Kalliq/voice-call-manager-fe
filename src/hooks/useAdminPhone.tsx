@@ -3,7 +3,7 @@ import { Device } from "@twilio/voice-sdk";
 import { Socket } from "socket.io-client";
 
 import { initTwilioDevice, destroyTwilioDevice } from "../utils/initTwilio";
-import { initSocket } from "../utils/initSocket";
+import { destroySocket, initSocket } from "../utils/initSocket";
 import { getAudioDevices } from "../utils/audioDevice";
 import useAppStore from "../store/useAppStore";
 import { AudioDevice } from "../interfaces/audio-device";
@@ -18,6 +18,7 @@ export const useAdminPhone = (userId: string | undefined) => {
     ((call: any) => void) | null
   >(null);
 
+  const socketRef = useRef<Socket | null>(null);
   const twilioDeviceRef = useRef<Device | null>(null);
 
   const getDevices = useCallback(async () => {
@@ -31,7 +32,6 @@ export const useAdminPhone = (userId: string | undefined) => {
     setInputVolume(inputVolume);
     setOutputVolume(outputVolume);
   };
-
   const hangUpHandler = () => {};
 
   useEffect(() => {
@@ -57,7 +57,6 @@ export const useAdminPhone = (userId: string | undefined) => {
   }, [twilioDevice, getDevices]);
 
   useEffect(() => {
-    console.log("userId inside useAdminPhone: ", userId);
     if (!userId) return;
 
     (async () => {
@@ -67,19 +66,20 @@ export const useAdminPhone = (userId: string | undefined) => {
 
         setTwilioDevice(device);
         device.register();
-
-        // Initialize Socket
-        const socket = initSocket(userId);
-
-        setSocket(socket);
       } catch (error) {
         console.error(error);
       }
     })();
 
+    const s = initSocket(userId);
+    socketRef.current = s;
+    setSocket(s);
+
     return () => {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+      destroySocket();
       destroyTwilioDevice();
-      if (socket) socket.disconnect();
     };
   }, [userId]);
 

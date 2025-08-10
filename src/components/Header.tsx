@@ -295,7 +295,7 @@ const Header = () => {
               justifyContent: "center",
             }}
           >
-            <Box component="img" alt="Echo" sx={{ height: 40 }}>
+            <Box component="img" alt="Kalliq" sx={{ height: 40 }}>
               <img src={Logo} style={{ height: "100%" }} alt="Logo" />
             </Box>
           </Box>
