@@ -13,10 +13,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
+      const url = error?.config?.url || "";
       if (error.response.status === 401) {
-        console.error("Unathorized! Logging out...");
+        if (!url.includes("/auth/me")) {
+          console.error("Unathorized! Logging out...");
 
-        if (!cfg.isDevMode) history.push("/");
+          if (!cfg.isDevMode) history.push("/");
+        }
       } else if (error.response.status === 500) {
         console.error("Server error! Try again later!");
       }

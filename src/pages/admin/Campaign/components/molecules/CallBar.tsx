@@ -25,6 +25,7 @@ interface CallBarProps {
   phone?: string;
   callStartTime: Date | null;
   elapsedTime: string;
+  hasAnsweredSession: boolean;
   onEndCall: () => void;
   handleNumpadClick: (char: string) => void;
 }
@@ -34,6 +35,7 @@ export const CallBar = ({
   phone,
   callStartTime,
   elapsedTime,
+  hasAnsweredSession,
   onEndCall,
   handleNumpadClick,
 }: CallBarProps) => {
@@ -84,6 +86,7 @@ export const CallBar = ({
                 })}
               </Typography>
             </Grid>
+
             <Grid
               item
               xs={12}
@@ -94,17 +97,19 @@ export const CallBar = ({
               gap={1.5}
               flexWrap="wrap"
             >
-              <Box
-                sx={{
-                  bgcolor: "rgba(255,255,255,.15)",
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: 4,
-                  fontWeight: 600,
-                }}
-              >
-                {elapsedTime}
-              </Box>
+              {hasAnsweredSession && (
+                <Box
+                  sx={{
+                    bgcolor: "rgba(255,255,255,.15)",
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: 4,
+                    fontWeight: 600,
+                  }}
+                >
+                  {elapsedTime}
+                </Box>
+              )}
               <IconButton
                 sx={{ color: "#fff" }}
                 onClick={() => setShowNumpad(true)}

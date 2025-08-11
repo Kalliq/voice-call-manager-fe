@@ -27,14 +27,15 @@ interface LocationState {
   mode: TelephonyConnection;
   contactId: string;
   phone: string;
+  defaultDisposition: string;
   autoStart: boolean;
 }
 
 const Campaign = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { contacts, mode, contactId, phone, autoStart } = (location.state ||
-    {}) as LocationState;
+  const { contacts, mode, contactId, phone, defaultDisposition, autoStart } =
+    (location.state || {}) as LocationState;
   const { phoneState } = useAuth();
   const { socket, volumeHandler, hangUpHandler } = phoneState;
   const { enqueue } = useSnackbar();
@@ -178,6 +179,7 @@ const Campaign = () => {
   const handleStopCampaign = () => {
     setIsCampaignRunning(false);
     setShowContinueDialog(false);
+    setIsCampaignFinished(true);
     setStatus("Campaign manually stopped!");
     api.post("/campaign/stop-campaign");
   };
@@ -197,7 +199,7 @@ const Campaign = () => {
   };
 
   const maybeProceedWithNextBatch = () => {
-    if (isCampaignRunning) {
+    if (!manualSession && isCampaignRunning) {
       handleContinue();
     }
   };
@@ -312,6 +314,7 @@ const Campaign = () => {
         setSelectedResults={setSelectedResults}
         setPendingResultContacts={setPendingResultContacts}
         setShowContinueDialog={setShowContinueDialog}
+        setIsCampaignFinished={setIsCampaignFinished}
         setContactNotes={setContactNotes}
         maybeProceedWithNextBatch={maybeProceedWithNextBatch}
         handleStopAndSkip={handleStopCampaign}
@@ -319,10 +322,14 @@ const Campaign = () => {
         isCampaign={!manualSession}
         answeredSessionId={lastAnsweredId}
         mode={mode}
+        defaultDisposition={defaultDisposition}
       />
       {isCampaignFinished && (
         <Alert severity="success" sx={{ mt: 3 }}>
-          Call campaign completed!
+          {contacts.slice(currentIndex, currentIndex + callsPerBatch).length ===
+          0
+            ? "Call campaign completed!"
+            : "Call campaign stopped!"}
         </Alert>
       )}
     </Container>

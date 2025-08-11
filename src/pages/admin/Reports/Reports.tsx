@@ -46,7 +46,7 @@ const ReportsPage = () => {
         const [usersRes, adminsRes, listsRes] = await Promise.all([
           api.get("users?role=admin"),
           api.get("/users?role=user"),
-          api.get("/lists"),
+          api.get("/lists/all"),
         ]);
         const allUsers = usersRes.data.concat(adminsRes.data);
         setUsers(allUsers);

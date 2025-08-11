@@ -1,13 +1,15 @@
 import { createContext, useContext } from "react";
 
 import { useAdminPhone } from "../hooks/useAdminPhone";
+import useAppStore from "../store/useAppStore";
 
 const TwilioContext = createContext<ReturnType<typeof useAdminPhone> | null>(
   null
 );
 
 export const TwilioProvider = ({ children }: { children: React.ReactNode }) => {
-  const phoneState = useAdminPhone();
+  const { user } = useAppStore();
+  const phoneState = useAdminPhone(user?.id);
   return (
     <TwilioContext.Provider value={phoneState}>
       {children}
