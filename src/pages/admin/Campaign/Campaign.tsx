@@ -179,6 +179,7 @@ const Campaign = () => {
   const handleStopCampaign = () => {
     setIsCampaignRunning(false);
     setShowContinueDialog(false);
+    setIsCampaignFinished(true);
     setStatus("Campaign manually stopped!");
     api.post("/campaign/stop-campaign");
   };
@@ -198,7 +199,7 @@ const Campaign = () => {
   };
 
   const maybeProceedWithNextBatch = () => {
-    if (isCampaignRunning) {
+    if (!manualSession && isCampaignRunning) {
       handleContinue();
     }
   };
@@ -313,6 +314,7 @@ const Campaign = () => {
         setSelectedResults={setSelectedResults}
         setPendingResultContacts={setPendingResultContacts}
         setShowContinueDialog={setShowContinueDialog}
+        setIsCampaignFinished={setIsCampaignFinished}
         setContactNotes={setContactNotes}
         maybeProceedWithNextBatch={maybeProceedWithNextBatch}
         handleStopAndSkip={handleStopCampaign}
@@ -324,7 +326,10 @@ const Campaign = () => {
       />
       {isCampaignFinished && (
         <Alert severity="success" sx={{ mt: 3 }}>
-          Call campaign completed!
+          {contacts.slice(currentIndex, currentIndex + callsPerBatch).length ===
+          0
+            ? "Call campaign completed!"
+            : "Call campaign stopped!"}
         </Alert>
       )}
     </Container>

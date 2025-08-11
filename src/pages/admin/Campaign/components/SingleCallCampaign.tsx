@@ -152,6 +152,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
           session={session}
           callStartTime={callStartTime}
           elapsedTime={elapsedTime}
+          hasAnsweredSession={!!answeredSession}
           onEndCall={onEndCall}
           handleNumpadClick={handleNumpadClick}
         />

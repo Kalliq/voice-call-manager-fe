@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -12,9 +11,10 @@ import SelectField from "./UI/SelectField";
 interface MoveContactsDialogProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (selectedListId: string) => void;
+  onConfirm: () => void;
   lists: { id: string; listName: string }[];
   selectedListId: string;
+  targetListId: string;
   setTargetListId: (val: string) => void;
 }
 
@@ -24,6 +24,7 @@ export function MoveContactsDialog({
   onConfirm,
   lists,
   selectedListId,
+  targetListId,
   setTargetListId,
 }: MoveContactsDialogProps) {
   return (
@@ -34,7 +35,7 @@ export function MoveContactsDialog({
         <SelectField
           items={lists.filter((l) => l.id !== selectedListId)}
           label="Select target list"
-          value={selectedListId || ""}
+          value={targetListId}
           onChange={setTargetListId}
           getValue={(l) => l.id}
           getLabel={(l) => l.listName}
@@ -44,8 +45,8 @@ export function MoveContactsDialog({
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"
-          disabled={!selectedListId}
-          onClick={() => onConfirm(selectedListId)}
+          disabled={!targetListId}
+          onClick={onConfirm}
         >
           Confirm
         </Button>

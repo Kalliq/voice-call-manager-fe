@@ -25,7 +25,8 @@ interface DynamicFieldConfig {
     name: string;
     label: string;
     placeholder?: string;
-    options?: { label: string; value: string | boolean }[]; // for select fields
+    options?: { label: string; value: string | boolean }[];
+    disableOnFirst: boolean;
   }[];
 }
 
@@ -61,6 +62,10 @@ const DynamicFieldArray: React.FC<DynamicFieldArrayProps> = ({
               const nestedError = (
                 errors?.[fieldConfig.name] as unknown as any[]
               )?.[index]?.[nestedField.name];
+
+              const isDisabled =
+                index === 0 && Boolean(nestedField.disableOnFirst);
+
               switch (nestedField.type) {
                 case "text":
                   return (
@@ -77,6 +82,8 @@ const DynamicFieldArray: React.FC<DynamicFieldArrayProps> = ({
                             fullWidth
                             error={Boolean(nestedError)}
                             helperText={nestedError?.message}
+                            disabled={isDisabled}
+                            sx={isDisabled ? { opacity: 0.6 } : undefined}
                           />
                         )}
                       />
@@ -95,6 +102,8 @@ const DynamicFieldArray: React.FC<DynamicFieldArrayProps> = ({
                             select
                             fullWidth
                             label={nestedField.label}
+                            disabled={isDisabled}
+                            sx={isDisabled ? { opacity: 0.6 } : undefined}
                           >
                             {nestedField.options?.map((option, j) => (
                               <MenuItem

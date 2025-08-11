@@ -31,6 +31,7 @@ interface ContinueDialogInterface {
   >;
   setPendingResultContacts: React.Dispatch<React.SetStateAction<CallSession[]>>;
   setShowContinueDialog: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsCampaignFinished: React.Dispatch<React.SetStateAction<boolean>>;
   setContactNotes: React.Dispatch<
     React.SetStateAction<{ [key: string]: string }>
   >;
@@ -57,6 +58,7 @@ const ContinueDialog = ({
   handleDialogClose,
   setSelectedResults,
   setPendingResultContacts,
+  setIsCampaignFinished,
   setShowContinueDialog,
   setContactNotes,
   maybeProceedWithNextBatch,
@@ -65,7 +67,7 @@ const ContinueDialog = ({
   mode,
   defaultDisposition,
 }: ContinueDialogInterface) => {
-  const saveHandler = async () => {
+  const saveHandler = async (stopAfter = false) => {
     await Promise.all(
       currentBatch.map((c) => {
         const result =
@@ -77,10 +79,22 @@ const ContinueDialog = ({
     setPendingResultContacts([]);
     setSelectedResults({});
     setShowContinueDialog(false);
+
+    if (stopAfter) {
+      setIsCampaignFinished(true);
+    }
   };
 
   return (
-    <Dialog open={showContinueDialog} onClose={handleDialogClose}>
+    <Dialog
+      open={showContinueDialog}
+      onClose={(event, reason) => {
+        if (reason === "backdropClick") {
+          return; // Ignore backdrop clicks
+        }
+        handleDialogClose();
+      }}
+    >
       <DialogTitle>Save Dispositions</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
@@ -158,15 +172,17 @@ const ContinueDialog = ({
         <Button
           variant="contained"
           onClick={() => {
-            saveHandler();
+            saveHandler(false);
             maybeProceedWithNextBatch();
           }}
         >
-          Save and continue
+          {isCampaign ? "Save and continue" : "Save"}
         </Button>
-        <Button variant="contained" onClick={() => saveHandler()}>
-          Save and stop
-        </Button>
+        {isCampaign && (
+          <Button variant="contained" onClick={() => saveHandler(true)}>
+            Save and stop
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
