@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogActions,
@@ -24,8 +24,8 @@ interface TimeSlot {
   from: string;
   to: string;
 }
-
 type Schedule = Record<string, TimeSlot[]>;
+type SaveState = "idle" | "loading" | "success";
 
 const defaultSchedule: Schedule = {
   [WeekDay.MONDAY]: [{ from: "08:00 AM", to: "06:00 PM" }],
@@ -65,21 +65,39 @@ const timeOptions = [
 ];
 
 const ScheduleComponent = () => {
-  const settings = useAppStore((state) => state.settings);
-  const user = useAppStore((state) => state.user);
-  const setSettings = useAppStore((state) => state.setSettings);
+  const settings = useAppStore((s) => s.settings);
+  const setSettings = useAppStore((s) => s.setSettings);
 
-  const { schedulesManagement } = settings!["Phone Settings"];
-
-  const [schedule, setSchedule] = useState<Schedule>(() => {
-    return Object.keys(schedulesManagement).length > 0
+  const schedulesManagement =
+    settings?.["Phone Settings"]?.schedulesManagement ?? {};
+  const [schedule, setSchedule] = useState<Schedule>(() =>
+    Object.keys(schedulesManagement).length > 0
       ? schedulesManagement
-      : defaultSchedule;
-  });
+      : defaultSchedule
+  );
+
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [fromTime, setFromTime] = useState("");
   const [toTime, setToTime] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+
+  // keep schedule in sync if settings change
+  useEffect(() => {
+    const sm = settings?.["Phone Settings"]?.schedulesManagement ?? {};
+    setSchedule(Object.keys(sm).length > 0 ? sm : defaultSchedule);
+  }, [settings]);
+
+  // clean up timer if unmounted during success flash
+  useEffect(() => {
+    let t: number | undefined;
+    if (saveState === "success") {
+      t = window.setTimeout(() => setSaveState("idle"), 3000);
+    }
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [saveState]);
 
   const handleOpenModal = (day: string) => {
     setSelectedDay(day);
@@ -87,17 +105,14 @@ const ScheduleComponent = () => {
     setToTime("");
     setOpen(true);
   };
-
   const handleClose = () => setOpen(false);
 
   const handleAddTimeframe = () => {
     if (!selectedDay || !fromTime || !toTime) return;
-
     setSchedule((prev) => ({
       ...prev,
       [selectedDay]: [...prev[selectedDay], { from: fromTime, to: toTime }],
     }));
-
     handleClose();
   };
 
@@ -109,10 +124,11 @@ const ScheduleComponent = () => {
   };
 
   const onSubmit = async () => {
+    if (saveState === "loading") return; // prevent double click
     try {
-      if (!settings) {
-        throw new Error("Missing settings!");
-      }
+      if (!settings) throw new Error("Missing settings!");
+      setSaveState("loading");
+
       const existingPhoneSettings = { ...settings["Phone Settings"] };
       const { data } = await api.patch(`/settings`, {
         "Phone Settings": {
@@ -121,31 +137,38 @@ const ScheduleComponent = () => {
         },
       });
       setSettings(data);
+
+      setSaveState("success"); // flash success for 3s (effect above resets to idle)
     } catch (err) {
       console.error(err);
+      setSaveState("idle"); // or keep an 'error' state if you want red styling
     }
   };
 
+  const isBusy = saveState === "loading";
+
   return (
     <Box>
-      <Typography variant="h6" fontWeight="bold" color="info" marginBottom={4}>
+      <Typography variant="h6" fontWeight="bold" color="info" mb={4}>
         CALL SCHEDULE
       </Typography>
+
       <Box
         className="hide-scrollbar"
         overflow="scroll"
         display="flex"
-        padding={2}
+        p={2}
         border="1px solid #eee"
         borderRadius={2}
         mt={1}
         gap={1}
+        sx={{ opacity: isBusy ? 0.9 : 1 }}
       >
         {Object.keys(schedule).map((day) => (
-          <Box key={day} sx={{ mb: 2 }} paddingBottom={2}>
+          <Box key={day} sx={{ mb: 2 }} pb={2}>
             <Typography
               display="inline-block"
-              marginLeft={1}
+              ml={1}
               width="120px"
               component="span"
               fontWeight="bold"
@@ -156,9 +179,13 @@ const ScheduleComponent = () => {
             {schedule[day].length > 0 ? (
               schedule[day].map((slot, index) => (
                 <Chip
-                  key={index}
+                  key={`${day}-${index}`}
                   label={`${slot.from} - ${slot.to}`}
-                  onDelete={() => handleRemoveTimeframe(day, index)}
+                  onDelete={
+                    !isBusy
+                      ? () => handleRemoveTimeframe(day, index)
+                      : undefined
+                  }
                   deleteIcon={<RemoveCircleOutlineIcon />}
                   sx={{ mb: 0.5 }}
                 />
@@ -168,13 +195,25 @@ const ScheduleComponent = () => {
                 No Schedule
               </Typography>
             )}
-            <IconButton size="small" onClick={() => handleOpenModal(day)}>
+            <IconButton
+              size="small"
+              onClick={() => handleOpenModal(day)}
+              disabled={isBusy}
+            >
               <AddCircleOutlineIcon />
             </IconButton>
           </Box>
         ))}
       </Box>
-      <SimpleButton label="Save" onClick={onSubmit} />
+
+      <SimpleButton
+        label="Save"
+        onClick={onSubmit}
+        loading={saveState === "loading"}
+        success={saveState === "success"}
+        disabled={isBusy}
+        sx={{ mt: 2 }}
+      />
 
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>Add Timeframe</DialogTitle>
@@ -186,6 +225,7 @@ const ScheduleComponent = () => {
             value={fromTime}
             onChange={(e) => setFromTime(e.target.value)}
             sx={{ mt: 2 }}
+            disabled={isBusy}
           >
             {timeOptions.map((time) => (
               <MenuItem key={time} value={time}>
@@ -200,6 +240,7 @@ const ScheduleComponent = () => {
             value={toTime}
             onChange={(e) => setToTime(e.target.value)}
             sx={{ mt: 2 }}
+            disabled={isBusy}
           >
             {timeOptions.map((time) => (
               <MenuItem key={time} value={time}>
@@ -209,8 +250,14 @@ const ScheduleComponent = () => {
           </TextField>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleAddTimeframe} variant="contained">
+          <Button onClick={handleClose} disabled={isBusy}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddTimeframe}
+            variant="contained"
+            disabled={isBusy}
+          >
             Add
           </Button>
         </DialogActions>

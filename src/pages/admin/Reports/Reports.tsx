@@ -175,7 +175,6 @@ const ReportsPage = () => {
                   <TableCell>Calls Out</TableCell>
                   <TableCell>Connects</TableCell>
                   <TableCell>Connect Rate</TableCell>
-                  <TableCell>Success Rate</TableCell>
                   <TableCell>Avg Talk Time</TableCell>
                 </TableRow>
               </TableHead>
@@ -192,8 +191,7 @@ const ReportsPage = () => {
                       <TableCell>{row.listName}</TableCell>
                       <TableCell>{row.callsOut}</TableCell>
                       <TableCell>{row.connects}</TableCell>
-                      <TableCell>{row.connectRate}%</TableCell>
-                      <TableCell>{row.successRate ?? "-"}%</TableCell>
+                      <TableCell>{row.connectRate ?? "-"}%</TableCell>
                       <TableCell>{row.avgTalkTime}</TableCell>
                     </TableRow>
                   ))
@@ -217,7 +215,6 @@ const ReportsPage = () => {
                   <TableCell>Inbound</TableCell>
                   <TableCell>Connects</TableCell>
                   <TableCell>Connect Rate</TableCell>
-                  <TableCell>Success Rate</TableCell>
                   <TableCell>Total Talk</TableCell>
                   <TableCell>Avg Talk</TableCell>
                 </TableRow>
@@ -237,8 +234,7 @@ const ReportsPage = () => {
                       <TableCell>{user.outboundCalls}</TableCell>
                       <TableCell>{user.inboundCalls}</TableCell>
                       <TableCell>{user.connects}</TableCell>
-                      <TableCell>{user.connectRate}%</TableCell>
-                      <TableCell>{user.successRate ?? "-"}%</TableCell>
+                      <TableCell>{user.connectRate ?? "-"}%</TableCell>
                       <TableCell>{user.totalTalkTime}</TableCell>
                       <TableCell>{user.avgTalkTime}</TableCell>
                     </TableRow>
