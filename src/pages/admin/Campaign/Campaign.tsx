@@ -56,6 +56,7 @@ const Campaign = () => {
   const callResults = settings["Phone Settings"].callResults as CallResult[];
   const [manualSession, setManualSession] = useState<CallSession | null>(null);
   const [callStarted, setCallStarted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (contactId && !contacts && !mode) {
@@ -139,29 +140,33 @@ const Campaign = () => {
       return;
     }
 
-    const { data } = await api.post("/contacts/batch", {
-      ids: slice.map((contact) => contact.id),
-    });
-    const batchContacts = data;
+    try {
+      const { data } = await api.post("/contacts/batch", {
+        ids: slice.map((contact) => contact.id),
+      });
+      const batchContacts = data;
 
-    const activeCalls = await api.post("/campaign/call-campaign", {
-      contacts: batchContacts,
-    });
+      const activeCalls = await api.post("/campaign/call-campaign", {
+        contacts: batchContacts,
+      });
+      const extendedBatchContactsWithSid = batchContacts.map(
+        (batchContact: Contact) => {
+          const call = activeCalls.data.find((activeCall: any) => {
+            return batchContact.phone === activeCall.phoneNumber;
+          });
 
-    const extendedBatchContactsWithSid = batchContacts.map(
-      (batchContact: Contact) => {
-        const call = activeCalls.data.find((activeCall: any) => {
-          return batchContact.phone === activeCall.phoneNumber;
-        });
+          return { ...batchContact, callSid: call.callSid };
+        }
+      );
 
-        return { ...batchContact, callSid: call.callSid };
-      }
-    );
-
-    setCurrentBatch(extendedBatchContactsWithSid);
-    currentBatchRef.current = extendedBatchContactsWithSid;
-    setStatus(`Calling ${batchContacts.length} contact(s)...`);
-    setCurrentIndex((prev) => prev + callsPerBatch);
+      setCurrentBatch(extendedBatchContactsWithSid);
+      currentBatchRef.current = extendedBatchContactsWithSid;
+      setStatus(`Calling ${batchContacts.length} contact(s)...`);
+      setCurrentIndex((prev) => prev + callsPerBatch);
+    } catch (error: any) {
+      const msg = error.response.data.errors[0].message;
+      setError(typeof msg === "string" ? msg : error.message);
+    }
   };
 
   const handleStartCampaign = () => {
@@ -235,6 +240,11 @@ const Campaign = () => {
               disabled={!isCampaignRunning}
             />
           </Stack>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mt: 3 }}>
+            {error}
+          </Alert>
         )}
 
         {phone && !manualSession && (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Tabs, Tab, Chip, IconButton, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
@@ -6,15 +6,11 @@ import { Contact } from "voice-javascript-common";
 
 import useAppStore from "../../store/useAppStore";
 import { SimpleButton } from "../UI/SimpleButton";
-
 import api from "../../utils/axiosInstance";
 
 type ContactField = keyof Contact;
 type AppField = { id: string; name: string };
-type ContactFieldOption = {
-  id: ContactField;
-  name: string;
-};
+type ContactFieldOption = { id: ContactField; name: string };
 type FieldOptionsMap = {
   contacts: ContactFieldOption[];
   leads: AppField[];
@@ -22,6 +18,7 @@ type FieldOptionsMap = {
   opportunities: AppField[];
 };
 type TabType = "contacts" | "leads" | "accounts" | "opportunities";
+type SaveState = "idle" | "loading" | "success";
 
 const fieldOptions: FieldOptionsMap = {
   contacts: [
@@ -59,9 +56,8 @@ const fieldOptions: FieldOptionsMap = {
 };
 
 export default function FieldMapper() {
-  const settings = useAppStore((state) => state.settings);
-  const user = useAppStore((state) => state.user);
-  const setSettings = useAppStore((state) => state.setSettings);
+  const settings = useAppStore((s) => s.settings);
+  const setSettings = useAppStore((s) => s.setSettings);
 
   const { integrationSettings } = settings!["Phone Settings"];
 
@@ -74,6 +70,15 @@ export default function FieldMapper() {
       opportunities: [],
     }
   );
+
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+
+  // optional safety: clear success after 3s with cleanup on unmount
+  useEffect(() => {
+    if (saveState !== "success") return;
+    const t = window.setTimeout(() => setSaveState("idle"), 3000);
+    return () => clearTimeout(t);
+  }, [saveState]);
 
   const handleAddField = <K extends TabType>(
     field: FieldOptionsMap[K][number],
@@ -98,10 +103,11 @@ export default function FieldMapper() {
   };
 
   const onSubmit = async () => {
+    if (saveState === "loading") return; // guard double-clicks
     try {
-      if (!settings) {
-        throw new Error("Missing settings!");
-      }
+      if (!settings) throw new Error("Missing settings!");
+      setSaveState("loading");
+
       const existingPhoneSettings = { ...settings["Phone Settings"] };
       const { data } = await api.patch(`/settings`, {
         "Phone Settings": {
@@ -111,8 +117,10 @@ export default function FieldMapper() {
       });
 
       setSettings(data);
+      setSaveState("success"); // shows green for ~3s, then fades back
     } catch (err) {
       console.error(err);
+      setSaveState("idle"); // you could add an 'error' visual if you like
     }
   };
 
@@ -121,19 +129,21 @@ export default function FieldMapper() {
       <Typography variant="h6" fontWeight="bold" color="info">
         INTEGRATION SETTINGS
       </Typography>
+
       <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)}>
         <Tab label="Contacts" value="contacts" />
         <Tab label="Leads" value="leads" />
         <Tab label="Accounts" value="accounts" />
         <Tab label="Opportunities" value="opportunities" />
       </Tabs>
+
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4, mt: 3 }}>
-        {/* Custom Fields (Mapped Fields) */}
+        {/* Mapped Fields */}
         <Box sx={{ flex: 1 }}>
           <Typography variant="h6">Mapped Fields</Typography>
           <Box
             display="flex"
-            padding={2}
+            p={2}
             border="1px solid #eee"
             borderRadius={2}
             mt={1}
@@ -151,42 +161,51 @@ export default function FieldMapper() {
           </Box>
         </Box>
 
-        {/* SFDC Fields List */}
+        {/* Application Fields */}
         <Box sx={{ flex: 1 }}>
           <Typography variant="h6">Application Fields</Typography>
           <Box
             display="flex"
-            padding={2}
+            p={2}
             border="1px solid #eee"
             borderRadius={2}
-            marginTop={1}
+            mt={1}
             gap={1}
           >
-            {fieldOptions[activeTab].map((field) => (
-              <Chip
-                key={field.id}
-                label={field.name}
-                disabled={mappedFields[activeTab].some(
-                  (f) => f.id === field.id
-                )}
-                icon={
-                  !mappedFields[activeTab].some((f) => f.id === field.id) ? (
-                    <IconButton
-                      size="small"
-                      onClick={() => handleAddField(field, activeTab)}
-                    >
-                      <AddIcon fontSize="small" />
-                    </IconButton>
-                  ) : (
-                    <></>
-                  )
-                }
-              />
-            ))}
+            {fieldOptions[activeTab].map((field) => {
+              const already = mappedFields[activeTab].some(
+                (f) => f.id === field.id
+              );
+              return (
+                <Chip
+                  key={field.id}
+                  label={field.name}
+                  disabled={already}
+                  icon={
+                    !already ? (
+                      <IconButton
+                        size="small"
+                        onClick={() => handleAddField(field as any, activeTab)}
+                      >
+                        <AddIcon fontSize="small" />
+                      </IconButton>
+                    ) : undefined
+                  }
+                />
+              );
+            })}
           </Box>
         </Box>
       </Box>
-      <SimpleButton label="save" onClick={onSubmit} />
+
+      <SimpleButton
+        label="save"
+        onClick={onSubmit}
+        loading={saveState === "loading"}
+        success={saveState === "success"}
+        disabled={saveState === "loading"}
+        sx={{ mt: 2 }}
+      />
     </Box>
   );
 }
