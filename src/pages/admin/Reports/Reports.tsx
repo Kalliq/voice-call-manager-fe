@@ -48,7 +48,6 @@ const ReportsPage = () => {
           api.get("/lists/all"),
         ]);
 
-        console.log("usersRes.data: ", usersRes.data);
         setUsers(usersRes.data);
         setLists(listsRes.data);
       } catch (err) {
