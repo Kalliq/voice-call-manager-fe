@@ -43,13 +43,13 @@ const ReportsPage = () => {
   useEffect(() => {
     const loadFilters = async () => {
       try {
-        const [usersRes, adminsRes, listsRes] = await Promise.all([
-          api.get("users?role=admin"),
-          api.get("/users?role=user"),
+        const [usersRes, listsRes] = await Promise.all([
+          api.get("/users/mine"),
           api.get("/lists/all"),
         ]);
-        const allUsers = usersRes.data.concat(adminsRes.data);
-        setUsers(allUsers);
+
+        console.log("usersRes.data: ", usersRes.data);
+        setUsers(usersRes.data);
         setLists(listsRes.data);
       } catch (err) {
         enqueue("Failed to load filters", { variant: "error" });

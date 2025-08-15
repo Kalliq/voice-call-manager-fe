@@ -152,7 +152,7 @@ export default function CallResultsManager() {
               sx={{ flexGrow: 1 }}
               disabled={isReadOnly || saveState === "loading"}
             />
-            <Typography variant="body2">Consider positive</Typography>
+            <Typography variant="body2">Consider connection</Typography>
             <Checkbox
               checked={item.considerPositive || false}
               onChange={() => togglePositive(item.id)}
