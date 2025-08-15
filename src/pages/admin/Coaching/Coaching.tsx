@@ -104,7 +104,7 @@ const Coaching = () => {
 
   useEffect(() => {
     if (tabIndex === 1) {
-      api.get("/users?role=user").then((res) => {
+      api.get("/users/mine").then((res) => {
         setUsers(res.data);
       });
       fetchCallLogs();
