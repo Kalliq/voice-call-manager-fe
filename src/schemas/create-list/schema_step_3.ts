@@ -75,7 +75,7 @@ export const getListExitStrategySchema = (
               type: "text",
               name: "gap",
               label: "Gap",
-              required: true,
+              disableOnFirst: true,
             },
             {
               type: "select",
@@ -85,7 +85,7 @@ export const getListExitStrategySchema = (
                 { label: "Hours", value: "hours" },
                 { label: "Days", value: "days" },
               ],
-              required: true,
+              disableOnFirst: true,
             },
             {
               type: "text",

@@ -14,6 +14,8 @@ import {
   TableCell,
   Typography,
   FormControlLabel,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 
 import api from "../../utils/axiosInstance";
@@ -28,6 +30,7 @@ type NumberRecord = {
   usageCount: number;
   validationStatus?: "valid" | "invalid" | "unknown";
   remediationStatus?: string;
+  user?: string; // assuming this exists on your payload for assigned user id
 };
 
 type User = {
@@ -36,16 +39,23 @@ type User = {
   role: string;
 };
 
+type View = "pool" | "problematic" | "spammed";
+type AssignmentFilter = "all" | "assigned" | "unassigned";
+
 const NumberPoolSettings = () => {
-  const [view, setView] = useState<"pool" | "problematic" | "cleaned">("pool");
-  const [numbers, setNumbers] = useState([]);
+  const [view, setView] = useState<View>("pool");
+  const [numbers, setNumbers] = useState<NumberRecord[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [assignUser, setAssignUser] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showSpammedOnly, setShowSpammedOnly] = useState(false);
 
-  const usageCounts = numbers.map((num: any) => num.usageCount || 0);
+  // NEW: Filters
+  const [assignmentFilter, setAssignmentFilter] =
+    useState<AssignmentFilter>("all");
+  const [assignedUserFilter, setAssignedUserFilter] = useState<string>("");
+
+  const usageCounts = numbers.map((num) => num.usageCount || 0);
   const maxUsage = Math.max(...usageCounts, 1);
   const minUsage = Math.min(...usageCounts, 0);
 
@@ -64,9 +74,14 @@ const NumberPoolSettings = () => {
   }, []);
 
   useEffect(() => {
+    // Fetch per view:
+    // - pool => /numbers
+    // - problematic => /cleaning/problematic
+    // - spammed => /numbers (then filter locally)
     let url = "/numbers";
     if (view === "problematic") url = "/cleaning/problematic";
-    if (view === "cleaned") url = "/cleaning/cleaned";
+    if (view === "spammed") url = "/numbers";
+
     api.get(url).then((r) => {
       setNumbers(r.data);
       setSelected([]);
@@ -108,37 +123,42 @@ const NumberPoolSettings = () => {
 
   const handleValidate = async () => {
     setLoading(true);
-
     await api.post("/cleaning/validate", { numbers: selected });
     const r = await api.get("/cleaning/problematic");
-
     setNumbers(r.data);
     setLoading(false);
   };
 
   const handleRemediate = async () => {
     setLoading(true);
-
     await api.post("/cleaning/remediate", { numbers: selected });
-    const r = await api.get("/numbers/cleaning/problematic");
-
+    // fixed path
+    const r = await api.get("/cleaning/problematic");
     setNumbers(r.data);
     setLoading(false);
   };
 
-  const handleReactivate = async () => {
-    setLoading(true);
+  // Build filtered list
+  let filteredNumbers: NumberRecord[] = numbers;
 
-    await api.post("/cleaning/reactivate", { numbers: selected });
-    const r = await api.get("/cleaning/cleaned");
+  // View-based filter (Spammed tab shows only spammed)
+  if (view === "spammed") {
+    filteredNumbers = filteredNumbers.filter((n) => n.spammed);
+  }
 
-    setNumbers(r.data);
-    setLoading(false);
-  };
+  // Assignment filter
+  if (assignmentFilter === "assigned") {
+    filteredNumbers = filteredNumbers.filter((n) => n.assigned);
+  } else if (assignmentFilter === "unassigned") {
+    filteredNumbers = filteredNumbers.filter((n) => !n.assigned);
+  }
 
-  const filteredNumbers = showSpammedOnly
-    ? numbers.filter((n: any) => n.spammed)
-    : numbers;
+  // Assigned user filter
+  if (assignedUserFilter) {
+    filteredNumbers = filteredNumbers.filter(
+      (n) => n.assigned && n.user === assignedUserFilter
+    );
+  }
 
   return (
     <Box p={3}>
@@ -146,6 +166,7 @@ const NumberPoolSettings = () => {
         Number Pool Management
       </Typography>
 
+      {/* Tabs */}
       <ButtonGroup sx={{ mb: 2 }}>
         <Button
           variant={view === "pool" ? "contained" : "outlined"}
@@ -154,25 +175,18 @@ const NumberPoolSettings = () => {
           Pool
         </Button>
         <Button
-          variant={view === "problematic" ? "contained" : "outlined"}
-          onClick={() => setView("problematic")}
+          variant={view === "spammed" ? "contained" : "outlined"}
+          onClick={() => setView("spammed")}
         >
-          Problematic
-        </Button>
-        <Button
-          variant={view === "cleaned" ? "contained" : "outlined"}
-          onClick={() => setView("cleaned")}
-        >
-          Cleaned
+          Spammed
         </Button>
       </ButtonGroup>
 
+      {/* Sync button */}
       <Button
         variant="contained"
         color="primary"
-        sx={{
-          marginLeft: "20px",
-        }}
+        sx={{ marginLeft: "20px" }}
         onClick={async () => {
           setLoading(true);
           try {
@@ -190,22 +204,49 @@ const NumberPoolSettings = () => {
         Sync Numbers
       </Button>
 
-      {view === "pool" && (
-        <Box mb={2} display="flex" alignItems="center" gap={2}>
-          <Select
-            value={assignUser}
-            onChange={(e) => setAssignUser(e.target.value)}
-            displayEmpty
-            size="small"
-            sx={{ minWidth: 180 }}
-          >
-            <MenuItem value="">Assign to user...</MenuItem>
-            {users.map((u) => (
-              <MenuItem key={u.id} value={u.id}>
-                {u.email}
+      {/* Pool & Spammed controls */}
+      {(view === "pool" || view === "spammed") && (
+        <Box
+          mb={2}
+          mt={2}
+          display="flex"
+          alignItems="center"
+          gap={2}
+          flexWrap="wrap"
+        >
+          {/* Assign to user */}
+          <FormControl size="small" sx={{ minWidth: 220 }}>
+            <InputLabel id="assign-user-label" shrink>
+              Assign to user…
+            </InputLabel>
+            <Select
+              labelId="assign-user-label"
+              label="Assign to user…"
+              value={assignUser}
+              onChange={(e) => setAssignUser(e.target.value as string)}
+              displayEmpty
+              renderValue={(selected) => {
+                if (selected === "") {
+                  return (
+                    <span style={{ color: "#9e9e9e" }}>Assign to user…</span>
+                  );
+                }
+                const u = users.find((u) => u.id === selected);
+                return u ? u.email : (selected as string);
+              }}
+            >
+              {/* Disabled placeholder so it doesn’t show as “None” */}
+              <MenuItem disabled value="">
+                <em>Assign to user…</em>
               </MenuItem>
-            ))}
-          </Select>
+              {users.map((u) => (
+                <MenuItem key={u.id} value={u.id}>
+                  {u.email}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
           <Button
             variant="contained"
             disabled={!assignUser || !selected.length || loading}
@@ -221,20 +262,60 @@ const NumberPoolSettings = () => {
           >
             Unassign
           </Button>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={showSpammedOnly}
-                onChange={(e) => setShowSpammedOnly(e.target.checked)}
-                color="error"
-              />
-            }
-            label="Show spammed only"
-          />
+
+          {/* NEW: Assignment filter */}
+          <FormControl size="small" sx={{ minWidth: 180, ml: 2 }}>
+            <InputLabel id="assignment-filter-label">
+              Assignment filter
+            </InputLabel>
+            <Select
+              labelId="assignment-filter-label"
+              label="Assignment filter"
+              value={assignmentFilter}
+              onChange={(e) =>
+                setAssignmentFilter(e.target.value as AssignmentFilter)
+              }
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="assigned">Assigned</MenuItem>
+              <MenuItem value="unassigned">Unassigned</MenuItem>
+            </Select>
+          </FormControl>
+
+          {/* NEW: Assigned user filter */}
+          <FormControl size="small" sx={{ minWidth: 220 }}>
+            <InputLabel id="assigned-user-filter-label" shrink>
+              Filter by assigned user
+            </InputLabel>
+            <Select
+              labelId="assigned-user-filter-label"
+              label="Filter by assigned user"
+              value={assignedUserFilter}
+              onChange={(e) => setAssignedUserFilter(e.target.value as string)}
+              displayEmpty
+              renderValue={(selected) => {
+                if (selected === "") {
+                  return <span style={{ color: "#9e9e9e" }}>Any user</span>;
+                }
+                const u = users.find((u) => u.id === selected);
+                return u ? u.email : (selected as string);
+              }}
+            >
+              {/* Keep this so you can clear the filter */}
+              <MenuItem value="">
+                <em>Any user</em>
+              </MenuItem>
+              {users.map((u) => (
+                <MenuItem key={u.id} value={u.id}>
+                  {u.email}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       )}
 
-      {/* Problematic‑only controls */}
+      {/* Problematic-only controls */}
       {view === "problematic" && (
         <Box mb={2} display="flex" gap={2}>
           <Button
@@ -255,19 +336,6 @@ const NumberPoolSettings = () => {
         </Box>
       )}
 
-      {/* Cleaned‑only controls */}
-      {view === "cleaned" && (
-        <Box mb={2}>
-          <Button
-            variant="contained"
-            disabled={!selected.length || loading}
-            onClick={handleReactivate}
-          >
-            Reactivate Selected
-          </Button>
-        </Box>
-      )}
-
       <Table>
         <TableHead>
           <TableRow>
@@ -282,9 +350,9 @@ const NumberPoolSettings = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredNumbers.map((num: any) => (
+          {filteredNumbers.map((num) => (
             <TableRow
-              key={num.id || num.number}
+              key={num.number}
               sx={
                 num.cooldown
                   ? { opacity: 0.7, backgroundColor: "#e3f2fd" }

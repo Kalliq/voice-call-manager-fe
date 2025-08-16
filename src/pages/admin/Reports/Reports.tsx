@@ -43,13 +43,12 @@ const ReportsPage = () => {
   useEffect(() => {
     const loadFilters = async () => {
       try {
-        const [usersRes, adminsRes, listsRes] = await Promise.all([
-          api.get("users?role=admin"),
-          api.get("/users?role=user"),
-          api.get("/lists"),
+        const [usersRes, listsRes] = await Promise.all([
+          api.get("/users/mine"),
+          api.get("/lists/all"),
         ]);
-        const allUsers = usersRes.data.concat(adminsRes.data);
-        setUsers(allUsers);
+
+        setUsers(usersRes.data);
         setLists(listsRes.data);
       } catch (err) {
         enqueue("Failed to load filters", { variant: "error" });
@@ -175,7 +174,6 @@ const ReportsPage = () => {
                   <TableCell>Calls Out</TableCell>
                   <TableCell>Connects</TableCell>
                   <TableCell>Connect Rate</TableCell>
-                  <TableCell>Success Rate</TableCell>
                   <TableCell>Avg Talk Time</TableCell>
                 </TableRow>
               </TableHead>
@@ -192,8 +190,7 @@ const ReportsPage = () => {
                       <TableCell>{row.listName}</TableCell>
                       <TableCell>{row.callsOut}</TableCell>
                       <TableCell>{row.connects}</TableCell>
-                      <TableCell>{row.connectRate}%</TableCell>
-                      <TableCell>{row.successRate ?? "-"}%</TableCell>
+                      <TableCell>{row.connectRate ?? "-"}%</TableCell>
                       <TableCell>{row.avgTalkTime}</TableCell>
                     </TableRow>
                   ))
@@ -217,7 +214,6 @@ const ReportsPage = () => {
                   <TableCell>Inbound</TableCell>
                   <TableCell>Connects</TableCell>
                   <TableCell>Connect Rate</TableCell>
-                  <TableCell>Success Rate</TableCell>
                   <TableCell>Total Talk</TableCell>
                   <TableCell>Avg Talk</TableCell>
                 </TableRow>
@@ -237,8 +233,7 @@ const ReportsPage = () => {
                       <TableCell>{user.outboundCalls}</TableCell>
                       <TableCell>{user.inboundCalls}</TableCell>
                       <TableCell>{user.connects}</TableCell>
-                      <TableCell>{user.connectRate}%</TableCell>
-                      <TableCell>{user.successRate ?? "-"}%</TableCell>
+                      <TableCell>{user.connectRate ?? "-"}%</TableCell>
                       <TableCell>{user.totalTalkTime}</TableCell>
                       <TableCell>{user.avgTalkTime}</TableCell>
                     </TableRow>

@@ -28,7 +28,7 @@ const MainLayout = () => {
         fontSize="caption.fontSize"
       >
         <Typography variant="caption">
-          © {new Date().getFullYear()} Echo — All rights reserved.
+          © {new Date().getFullYear()} Kalliq — All rights reserved.
         </Typography>
       </Box>
     </Box>

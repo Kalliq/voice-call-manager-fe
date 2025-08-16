@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Box, CircularProgress } from "@mui/material";
 
 import { useAuth } from "./contexts/AuthContext";
 
@@ -35,19 +36,19 @@ import UsersManagement from "./pages/superadmin/UserManagement";
 import "./App.css";
 
 function App() {
-  const { isAuthenticated, isSuperadmin } = useAuth();
+  const { isAuthenticated, isSuperadmin, authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (isAuthenticated && location.pathname === "/") {
+    if (!authLoading && isAuthenticated && location.pathname === "/") {
       if (isSuperadmin) {
         navigate("/superdashboard", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
       }
     }
-  }, [isAuthenticated, isSuperadmin, location.pathname, navigate]);
+  }, [authLoading, isAuthenticated, isSuperadmin, location.pathname, navigate]);
 
   const {
     isInboundCallDialogOpen,
@@ -58,29 +59,39 @@ function App() {
     hangUp,
   } = useInboundCall();
 
+  if (authLoading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <>
       <Routes>
         <Route path="/" element={<SignIn />} />
         {/* Private routes */}
-        {isAuthenticated && (
-          <Route element={<PrivateRoute />}>
-            <Route element={<AdminLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/auth/me" element={<MyProfile />} />
-              <Route path="/campaign" element={<Campaign />} />
-              <Route path="/lists" element={<Lists />} />
-              <Route path="/contacts" element={<Contacts />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/import-contacts" element={<ImportContacts />} />
-              <Route path="/create-new-list/:id?" element={<CreateNewList />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/my-numbers" element={<MyPhoneNumbersList />} />
-              <Route path="/coaching" element={<Coaching />} />
-              <Route path="/reports" element={<Reports />} />
-            </Route>
+        <Route element={<PrivateRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/campaign" element={<Campaign />} />
+            <Route path="/lists" element={<Lists />} />
+            <Route path="/contacts" element={<Contacts />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/import-contacts" element={<ImportContacts />} />
+            <Route path="/create-new-list/:id?" element={<CreateNewList />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/my-numbers" element={<MyPhoneNumbersList />} />
+            <Route path="/coaching" element={<Coaching />} />
+            <Route path="/reports" element={<Reports />} />
           </Route>
-        )}
+        </Route>
         <Route element={<SuperadminRoute />}>
           <Route path="/superdashboard">
             <Route index element={<WithHeader component={SuperDashboard} />} />

@@ -13,7 +13,7 @@ export default defineConfig({
       "/socket.io": {
         target:
           process.env.NODE_ENV === "production"
-            ? "https://p1.echo-o.com"
+            ? "https://b1.kalliq.com"
             : "http://localhost:3000",
         ws: true,
       },

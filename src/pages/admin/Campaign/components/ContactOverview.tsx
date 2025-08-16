@@ -23,7 +23,7 @@ import {
   CheckCircleOutline,
   MenuBook,
 } from "@mui/icons-material";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { CallLog } from "voice-javascript-common";
 
 import api from "../../../../utils/axiosInstance";
@@ -32,13 +32,21 @@ import AudioWaveform from "../../../../components/AudioWaveform";
 
 import { Contact } from "../../../../types/contact";
 import { FieldItem } from "../../../../components/atoms/FieldItem";
+import { transformToNormalCase } from "../../../../utils/transformCase";
 
 // TO DO change any to CallLog
 const ActivityRow = ({ entry }: { entry: CallLog }) => {
   console.log("entry: ", entry);
   let formattedTime = "";
-  if (entry.action) {
-    formattedTime = format(new Date(parseInt(entry.action.timestamp)), "PPpp");
+  // TO-DO check also if timestamp is set or use startedAt
+  if (entry.action?.timestamp) {
+    const tsNum = Number(entry.action.timestamp);
+    if (!isNaN(tsNum)) {
+      const dateObj = new Date(tsNum);
+      if (isValid(dateObj)) {
+        formattedTime = format(dateObj, "PPpp");
+      }
+    }
   }
   const [isOpen, setIsOpen] = useState(false);
 
@@ -53,7 +61,9 @@ const ActivityRow = ({ entry }: { entry: CallLog }) => {
         <Stack>
           <Stack direction="row" alignItems="center" spacing={1}>
             <CheckCircleOutline color="primary" />
-            <Typography fontWeight={500}>{entry.action?.result}</Typography>
+            <Typography fontWeight={500}>
+              {transformToNormalCase(entry.action?.result as string)}
+            </Typography>
             {entry.action?.notes && (
               <Tooltip title={entry.action.notes} arrow placement="top">
                 <MenuBook

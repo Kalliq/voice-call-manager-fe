@@ -27,14 +27,15 @@ interface LocationState {
   mode: TelephonyConnection;
   contactId: string;
   phone: string;
+  defaultDisposition: string;
   autoStart: boolean;
 }
 
 const Campaign = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { contacts, mode, contactId, phone, autoStart } = (location.state ||
-    {}) as LocationState;
+  const { contacts, mode, contactId, phone, defaultDisposition, autoStart } =
+    (location.state || {}) as LocationState;
   const { phoneState } = useAuth();
   const { socket, volumeHandler, hangUpHandler } = phoneState;
   const { enqueue } = useSnackbar();
@@ -55,6 +56,7 @@ const Campaign = () => {
   const callResults = settings["Phone Settings"].callResults as CallResult[];
   const [manualSession, setManualSession] = useState<CallSession | null>(null);
   const [callStarted, setCallStarted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (contactId && !contacts && !mode) {
@@ -138,29 +140,33 @@ const Campaign = () => {
       return;
     }
 
-    const { data } = await api.post("/contacts/batch", {
-      ids: slice.map((contact) => contact.id),
-    });
-    const batchContacts = data;
+    try {
+      const { data } = await api.post("/contacts/batch", {
+        ids: slice.map((contact) => contact.id),
+      });
+      const batchContacts = data;
 
-    const activeCalls = await api.post("/campaign/call-campaign", {
-      contacts: batchContacts,
-    });
+      const activeCalls = await api.post("/campaign/call-campaign", {
+        contacts: batchContacts,
+      });
+      const extendedBatchContactsWithSid = batchContacts.map(
+        (batchContact: Contact) => {
+          const call = activeCalls.data.find((activeCall: any) => {
+            return batchContact.phone === activeCall.phoneNumber;
+          });
 
-    const extendedBatchContactsWithSid = batchContacts.map(
-      (batchContact: Contact) => {
-        const call = activeCalls.data.find((activeCall: any) => {
-          return batchContact.phone === activeCall.phoneNumber;
-        });
+          return { ...batchContact, callSid: call.callSid };
+        }
+      );
 
-        return { ...batchContact, callSid: call.callSid };
-      }
-    );
-
-    setCurrentBatch(extendedBatchContactsWithSid);
-    currentBatchRef.current = extendedBatchContactsWithSid;
-    setStatus(`Calling ${batchContacts.length} contact(s)...`);
-    setCurrentIndex((prev) => prev + callsPerBatch);
+      setCurrentBatch(extendedBatchContactsWithSid);
+      currentBatchRef.current = extendedBatchContactsWithSid;
+      setStatus(`Calling ${batchContacts.length} contact(s)...`);
+      setCurrentIndex((prev) => prev + callsPerBatch);
+    } catch (error: any) {
+      const msg = error.response.data.errors[0].message;
+      setError(typeof msg === "string" ? msg : error.message);
+    }
   };
 
   const handleStartCampaign = () => {
@@ -178,6 +184,7 @@ const Campaign = () => {
   const handleStopCampaign = () => {
     setIsCampaignRunning(false);
     setShowContinueDialog(false);
+    setIsCampaignFinished(true);
     setStatus("Campaign manually stopped!");
     api.post("/campaign/stop-campaign");
   };
@@ -197,7 +204,7 @@ const Campaign = () => {
   };
 
   const maybeProceedWithNextBatch = () => {
-    if (isCampaignRunning) {
+    if (!manualSession && isCampaignRunning) {
       handleContinue();
     }
   };
@@ -233,6 +240,11 @@ const Campaign = () => {
               disabled={!isCampaignRunning}
             />
           </Stack>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mt: 3 }}>
+            {error}
+          </Alert>
         )}
 
         {phone && !manualSession && (
@@ -312,6 +324,7 @@ const Campaign = () => {
         setSelectedResults={setSelectedResults}
         setPendingResultContacts={setPendingResultContacts}
         setShowContinueDialog={setShowContinueDialog}
+        setIsCampaignFinished={setIsCampaignFinished}
         setContactNotes={setContactNotes}
         maybeProceedWithNextBatch={maybeProceedWithNextBatch}
         handleStopAndSkip={handleStopCampaign}
@@ -319,10 +332,14 @@ const Campaign = () => {
         isCampaign={!manualSession}
         answeredSessionId={lastAnsweredId}
         mode={mode}
+        defaultDisposition={defaultDisposition}
       />
       {isCampaignFinished && (
         <Alert severity="success" sx={{ mt: 3 }}>
-          Call campaign completed!
+          {contacts.slice(currentIndex, currentIndex + callsPerBatch).length ===
+          0
+            ? "Call campaign completed!"
+            : "Call campaign stopped!"}
         </Alert>
       )}
     </Container>

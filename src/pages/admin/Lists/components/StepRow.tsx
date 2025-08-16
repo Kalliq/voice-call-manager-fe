@@ -41,6 +41,7 @@ const StepRow = ({
 
   const mode = (selectedCallType || TelephonyConnection.SOFT_CALL) as string;
   const hasEligible = contacts && contacts.length > 0;
+  const defaultDisposition = step.defaultAction;
 
   return (
     <>
@@ -102,7 +103,12 @@ const StepRow = ({
                 sx={{ cursor: "pointer" }}
                 onClick={() =>
                   navigate("/campaign", {
-                    state: { contacts, mode, autoStart: false },
+                    state: {
+                      contacts,
+                      mode,
+                      defaultDisposition,
+                      autoStart: false,
+                    },
                   })
                 }
               >

@@ -170,8 +170,6 @@ export const useCampaign = ({
       const isOutbound = params.get("outbound") === "true";
       const callSid = params.get("callSid");
 
-      console.log("params.get outbound: ", params.get("outbound") === "true");
-
       if (!isOutbound) return;
 
       if (contactId) {
@@ -192,7 +190,6 @@ export const useCampaign = ({
         call.accept();
         setStatus("Outbound call accepted");
       } else {
-        console.log("inside else in onIncomingHandler");
         activeCallRef.current = call;
         bindCallEventHandlers(call);
         call.accept();

@@ -1,5 +1,6 @@
 import {
   Button,
+  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -11,9 +12,11 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
+import { TelephonyConnection } from "voice-javascript-common";
 
 import { CustomTextField } from "../../../../components/UI";
 import { CallSession } from "../../../../types/contact";
+import { transformToSnakeCase } from "../../../../utils/transformCase";
 
 interface ContinueDialogInterface {
   callResults: { label: string }[];
@@ -28,6 +31,7 @@ interface ContinueDialogInterface {
   >;
   setPendingResultContacts: React.Dispatch<React.SetStateAction<CallSession[]>>;
   setShowContinueDialog: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsCampaignFinished: React.Dispatch<React.SetStateAction<boolean>>;
   setContactNotes: React.Dispatch<
     React.SetStateAction<{ [key: string]: string }>
   >;
@@ -40,6 +44,7 @@ interface ContinueDialogInterface {
   isCampaign: boolean;
   answeredSessionId: string | null;
   mode: string;
+  defaultDisposition: string;
 }
 
 const ContinueDialog = ({
@@ -53,88 +58,112 @@ const ContinueDialog = ({
   handleDialogClose,
   setSelectedResults,
   setPendingResultContacts,
+  setIsCampaignFinished,
   setShowContinueDialog,
   setContactNotes,
   maybeProceedWithNextBatch,
-  handleStopAndSkip,
   handleResult,
   isCampaign,
   mode,
+  defaultDisposition,
 }: ContinueDialogInterface) => {
-  const saveHandler = async () => {
+  const saveHandler = async (stopAfter = false) => {
     await Promise.all(
       currentBatch.map((c) => {
         const result =
           selectedResults[c.id] ||
-          (c.id !== answeredSessionId ? "No Answer" : "");
+          (c.id !== answeredSessionId ? defaultDisposition : "");
         return handleResult(c, result);
       })
     );
     setPendingResultContacts([]);
     setSelectedResults({});
     setShowContinueDialog(false);
+
+    if (stopAfter) {
+      setIsCampaignFinished(true);
+    }
   };
 
   return (
-    <Dialog open={showContinueDialog} onClose={handleDialogClose}>
-      <DialogTitle>Call Results</DialogTitle>
+    <Dialog
+      open={showContinueDialog}
+      onClose={(event, reason) => {
+        if (reason === "backdropClick") {
+          return; // Ignore backdrop clicks
+        }
+        handleDialogClose();
+      }}
+    >
+      <DialogTitle>Save Dispositions</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
           {currentBatch.map((contact) => {
             const isAnswered = contact.id === answeredSessionId;
-            return (
-              <>
-                {isAnswered ? (
-                  <Card key={contact.id} variant="outlined" sx={{ my: 1 }}>
-                    <CardContent>
-                      <Typography variant="h6">
-                        {contact.first_name} {contact.last_name}
-                      </Typography>
-                      <Typography variant="body2">{contact.phone}</Typography>
+            const isPower = mode === TelephonyConnection.SOFT_CALL;
 
-                      <Select
-                        value={
-                          selectedResults[contact.id] ||
-                          (isAnswered ? "" : "No Answer")
-                        }
-                        onChange={(e) =>
-                          setSelectedResults((prev) => ({
-                            ...prev,
-                            [contact.id]: e.target.value,
-                          }))
-                        }
-                        displayEmpty
-                        fullWidth
-                        sx={{ mt: 1 }}
-                      >
-                        <MenuItem value="" disabled>
-                          Select result
-                        </MenuItem>
-                        {callResults.map((callResult) => (
-                          <MenuItem
-                            key={callResult.label}
-                            value={callResult.label}
-                          >
-                            {callResult.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      <Typography>Short description</Typography>
-                      <CustomTextField
-                        value={contactNotes[contact.id] || ""}
-                        onChange={(e) =>
-                          setContactNotes((prev) => ({
-                            ...prev,
-                            [contact.id]: e.target.value,
-                          }))
-                        }
-                      />
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Typography>Dispositions saved automatically!</Typography>
-                )}
-              </>
+            const defaultDispositionFormatted = callResults.find(
+              (cr) => transformToSnakeCase(cr.label) === defaultDisposition
+            );
+            const valueForSelect = isAnswered
+              ? selectedResults[contact.id] || ""
+              : defaultDispositionFormatted?.label;
+
+            return (
+              <Card key={contact.id} variant="outlined" sx={{ my: 1 }}>
+                <CardContent>
+                  <Typography variant="h6">
+                    {contact.first_name} {contact.last_name}
+                  </Typography>
+                  <Typography variant="body2">{contact.phone}</Typography>
+
+                  <Select
+                    value={valueForSelect}
+                    onChange={(e) =>
+                      setSelectedResults((prev) => ({
+                        ...prev,
+                        [contact.id]: e.target.value as string,
+                      }))
+                    }
+                    displayEmpty
+                    fullWidth
+                    sx={{ mt: 1 }}
+                  >
+                    <MenuItem value="" disabled>
+                      Select result
+                    </MenuItem>
+                    {callResults.map((callResult) => (
+                      <MenuItem key={callResult.label} value={callResult.label}>
+                        {callResult.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {!isAnswered && !isPower && (
+                    <Chip
+                      label="auto-dropped"
+                      size="small"
+                      sx={{
+                        mt: 1,
+                        px: 1.25,
+                        borderRadius: "16px",
+                        bgcolor: "rgba(244, 67, 54, 0.12)",
+                        color: "error.main",
+                        fontWeight: 600,
+                      }}
+                    />
+                  )}
+                  <Typography>Short description</Typography>
+                  <CustomTextField
+                    value={contactNotes[contact.id] || ""}
+                    onChange={(e) =>
+                      setContactNotes((prev) => ({
+                        ...prev,
+                        [contact.id]: e.target.value,
+                      }))
+                    }
+                  />
+                </CardContent>
+              </Card>
             );
           })}
         </Stack>
@@ -143,21 +172,17 @@ const ContinueDialog = ({
         <Button
           variant="contained"
           onClick={() => {
-            saveHandler();
+            saveHandler(false);
             maybeProceedWithNextBatch();
           }}
         >
-          {answeredSessionId ? "Save and continue" : "Continue"}
+          {isCampaign ? "Save and continue" : "Save"}
         </Button>
-        {mode !== "Power dialer" && (
-          <Button variant="contained" onClick={() => saveHandler()}>
+        {isCampaign && (
+          <Button variant="contained" onClick={() => saveHandler(true)}>
             Save and stop
           </Button>
         )}
-
-        <Button onClick={handleStopAndSkip} color="error" variant="outlined">
-          {isCampaign ? "Stop campaign" : "Skip without save"}
-        </Button>
       </DialogActions>
     </Dialog>
   );

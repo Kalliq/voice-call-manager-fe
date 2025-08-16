@@ -173,7 +173,10 @@ const ContactsPage = () => {
             <Button
               variant="outlined"
               color="primary"
-              onClick={() => setMoveDialogOpen(true)}
+              onClick={() => {
+                setTargetListId("");
+                setMoveDialogOpen(true);
+              }}
             >
               Move to List
             </Button>
@@ -362,6 +365,7 @@ const ContactsPage = () => {
         onConfirm={onMoveConfirmHandler}
         lists={lists}
         selectedListId={selectedListId}
+        targetListId={targetListId}
         setTargetListId={setTargetListId}
       />
     </Box>

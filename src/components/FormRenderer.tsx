@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   useFormContext,
   Controller,
@@ -17,6 +18,8 @@ import {
 } from "./molecules";
 import { FormErrorMessage } from "./atoms";
 
+type BtnVisual = "idle" | "loading" | "success";
+
 const FormRenderer = ({
   schema,
   onSubmit,
@@ -27,24 +30,59 @@ const FormRenderer = ({
     control,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useFormContext();
   const { isAdmin } = useAuth();
 
-  const handleButtonClick = (action?: string) => {
-    console.log("action: ", action);
-    switch (action) {
-      case ButtonAction.NEXT:
-        handleSubmit((data) => {
-          console.log("Collected data: ", data);
-          onNext?.(data);
-        })();
-        break;
-      case ButtonAction.PREVIOUS:
-        onPrevious?.();
-        break;
+  // Track non-submit actions (e.g., NEXT/PREVIOUS) to show spinners/disable buttons
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [btnState, setBtnState] = useState<Record<string, BtnVisual>>({});
+
+  const setBtn = (id: string, state: BtnVisual) =>
+    setBtnState((s) => ({ ...s, [id]: state }));
+
+  const runButtonAction = async (id: string, fn: () => Promise<void>) => {
+    if (!id) return;
+    if (btnState[id] === "loading") return; // guard double-click
+    setBtn(id, "loading");
+    try {
+      await fn();
+      setBtn(id, "success");
+      // fade back after 3s
+      setTimeout(() => setBtn(id, "idle"), 3000);
+    } catch (e) {
+      // on error, just return to idle (or keep separate error state if you wish)
+      setBtn(id, "idle");
+      throw e;
     }
   };
+
+  const handleButtonClick = async (action?: string, id?: string) => {
+    if (!action) return;
+    const btnId = id || action;
+
+    switch (action) {
+      case ButtonAction.NEXT:
+        await runButtonAction(btnId, async () => {
+          await handleSubmit(async (data) => {
+            await onNext?.(data);
+          })();
+        });
+        break;
+      case ButtonAction.PREVIOUS:
+        await runButtonAction(btnId, async () => {
+          await onPrevious?.();
+        });
+        break;
+      default:
+        // custom actions → wrap them similarly
+        await runButtonAction(btnId, async () => {
+          /* await something */
+        });
+    }
+  };
+
+  const anyLoading = isSubmitting || pendingAction !== null;
 
   return (
     <>
@@ -52,169 +90,211 @@ const FormRenderer = ({
         key={schema.title + (schema.sections?.[0]?.fields?.length || 0)}
         onSubmit={
           onSubmit
-            ? handleSubmit(onSubmit as SubmitHandler<FieldValues>)
+            ? handleSubmit(async (data) => {
+                // Ensures RHF sets isSubmitting while your promise is pending
+                await (onSubmit as SubmitHandler<FieldValues>)(data);
+              })
             : (e) => e.preventDefault()
         }
       >
-        <Box display="flex" flexDirection="column" gap={4}>
-          <Typography
-            variant="h2"
-            fontWeight="bold"
-            mt={2}
-            pl={2}
-            fontSize={16}
-          >
-            {schema.title}
-          </Typography>
+        {/* Optional: block interactions while loading */}
+        <fieldset
+          disabled={anyLoading}
+          style={{ border: "none", padding: 0, margin: 0 }}
+        >
           <Box
             display="flex"
             flexDirection="column"
-            padding={2}
-            border="1px solid #eee"
-            borderRadius={2}
-            mt={1}
-            px={3}
-            py={2}
-            gap={1}
+            gap={4}
+            sx={{ opacity: anyLoading ? 0.9 : 1 }}
           >
-            {schema.sections.map((section, idx) => {
-              const sectionKey = section.title ? `${section.title}-${idx}` : `section-${idx}`;
-              const isButtonSection = section.fields.every(
-                (f) => f.type === "button"
-              );
+            <Typography
+              variant="h2"
+              fontWeight="bold"
+              mt={2}
+              pl={2}
+              fontSize={16}
+            >
+              {schema.title}
+            </Typography>
 
-              return (
-                <Box
-                  key={sectionKey}
-                  display={isButtonSection ? "flex" : "block"}
-                  flexDirection={isButtonSection ? "row" : "column"}
-                  gap={0}
-                >
-                  {!isButtonSection && (
-                    <Typography
-                      variant="h3"
-                      fontSize={14}
-                      mt={4}
-                      mb={2}
-                      fontWeight="bold"
-                    >
-                      {section.title}
-                    </Typography>
-                  )}
-                  {section.fields.map((field, fIdx) => {
-                    const fieldKey = field.name ? `${field.name}-${fIdx}` : `field-${fIdx}`;
-                    const isReadonly = field.adminOnly && !isAdmin;
+            <Box
+              display="flex"
+              flexDirection="column"
+              padding={2}
+              border="1px solid #eee"
+              borderRadius={2}
+              mt={1}
+              px={3}
+              py={2}
+              gap={1}
+            >
+              {schema.sections.map((section, idx) => {
+                const isButtonSection = section.fields.every(
+                  (f) => f.type === "button"
+                );
 
-                    switch (field.type) {
-                      case "text":
-                        return (
-                          <Controller
-                            key={fieldKey}
-                            name={field.name || ""}
-                            control={control}
-                            render={({ field: controllerField }) => (
-                              <CustomTextField
-                                value={controllerField.value}
-                                onChange={controllerField.onChange}
-                                label={field.label}
-                                placeholder={field.placeholder}
-                                fullWidth={field.fullWidth}
-                                error={!!errors[field.name || ""]}
-                                helperText={
-                                  !isReadonly
-                                    ? (errors[field.name || ""]
-                                        ?.message as string)
-                                    : "(Admin only field)"
-                                }
-                                InputProps={{ readOnly: isReadonly }}
-                                sx={
-                                  isReadonly
-                                    ? { opacity: 0.5, pointerEvents: "none" }
-                                    : {}
-                                }
-                              />
-                            )}
-                          />
-                        );
-                      case "radio":
-                        if (!field.options) return null;
-                        const selectedOption = watch(field.name || "");
-                        return (
-                          <RadioGroupWithNestedField
-                            controllerKey={fieldKey as any}
-                            field={field}
-                            control={control}
-                            errors={errors}
-                            selectedOption={selectedOption}
-                            isReadonly={isReadonly || false}
-                          />
-                        );
-                      case "checkbox":
-                        return (
-                          <CheckBoxWithNestedField
-                            controllerKey={fieldKey as any}
-                            field={field}
-                            control={control}
-                            errors={errors}
-                            isReadonly={isReadonly || false}
-                          />
-                        );
-                      case "button":
-                        return (
-                          <Box key={fieldKey}>
-                            <SimpleButton
-                              type={
-                                field.action === "submit" ? "submit" : "button"
-                              }
-                              label={field.label || ""}
-                              onClick={
-                                field.action !== "submit"
-                                  ? () => handleButtonClick(field.action)
-                                  : undefined
-                              }
-                            />
-                          </Box>
-                        );
-                      case "toggle":
-                        return (
-                          <Controller
-                            key={fieldKey}
-                            name={field.name || ""}
-                            control={control}
-                            render={({ field: controllerField }) => (
-                              <Box display="flex" alignItems="center" gap={1}>
-                                <Switch
-                                  checked={controllerField.value || false}
-                                  onChange={(e) =>
-                                    controllerField.onChange(e.target.checked)
+                return (
+                  <Box
+                    key={`${section}.${idx}`}
+                    display={isButtonSection ? "flex" : "block"}
+                    flexDirection={isButtonSection ? "row" : "column"}
+                    gap={0}
+                  >
+                    {!isButtonSection && (
+                      <Typography
+                        variant="h3"
+                        fontSize={14}
+                        mt={4}
+                        mb={2}
+                        fontWeight="bold"
+                      >
+                        {section.title}
+                      </Typography>
+                    )}
+
+                    {section.fields.map((field, fIdx) => {
+                      const isReadonly = field.adminOnly && !isAdmin;
+
+                      switch (field.type) {
+                        case "text":
+                          return (
+                            <Controller
+                              key={fIdx}
+                              name={field.name || ""}
+                              control={control}
+                              render={({ field: controllerField }) => (
+                                <CustomTextField
+                                  value={controllerField.value}
+                                  onChange={controllerField.onChange}
+                                  label={field.label}
+                                  placeholder={field.placeholder}
+                                  fullWidth={field.fullWidth}
+                                  error={!!errors[field.name || ""]}
+                                  helperText={
+                                    !isReadonly
+                                      ? (errors[field.name || ""]
+                                          ?.message as string)
+                                      : "(Admin only field)"
                                   }
-                                  sx={{
-                                    transform: "scale(1.5)",
-                                  }}
+                                  InputProps={{ readOnly: isReadonly }}
+                                  sx={
+                                    isReadonly
+                                      ? { opacity: 0.5, pointerEvents: "none" }
+                                      : {}
+                                  }
                                 />
-                                <Typography>{field.label}</Typography>
-                              </Box>
-                            )}
-                          />
-                        );
-                      case "dynamic":
-                        return (
-                          <DynamicFieldArray
-                            key={fieldKey}
-                            fieldConfig={field as any} // Pass the config (includes addButtonLabel, nestedFields, etc.)
-                            control={control}
-                            errors={errors}
-                          />
-                        );
-                      default:
-                        return null;
-                    }
-                  })}
-                </Box>
-              );
-            })}
+                              )}
+                            />
+                          );
+
+                        case "radio":
+                          if (!field.options) return null;
+                          const selectedOption = watch(field.name || "");
+                          return (
+                            <RadioGroupWithNestedField
+                              key={fIdx}
+                              controllerKey={fIdx}
+                              field={field}
+                              control={control}
+                              errors={errors}
+                              selectedOption={selectedOption}
+                              isReadonly={isReadonly || false}
+                            />
+                          );
+
+                        case "checkbox":
+                          return (
+                            <CheckBoxWithNestedField
+                              key={fIdx}
+                              controllerKey={fIdx}
+                              field={field}
+                              control={control}
+                              errors={errors}
+                              isReadonly={isReadonly || false}
+                            />
+                          );
+
+                        case "toggle":
+                          return (
+                            <Controller
+                              key={fIdx}
+                              name={field.name || ""}
+                              control={control}
+                              render={({ field: controllerField }) => (
+                                <Box display="flex" alignItems="center" gap={1}>
+                                  <Switch
+                                    checked={controllerField.value || false}
+                                    onChange={(e) =>
+                                      controllerField.onChange(e.target.checked)
+                                    }
+                                    sx={{ transform: "scale(1.5)" }}
+                                  />
+                                  <Typography>{field.label}</Typography>
+                                </Box>
+                              )}
+                            />
+                          );
+
+                        case "dynamic":
+                          return (
+                            <DynamicFieldArray
+                              key={fIdx}
+                              fieldConfig={field as any}
+                              control={control}
+                              errors={errors}
+                            />
+                          );
+
+                        case "button": {
+                          const isSubmit = field.action === "submit";
+                          const btnId =
+                            field.name ||
+                            `btn-${idx}-${fIdx}-${field.action || "custom"}`;
+
+                          const loading = btnState[btnId] === "loading";
+                          const success = btnState[btnId] === "success";
+
+                          return (
+                            <Box key={fIdx}>
+                              <SimpleButton
+                                type={"button"}
+                                label={field.label || ""}
+                                loading={loading}
+                                success={success}
+                                onClick={() =>
+                                  runButtonAction(btnId, async () => {
+                                    if (isSubmit) {
+                                      // manual submit -> keeps RHF validation but avoids global isSubmitting visuals
+                                      await handleSubmit(async (data) => {
+                                        await (
+                                          onSubmit as SubmitHandler<FieldValues>
+                                        )?.(data);
+                                      })();
+                                    } else {
+                                      await handleButtonClick(
+                                        field.action,
+                                        btnId
+                                      );
+                                    }
+                                  })
+                                }
+                                disabled={loading}
+                              />
+                            </Box>
+                          );
+                        }
+
+                        default:
+                          return null;
+                      }
+                    })}
+                  </Box>
+                );
+              })}
+            </Box>
           </Box>
-        </Box>
+        </fieldset>
       </form>
 
       <FormErrorMessage errors={errors} />
