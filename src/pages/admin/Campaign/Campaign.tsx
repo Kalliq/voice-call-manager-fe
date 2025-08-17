@@ -9,6 +9,7 @@ import useAppStore from "../../../store/useAppStore";
 import DialingCards from "./components/DialingCards";
 import SingleCallCampaignPanel from "./components/SingleCallCampaign";
 import { useCampaign } from "./useCampaign";
+import { useSocketReady } from "./useSocketReady";
 import { SimpleButton } from "../../../components/UI";
 import { CallSession, Contact } from "../../../types/contact";
 import { CallResult } from "../../../types/call-results";
@@ -39,21 +40,25 @@ const Campaign = () => {
   const { phoneState } = useAuth();
   const { socket, volumeHandler, hangUpHandler } = phoneState;
   const { enqueue } = useSnackbar();
-  if (!socket) {
-    navigate("/dashboard");
-    return;
-  }
 
   const { user, settings } = useAppStore((state) => state);
-  if (!user) {
-    throw new Error("Problem with authentication. Missing user!");
-  }
-  if (!settings) {
-    navigate("/dashboard");
-    return;
-  }
 
-  const callResults = settings["Phone Settings"].callResults as CallResult[];
+  const shouldRedirect = !socket || !user || !settings;
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      navigate("/dashboard", { replace: true, state: { from: location } });
+    }
+  }, [shouldRedirect, navigate, location]);
+
+  const { ready: isSocketReady, reason: socketReason } = useSocketReady(
+    socket,
+    user?.id
+  );
+
+  const callResults: CallResult[] =
+    (settings?.["Phone Settings"]?.callResults as CallResult[]) ?? [];
+
   const [manualSession, setManualSession] = useState<CallSession | null>(null);
   const [callStarted, setCallStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,8 +101,9 @@ const Campaign = () => {
     handleHangUpNotKnown,
     handleNumpadClick,
   } = useCampaign({
-    userId: user!.id,
+    userId: user!.id ?? "",
     socket,
+    enabled: isSocketReady,
     callEventHandlers: {
       volumeHandler,
       hangUpHandler,
@@ -106,15 +112,35 @@ const Campaign = () => {
 
   useRingingTone({ ringingSessions, answeredSession });
 
+  useEffect(() => {
+    if (shouldRedirect)
+      navigate("/dashboard", { replace: true, state: { from: location } });
+  }, [shouldRedirect, navigate, location]);
+
+  const guardNoSocket = () => {
+    if (!isSocketReady) {
+      enqueue(
+        `Real-time connection not ready${
+          socketReason ? `: ${socketReason}` : ""
+        }`,
+        { variant: "warning" }
+      );
+      return true;
+    }
+    return false;
+  };
+
+  const resolvedMode = mode ?? TelephonyConnection.SOFT_CALL;
   const callsPerBatch = {
     [TelephonyConnection.SOFT_CALL]: 1,
     [TelephonyConnection.PARALLEL_CALL]: 2,
     [TelephonyConnection.ADVANCED_PARALLEL_CALL]: 4,
-  }[mode];
+  }[resolvedMode];
 
   const singleSession = getSingleDialingSessionWithStatus(currentBatch);
 
   const makeCallNotKnown = async (phone: string) => {
+    if (guardNoSocket()) return;
     setCallStarted(true);
     await api.post("/campaign/call-notknown", {
       phone,
@@ -122,6 +148,7 @@ const Campaign = () => {
   };
 
   const makeCallBatch = async () => {
+    if (guardNoSocket()) return;
     setCallStarted(true);
     // TO-DO implement try-catch
     let slice: Contact[];
@@ -226,13 +253,19 @@ const Campaign = () => {
 
   return (
     <Container sx={{ py: 4 }}>
+      {!isSocketReady && (
+        <Alert severity="warning">
+          Reconnecting to real-time service… You can’t start a campaign until
+          it’s ready.
+        </Alert>
+      )}
       <Stack spacing={3}>
         {!contactId && !phone && (
           <Stack direction="row" spacing={1} justifyContent="center">
             <SimpleButton
               label="Start campaign"
               onClick={handleStartCampaign}
-              disabled={isCampaignRunning}
+              disabled={!isSocketReady || isCampaignRunning}
             />
             <SimpleButton
               label="Stop campaign"
@@ -336,8 +369,9 @@ const Campaign = () => {
       />
       {isCampaignFinished && (
         <Alert severity="success" sx={{ mt: 3 }}>
-          {contacts.slice(currentIndex, currentIndex + callsPerBatch).length ===
-          0
+          {contacts &&
+          contacts.slice(currentIndex, currentIndex + callsPerBatch).length ===
+            0
             ? "Call campaign completed!"
             : "Call campaign stopped!"}
         </Alert>

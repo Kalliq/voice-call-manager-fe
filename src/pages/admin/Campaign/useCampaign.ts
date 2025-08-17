@@ -9,6 +9,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 interface useTwilioCampaignProps {
   userId: string;
   socket: Socket;
+  enabled?: boolean;
   callEventHandlers: {
     volumeHandler: (inputVolume: number, outputVolume: number) => void;
     hangUpHandler: () => void;
@@ -18,6 +19,7 @@ interface useTwilioCampaignProps {
 export const useCampaign = ({
   userId,
   socket,
+  enabled = false,
   callEventHandlers,
 }: useTwilioCampaignProps) => {
   const [status, setStatus] = useState<string>("");
@@ -162,6 +164,7 @@ export const useCampaign = ({
 
   // Effects
   useEffect(() => {
+    if (!enabled) return;
     if (!twilioDevice || !setIncomingHandler) return;
 
     const onIncomingHandler = (call: Call) => {
@@ -202,23 +205,25 @@ export const useCampaign = ({
     return () => {
       setIncomingHandler(null);
     };
-  }, [twilioDevice]);
+  }, [twilioDevice, enabled]);
 
   useEffect(() => {
     answeredSessionRef.current = answeredSession;
   }, [answeredSession]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!enabled) return;
+    if (!socket || !userId) return;
     const roomEvent = `call-status-user-${userId}`;
 
     socket.on(roomEvent, handleCallStatus);
     return () => {
       socket.off(roomEvent, handleCallStatus);
     };
-  }, [socket, currentBatch, pendingResultContacts, userId]);
+  }, [socket, currentBatch, pendingResultContacts, userId, enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     if (currentBatch.length === 0) return;
 
     const allContactsHandled = currentBatch.every((contact) =>
@@ -239,6 +244,7 @@ export const useCampaign = ({
     answeredSession,
     pendingResultContacts,
     currentBatch,
+    enabled,
   ]);
 
   return {

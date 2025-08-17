@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Box, Typography } from "@mui/material";
 
 import { settingsComponentRegistry } from "../../../registry/settings-component-registry";
@@ -9,6 +11,17 @@ import { useSettingsContext } from "../../../contexts/SettingsContext";
 
 const Settings: React.FC = () => {
   const { selected, settings } = useSettingsContext();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!settings || !selected || !settings[selected.parent]) {
+      navigate("/dashboard", { replace: true, state: { from: "settings" } });
+    }
+  }, [settings, selected, navigate]);
+
+  if (!settings || !selected || !settings[selected.parent]) {
+    return null;
+  }
 
   return (
     <Box
