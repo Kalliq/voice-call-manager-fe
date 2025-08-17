@@ -425,6 +425,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
 
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <DialogTitle>Add Talking Point</DialogTitle>
+        <Divider />
         <DialogContent>
           <TextField
             autoFocus
