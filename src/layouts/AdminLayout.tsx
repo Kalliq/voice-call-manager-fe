@@ -270,9 +270,11 @@ export default function AdminLayout() {
           }}
         >
           <Toolbar>
-            <IconButton onClick={() => setCollapsed(!collapsed)} sx={{ mr: 2 }}>
-              <MenuIcon />
-            </IconButton>
+             {!isSettingsPage && (
+              <IconButton onClick={() => setCollapsed(!collapsed)} sx={{ mr: 2 }}>
+                <MenuIcon />
+              </IconButton>
+             )}
             <Box sx={{ width: 300 }}>
               <Autocomplete<SearchResult, false, false, false>
                 freeSolo={false}

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -15,6 +15,8 @@ import {
   TablePagination,
   IconButton,
   Tooltip,
+  InputAdornment,
+  CircularProgress,
   Typography,
   useTheme,
   Button,
@@ -48,11 +50,13 @@ const ContactsPage = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedListId, setSelectedListId] = useState<string>("");
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [lists, setLists] = useState<List[]>([]);
+
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
 
   const [editing, setEditing] = useState<Contact | null>(null);
   const [deleting, setDeleting] = useState<Contact | null>(null);
@@ -103,6 +107,22 @@ const ContactsPage = () => {
     } catch {
       enqueue("Failed to load lists", { variant: "error" });
     }
+  };
+
+  const debouncedSetSearch = useMemo(
+    () =>
+      _.debounce((val: string) => {
+        setPage(0);
+        setSearch(val); 
+      }, 300),
+    []
+  );
+  useEffect(() => {
+    return () => debouncedSetSearch.cancel();
+  }, [debouncedSetSearch]);
+  const onSearchChange = (val: string) => {
+    setSearchInput(val);      
+    debouncedSetSearch(val); 
   };
 
   const onSearch = _.debounce((val: string) => {
@@ -161,12 +181,22 @@ const ContactsPage = () => {
         <TextField
           size="small"
           placeholder="Search..."
-          onChange={(e) => onSearch(e.target.value)}
+          value={searchInput}                     
+          onChange={(e) => onSearchChange(e.target.value)}
+          autoComplete="off"
           InputProps={{
-            startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />,
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+            endAdornment: loading ? (
+              <InputAdornment position="end">
+                <CircularProgress size={16} />
+              </InputAdornment>
+            ) : null,
           }}
           sx={{ width: 300 }}
-          disabled={loading}
         />
         <Box display="flex" gap={2}>
           {selectedContactIds.length > 0 && (
