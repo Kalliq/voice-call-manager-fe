@@ -10,6 +10,8 @@ import {
   Divider,
   Stack,
   Chip,
+  Button,
+  CircularProgress,
 } from "@mui/material";
 import styled from "@emotion/styled";
 import { Task } from "voice-javascript-common";
@@ -17,6 +19,8 @@ import { Task } from "voice-javascript-common";
 import api from "../../utils/axiosInstance";
 import useAppStore from "../../store/useAppStore";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+
+// import { useGoogleCalendar } from "../../contexts/GoogleCalendarContext";
 
 const colors = {
   background: "#fff",
@@ -61,6 +65,7 @@ const Dashboard = () => {
     "In Progress": [] as Task[],
     Completed: [] as Task[],
   });
+  // const { isLoading, events, signIn, signOut } = useGoogleCalendar();
 
   useEffect(() => {
     if (!user) return;
@@ -125,12 +130,11 @@ const Dashboard = () => {
   }, [callStats, settings]);
 
   return (
-    <Box p={3}>
+    <Box p={3} sx={{backgroundColor: "white", width:"100%"}}>
       <Box>
         <Typography variant="h5" fontWeight="bold" mb={3}>
           Dashboard
-        </Typography>
-      </Box>
+        </Typography>      </Box>
       <Grid container spacing={2} mb={3}>
         <Grid item xs={12} md={3} sx={{ display: "flex" }}>
           <Card
@@ -329,6 +333,19 @@ const Dashboard = () => {
           </Card>
         </Grid>
       </Grid>
+      
+
+       {/* <Grid container spacing={2} mt={3}>
+        <Grid item xs={12} md={6}>
+          <Card elevation={0} sx={{ ...cardStyle }}>
+            <CardContent>
+              <Typography fontWeight="bold" mb={1}>Your Calendar</Typography>
+              <Divider sx={{ mb: 2 }} />
+              <CalendarPage />
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid> */}
     </Box>
   );
 };

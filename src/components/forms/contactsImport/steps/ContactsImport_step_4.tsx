@@ -27,7 +27,7 @@ const fetchLists = async () => {
 };
 
 const CsvImport_step_4 = ({ onPrevious, onConfirm }: any) => {
-  const { handleSubmit, watch, control } = useFormContext();
+  const { handleSubmit, watch, control, formState: { errors }, } = useFormContext();
 
   const file = watch("file");
   const hasHeader = watch("hasHeader");
@@ -96,6 +96,7 @@ const CsvImport_step_4 = ({ onPrevious, onConfirm }: any) => {
             render={({ field }) => (
               <Select
                 {...field}
+                value={field.value ?? ""}
                 labelId="select-list-label"
                 label="Assign to List"
                 disabled={loadingLists}
@@ -106,7 +107,7 @@ const CsvImport_step_4 = ({ onPrevious, onConfirm }: any) => {
                   </MenuItem>
                 ) : (
                   lists.map((list) => (
-                    <MenuItem key={list.id} value={list.id}>
+                    <MenuItem key={String(list.id)} value={list.id}>
                       {list.listName}
                     </MenuItem>
                   ))
@@ -114,6 +115,11 @@ const CsvImport_step_4 = ({ onPrevious, onConfirm }: any) => {
               </Select>
             )}
           />
+          {errors.selectedListId && (
+            <Typography color="error" variant="caption" mt={1}>
+              {errors.selectedListId.message as string}
+            </Typography>
+          )}
         </FormControl>
 
         <Box display="flex" gap={2}>

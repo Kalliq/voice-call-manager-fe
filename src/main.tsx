@@ -12,6 +12,7 @@ import theme from "./theme";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SnackbarProvider } from "./hooks/useSnackbar";
 import { SettingsProvider } from "./contexts/SettingsContext";
+import { GoogleCalendarProvider } from './contexts/GoogleCalendarContext';
 
 createRoot(document.getElementById("root") as HTMLElement).render(
   <StrictMode>

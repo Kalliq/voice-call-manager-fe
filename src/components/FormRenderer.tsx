@@ -87,6 +87,7 @@ const FormRenderer = ({
   return (
     <>
       <form
+        key={schema.title + (schema.sections?.[0]?.fields?.length || 0)}
         onSubmit={
           onSubmit
             ? handleSubmit(async (data) => {

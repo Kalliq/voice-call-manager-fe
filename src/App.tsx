@@ -14,7 +14,7 @@ import { InboundCallDialog } from "./components/InboundCallDialog";
 
 // Main Pages
 import SignIn from "./pages/SignIn";
-
+import MyProfile from "./pages/MyProfile";
 // Admin pages
 import Dashboard from "./pages/admin/Dashboard";
 import Campaign from "./pages/admin/Campaign/Campaign";

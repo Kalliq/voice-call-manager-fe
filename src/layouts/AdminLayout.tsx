@@ -55,7 +55,6 @@ type SearchResult = { id: string; label: string };
 
 const DRAWER_WIDTH = 240;
 const COLLAPSED_WIDTH = 80;
-
 const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
   { label: "Lists", path: "/lists", icon: <ListsIcon /> },
@@ -271,9 +270,11 @@ export default function AdminLayout() {
           }}
         >
           <Toolbar>
-            <IconButton onClick={() => setCollapsed(!collapsed)} sx={{ mr: 2 }}>
-              <MenuIcon />
-            </IconButton>
+             {!isSettingsPage && (
+              <IconButton onClick={() => setCollapsed(!collapsed)} sx={{ mr: 2 }}>
+                <MenuIcon />
+              </IconButton>
+             )}
             <Box sx={{ width: 300 }}>
               <Autocomplete<SearchResult, false, false, false>
                 freeSolo={false}
@@ -339,7 +340,9 @@ export default function AdminLayout() {
               open={!!avatarAnchor}
               onClose={closeAvatarMenu}
             >
-              <MenuItem onClick={closeAvatarMenu}>Profile</MenuItem>
+              <MenuItem onClick={() => {closeAvatarMenu(); 
+                                        navigate("/auth/me"); 
+                                      }}>Profile</MenuItem>
               <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
             </Menu>
           </Toolbar>

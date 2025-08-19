@@ -152,6 +152,7 @@ const Lists = () => {
             {!showDropped ? (
               <TableContainer sx={{ width: "100%", mb: 1 }}>
                 <Table size="medium" sx={{ width: "100%" }}>
+                  <TableBody>
                   {lists &&
                     lists.map((list) => (
                       <ListCard
@@ -169,6 +170,7 @@ const Lists = () => {
                         onDeleteClick={handleDeleteClick}
                       />
                     ))}
+                    </TableBody>
                 </Table>
               </TableContainer>
             ) : (

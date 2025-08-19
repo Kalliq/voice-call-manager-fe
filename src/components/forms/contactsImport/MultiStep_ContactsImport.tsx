@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { Box, Typography } from "@mui/material";
-import { FormProvider, useForm } from "react-hook-form";
+import { Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
+import { FormProvider, Resolver, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import React from "react";
+import * as z from 'zod';
+import type { ZodType } from 'zod';
+import { AnyZodObject } from 'zod';
 
 import ContactsImport_step_1 from "./steps/ContactsImport_step_1";
 import ContactsImport_step_2 from "./steps/ContactsImport_step_2";
@@ -9,6 +13,13 @@ import ContactsImport_step_3 from "./steps/ContactsImport_step_3";
 import ContactsImport_step_4 from "./steps/ContactsImport_step_4";
 
 import api from "../../../utils/axiosInstance";
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  csvFileImportStep_1_ValidationSchema,
+  csvFileImportStep_2_ValidationSchema,
+  // csvFileImportStep_3_ValidationSchema,
+  csvFileImportStep_4_ValidationSchema,
+} from '../../../schemas/contacts-import/csv-file-import/validation-schema';
 
 type ImportFormValues = {
   file: File;
@@ -18,18 +29,54 @@ type ImportFormValues = {
   selectedListId: string; // or mongoose.Types.ObjectId if you want to be strict
 };
 
+const getValidationSchemaForStep = (step: number) => {
+  switch (step) {
+    case 1:
+      return csvFileImportStep_1_ValidationSchema;
+    case 2:
+      return csvFileImportStep_2_ValidationSchema;
+    case 3:
+      return z.object({});
+      //return csvFileImportStep_3_ValidationSchema;
+    case 4:
+      return csvFileImportStep_4_ValidationSchema;
+    default:
+      return undefined;
+  }
+};
+
 const MultiStepForm = () => {
   const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogTitle, setDialogTitle] = useState("");
+  const currentSchema = getValidationSchemaForStep(step) as AnyZodObject | undefined;
   const methods = useForm<ImportFormValues>({
     defaultValues: {
       hasHeader: false,
       mapping: {},
       duplicateField: "",
       selectedListId: "",
-      file: undefined as unknown as File,
     },
+    resolver: zodResolver(
+      getValidationSchemaForStep(step)! as any
+    ) as Resolver<ImportFormValues>,
+    mode: "onTouched",
   });
-  const [step, setStep] = useState(1);
+
+  // Dynamically update resolver when step changes
+  React.useEffect(() => {
+    methods.reset(methods.getValues(), {
+      keepErrors: false,
+      keepDirty: true,
+      keepValues: true,
+    });
+    // @ts-ignore
+    methods.control._options.resolver = zodResolver(
+      getValidationSchemaForStep(step)! as any
+    ) as Resolver<ImportFormValues>;
+  }, [step]);
 
   const onNextStepHandler = async (data: any) => {
     console.log("data: ", data);
@@ -60,10 +107,22 @@ const MultiStepForm = () => {
       });
 
       console.log("Import Result: ", data);
-      navigate(`/lists`);
-    } catch (err) {
+      setDialogTitle("Success");
+      setDialogMessage("The list has been created successfully.");
+      setDialogOpen(true);
+    } catch (err: any) {
       console.error("Import error: ", err);
+      setDialogTitle("Error");
+      setDialogMessage(
+        err?.response?.data?.message || "There was an error creating the list."
+      );
+      setDialogOpen(true);
     }
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    navigate("/lists");
   };
 
   return (
@@ -78,7 +137,7 @@ const MultiStepForm = () => {
           IMPORT CONTACTS LIST
         </Typography>
         <Box>
-          <FormProvider {...methods}>
+          <FormProvider {...methods} key={step}>
             {step === 1 && <ContactsImport_step_1 onNext={onNextStepHandler} />}
             {step === 2 && (
               <ContactsImport_step_2
@@ -100,6 +159,30 @@ const MultiStepForm = () => {
             )}
           </FormProvider>
         </Box>
+        <Dialog
+          open={dialogOpen}
+          // disable closing by backdrop or escape:
+          onClose={(_, reason) => {
+            if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+             handleDialogClose()            }
+          }}
+        >
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogContent>
+            <Typography>{dialogMessage}</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setDialogOpen(false) 
+                navigate('/lists')      
+              }}
+              autoFocus
+            >
+              OK
+           </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );
