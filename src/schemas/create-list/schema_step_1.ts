@@ -11,6 +11,7 @@ const schema = {
           label: "List name",
           fullWidth: true,
           required: true,
+          tooltip: "Enter a unique name for this list. This name will be used to identify the list throughout the system.",
         },
       ],
     },
@@ -21,6 +22,7 @@ const schema = {
           type: "radio",
           name: "listPriority",
           label: "List priority",
+          tooltip: "Select the priority level for this list. High priority lists are dialed first, followed by medium and low priority lists.",
           options: [
             { label: "High", value: "high" },
             { label: "Medium", value: "medium" },

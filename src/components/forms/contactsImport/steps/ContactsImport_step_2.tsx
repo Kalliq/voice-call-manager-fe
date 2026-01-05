@@ -7,7 +7,10 @@ import {
   Select,
   MenuItem,
   Typography,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
 
 import { SimpleButton } from "../../../UI/SimpleButton";
 
@@ -42,7 +45,14 @@ const CsvImport_step_2 = ({
         mt={1}
         gap={1}
       >
-        <Typography variant="h6">Select a Duplicate Filter Field</Typography>
+        <Box display="flex" alignItems="center" gap={0.5} mb={1}>
+          <Typography variant="h6">Select a Duplicate Filter Field</Typography>
+          <Tooltip title="Choose a field to use for detecting duplicate contacts. If a contact with the same value in this field already exists, it will be skipped during import." arrow placement="top">
+            <IconButton size="small" sx={{ padding: 0, margin: 0, minWidth: 'auto' }}>
+              <InfoIcon fontSize="small" color="action" />
+            </IconButton>
+          </Tooltip>
+        </Box>
         <FormControl fullWidth margin="normal">
           <InputLabel id="filter-label">Field</InputLabel>
           <Controller

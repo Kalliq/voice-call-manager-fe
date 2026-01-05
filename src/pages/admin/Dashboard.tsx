@@ -123,9 +123,9 @@ const Dashboard = () => {
     const semiSuccessful = Math.max(connected - successful, 0);
 
     return [
-      { name: "Successful", value: successful, color: "#2cb67d" },
-      { name: "Connected", value: semiSuccessful, color: "#facc15" },
-      { name: "Unanswered", value: unsuccessful, color: "#ef4444" },
+      { name: "Connected Positive", value: successful, color: "#2cb67d" },
+      { name: "Connected Negative", value: semiSuccessful, color: "#facc15" },
+      { name: "No Answer", value: unsuccessful, color: "#ef4444" },
     ];
   }, [callStats, settings]);
 

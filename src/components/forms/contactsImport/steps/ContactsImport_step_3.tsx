@@ -8,7 +8,10 @@ import {
   MenuItem,
   Typography,
   Grid,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import Papa from "papaparse";
 
@@ -97,7 +100,14 @@ const CsvImport_step_3 = ({
         mt={1}
         gap={1}
       >
-        <Typography variant="h6">Map CSV Columns to Data Fields</Typography>
+        <Box display="flex" alignItems="center" gap={0.5} mb={1}>
+          <Typography variant="h6">Map CSV Columns to Data Fields</Typography>
+          <Tooltip title="Match each column from your CSV file to the corresponding contact field in the system. Select 'NONE' if you want to skip a column during import." arrow placement="top">
+            <IconButton size="small" sx={{ padding: 0, margin: 0, minWidth: 'auto' }}>
+              <InfoIcon fontSize="small" color="action" />
+            </IconButton>
+          </Tooltip>
+        </Box>
         <Grid container spacing={2}>
           {csvColumns.map((col) => (
             <Grid
@@ -136,6 +146,9 @@ const CsvImport_step_3 = ({
                         {...field}
                         value={field.value ?? ""}
                       >
+                        <MenuItem value="">
+                          <em>NONE</em>
+                        </MenuItem>
                         {integrationSettings.contacts.map((contact: any) => (
                           <MenuItem key={String(contact.id)} value={contact.id}>
                             {contact.name}
