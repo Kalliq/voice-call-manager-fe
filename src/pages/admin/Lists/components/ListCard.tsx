@@ -17,8 +17,10 @@ import {
   Delete,
   GroupOutlined,
   HelpOutline,
+  Call,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { TelephonyConnection } from "voice-javascript-common";
 import ConnectionMenu from "./ConnectionMenu";
 import StepRow from "./StepRow";
 import { Step } from "../../../../interfaces/list-dialing-step";
@@ -54,6 +56,33 @@ const ListCard = ({
   const navigate = useNavigate();
   const hasContacts = list.contacts?.length > 0;
   const contactCount = list.contacts?.length ?? 0;
+
+  const handleDial = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    
+    // Aggregate all eligible contacts from all steps
+    const allContacts = Object.values(eligibleContacts ?? {}).flat();
+    
+    // Fallback to step.contacts if eligibleContacts not available
+    const fallbackContacts = list.steps?.flatMap((step: Step) => step.contacts ?? []) ?? [];
+    const contacts = allContacts.length > 0 ? allContacts : fallbackContacts;
+    
+    if (contacts.length === 0) {
+      return;
+    }
+    
+    const mode = selectedCall || TelephonyConnection.SOFT_CALL;
+    const defaultDisposition = list.steps?.[0]?.defaultAction;
+    
+    navigate("/campaign", {
+      state: {
+        contacts,
+        mode,
+        defaultDisposition,
+        autoStart: false,
+      },
+    });
+  };
 
   return (
     <>
@@ -98,6 +127,16 @@ const ListCard = ({
           </Box>
         </TableCell>
         <TableCell align="right">
+          <Tooltip title="Dial eligible contacts">
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={handleDial}
+              disabled={!hasContacts}
+            >
+              <Call fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <IconButton
             size="small"
             onClick={() => navigate(`/create-new-list/${list.id}`)}
