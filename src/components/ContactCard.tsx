@@ -8,7 +8,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { Delete, Visibility } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { Contact } from "../types/contact";
 
@@ -20,6 +20,7 @@ interface ContactCardProps {
 const ContactCard = ({ contact, onDeleteClick }: ContactCardProps) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <Box>
@@ -97,7 +98,9 @@ const ContactCard = ({ contact, onDeleteClick }: ContactCardProps) => {
                 <IconButton
                   size="small"
                   onClick={() =>
-                    navigate(`/dashboard/contact-details/${contact.id}`)
+                    navigate("/contacts", {
+                      state: { contactId: contact.id || contact._id },
+                    })
                   }
                 >
                   <Visibility fontSize="small" />
@@ -108,7 +111,7 @@ const ContactCard = ({ contact, onDeleteClick }: ContactCardProps) => {
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => onDeleteClick(contact.id)}
+                  onClick={() => onDeleteClick(contact.id || contact._id)}
                 >
                   <Delete fontSize="small" />
                 </IconButton>
