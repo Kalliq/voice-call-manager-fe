@@ -13,14 +13,10 @@ import {
   ArrowBack,
   CallEnd,
   VolumeOff,
-  VolumeUp,
   Pause,
-  PlayArrow,
   Dialpad,
 } from "@mui/icons-material";
 import { useState } from "react";
-import { Call } from "@twilio/voice-sdk";
-import { Device } from "@twilio/voice-sdk";
 
 import { Contact } from "../../../../../types/contact";
 
@@ -32,8 +28,6 @@ interface CallBarProps {
   hasAnsweredSession: boolean;
   onEndCall: () => void;
   handleNumpadClick: (char: string) => void;
-  activeCallRef?: React.MutableRefObject<Call | null>;
-  twilioDevice?: Device | null;
 }
 
 export const CallBar = ({
@@ -44,37 +38,8 @@ export const CallBar = ({
   hasAnsweredSession,
   onEndCall,
   handleNumpadClick,
-  activeCallRef,
-  twilioDevice,
 }: CallBarProps) => {
   const [showNumpad, setShowNumpad] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isHeld, setIsHeld] = useState(false);
-
-  const handleMute = () => {
-    if (!activeCallRef?.current) return;
-    try {
-      const currentMuted = activeCallRef.current.isMuted();
-      const newMutedState = !currentMuted;
-      activeCallRef.current.mute(newMutedState);
-      setIsMuted(newMutedState);
-    } catch (error) {
-      console.error("Failed to toggle mute:", error);
-    }
-  };
-
-  const handleHold = () => {
-    if (!activeCallRef?.current) return;
-    try {
-      const newHeldState = !isHeld;
-      // Hold = mute microphone (same as mute) with separate UI state
-      activeCallRef.current.mute(newHeldState);
-      setIsHeld(newHeldState);
-      setIsMuted(newHeldState); // Sync mute state with hold
-    } catch (error) {
-      console.error("Failed to toggle hold:", error);
-    }
-  };
 
   return (
     <>
@@ -151,19 +116,11 @@ export const CallBar = ({
               >
                 <Dialpad />
               </IconButton>
-              <IconButton
-                sx={{ color: isMuted ? "primary.light" : "#fff" }}
-                onClick={handleMute}
-                disabled={!activeCallRef?.current}
-              >
-                {isMuted ? <VolumeOff /> : <VolumeUp />}
+              <IconButton sx={{ color: "#fff" }}>
+                <VolumeOff />
               </IconButton>
-              <IconButton
-                sx={{ color: isHeld ? "primary.light" : "#fff" }}
-                onClick={handleHold}
-                disabled={!activeCallRef?.current}
-              >
-                {isHeld ? <Pause /> : <PlayArrow />}
+              <IconButton sx={{ color: "#fff" }}>
+                <Pause />
               </IconButton>
               <IconButton sx={{ color: "#fff" }} onClick={onEndCall}>
                 <CallEnd color="error" />

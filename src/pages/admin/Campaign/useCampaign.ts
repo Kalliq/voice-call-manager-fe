@@ -259,7 +259,6 @@ export const useCampaign = ({
     currentBatch,
     currentBatchRef,
     lastAnsweredId,
-    activeCallRef,
     setStatus,
     setCurrentBatch,
     setIsCampaignRunning,

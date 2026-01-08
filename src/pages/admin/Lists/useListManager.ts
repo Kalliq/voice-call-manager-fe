@@ -18,6 +18,7 @@ const useListManager = () => {
   const [eligibleContacts, setEligibleContacts] = useState<{
     [listId: string]: { [stepIndex: number]: Contact[] };
   }>({});
+  const [eligibleCounts, setEligibleCounts] = useState<Record<string, number>>({});
 
   const fetchEligibleContacts = async (listId: string, steps: Step[]) => {
     const results: { [stepIndex: number]: Contact[] } = {};
@@ -33,6 +34,27 @@ const useListManager = () => {
 
     setEligibleContacts((prev) => ({ ...prev, [listId]: results }));
     return results;
+  };
+
+  const fetchEligibleCounts = async (listId: string, steps: Step[]): Promise<number | undefined> => {
+    if (!steps?.length) return undefined;
+    
+    try {
+      let totalCount = 0;
+      for (let i = 0; i < steps.length; i++) {
+        try {
+          const res = await api.post(`/lists/${listId}/step/${i + 1}/contacts`);
+          totalCount += Array.isArray(res.data) ? res.data.length : 0;
+        } catch {
+          // Individual step failure, continue with others
+        }
+      }
+      setEligibleCounts((prev) => ({ ...prev, [listId]: totalCount }));
+      return totalCount;
+    } catch {
+      // Overall failure, return undefined (not 0)
+      return undefined;
+    }
   };
 
   const handleExpand = (listId: string, steps?: Step[]) => {
@@ -76,8 +98,10 @@ const useListManager = () => {
     selectedCalls,
     expandedListId,
     eligibleContacts,
+    eligibleCounts,
     handleExpand,
     fetchEligibleContacts,
+    fetchEligibleCounts,
     handleConnectionChange,
     anchorEl,
     menuListId,

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Grid, Typography, Button, Avatar, Paper } from "@mui/material";
 import { Phone, Person } from "@mui/icons-material";
-import { Call } from "@twilio/voice-sdk";
-import { Device } from "@twilio/voice-sdk";
 
 import { CallBar } from "./molecules/CallBar";
 
@@ -13,8 +11,6 @@ interface MinimalCallPanelProps {
   onEndCall: () => void;
   callStarted: boolean;
   handleNumpadClick: (char: string) => void;
-  activeCallRef?: React.MutableRefObject<Call | null>;
-  twilioDevice?: Device | null;
 }
 
 const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
@@ -24,8 +20,6 @@ const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
   onEndCall,
   callStarted,
   handleNumpadClick,
-  activeCallRef,
-  twilioDevice,
 }) => {
   const [callStartTime, setCallStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState("00:00");
@@ -62,8 +56,6 @@ const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
           elapsedTime={elapsedTime}
           onEndCall={onEndCall}
           handleNumpadClick={handleNumpadClick}
-          activeCallRef={activeCallRef}
-          twilioDevice={twilioDevice}
         />
       )}
 

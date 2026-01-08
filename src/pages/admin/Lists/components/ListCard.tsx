@@ -30,6 +30,7 @@ interface ListCardProps {
   selectedCall: string;
   expanded: boolean;
   eligibleContacts: Record<number, any[]>;
+  eligibleCount?: number;
   onExpand: (id: string, steps?: Step[]) => void;
   onFetchEligibleContacts: (listId: string, steps: Step[]) => Promise<Record<number, any[]>>;
   onConnectionClick: (e: React.MouseEvent<HTMLElement>, id: string) => void;
@@ -45,6 +46,7 @@ const ListCard = ({
   selectedCall,
   expanded,
   eligibleContacts,
+  eligibleCount,
   onExpand,
   onFetchEligibleContacts,
   onConnectionClick,
@@ -62,7 +64,11 @@ const ListCard = ({
   const allEligibleContacts = Object.values(eligibleContacts ?? {}).flat();
   const fallbackStepContacts = list.steps?.flatMap((step: Step) => step.contacts ?? []) ?? [];
   const availableContacts = allEligibleContacts.length > 0 ? allEligibleContacts : fallbackStepContacts;
-  const contactCount = availableContacts.length;
+  // Prefer eligibleCount prop if available, otherwise use local calculation
+  const contactCount = eligibleCount !== undefined 
+    ? eligibleCount 
+    : availableContacts.length;
+  const hasContacts = contactCount > 0;
 
   const handleDial = async (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
@@ -128,7 +134,7 @@ const ListCard = ({
           <Box display="flex" alignItems="center" gap={0.5}>
             <GroupOutlined color={contactCount > 0 ? "action" : "disabled"} />
             <Typography variant="body2" color="text.secondary">
-              {contactCount > 0 ? contactCount : "0"}
+              {contactCount !== undefined ? (contactCount > 0 ? contactCount : "0") : "—"}
             </Typography>
           </Box>
         </TableCell>
