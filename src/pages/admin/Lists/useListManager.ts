@@ -32,6 +32,7 @@ const useListManager = () => {
     }
 
     setEligibleContacts((prev) => ({ ...prev, [listId]: results }));
+    return results;
   };
 
   const handleExpand = (listId: string, steps?: Step[]) => {
@@ -76,6 +77,7 @@ const useListManager = () => {
     expandedListId,
     eligibleContacts,
     handleExpand,
+    fetchEligibleContacts,
     handleConnectionChange,
     anchorEl,
     menuListId,

@@ -18,7 +18,6 @@ interface Field {
   fullWidth?: boolean;
   onClick?: (data: any) => {};
   adminOnly?: boolean;
-  tooltip?: string;
 }
 
 interface Section {

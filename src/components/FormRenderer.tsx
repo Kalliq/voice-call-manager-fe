@@ -5,8 +5,7 @@ import {
   SubmitHandler,
   FieldValues,
 } from "react-hook-form";
-import { Box, Typography, Switch, Tooltip, IconButton } from "@mui/material";
-import InfoIcon from "@mui/icons-material/Info";
+import { Box, Typography, Switch } from "@mui/material";
 
 import { useAuth } from "../contexts/AuthContext";
 import { FormRendererProps } from "../interfaces/form-renderer";
@@ -85,22 +84,6 @@ const FormRenderer = ({
 
   const anyLoading = isSubmitting || pendingAction !== null;
 
-  const renderLabelWithTooltip = (label: string | undefined, tooltip: string | undefined) => {
-    if (!label) return null;
-    if (!tooltip) return label;
-    
-    return (
-      <Box display="flex" alignItems="center" gap={0.5}>
-        <Typography component="span">{label}</Typography>
-        <Tooltip title={tooltip} arrow placement="top">
-          <IconButton size="small" sx={{ padding: 0, margin: 0, minWidth: 'auto' }}>
-            <InfoIcon fontSize="small" color="action" />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    );
-  };
-
   return (
     <>
       <form
@@ -176,60 +159,48 @@ const FormRenderer = ({
                       switch (field.type) {
                         case "text":
                           return (
-                            <Box key={fIdx}>
-                              {field.tooltip && (
-                                <Box mb={0.5}>
-                                  {renderLabelWithTooltip(field.label, field.tooltip)}
-                                </Box>
+                            <Controller
+                              key={fIdx}
+                              name={field.name || ""}
+                              control={control}
+                              render={({ field: controllerField }) => (
+                                <CustomTextField
+                                  value={controllerField.value}
+                                  onChange={controllerField.onChange}
+                                  label={field.label}
+                                  placeholder={field.placeholder}
+                                  fullWidth={field.fullWidth}
+                                  error={!!errors[field.name || ""]}
+                                  helperText={
+                                    !isReadonly
+                                      ? (errors[field.name || ""]
+                                          ?.message as string)
+                                      : "(Admin only field)"
+                                  }
+                                  InputProps={{ readOnly: isReadonly }}
+                                  sx={
+                                    isReadonly
+                                      ? { opacity: 0.5, pointerEvents: "none" }
+                                      : {}
+                                  }
+                                />
                               )}
-                              <Controller
-                                name={field.name || ""}
-                                control={control}
-                                render={({ field: controllerField }) => (
-                                  <CustomTextField
-                                    value={controllerField.value}
-                                    onChange={controllerField.onChange}
-                                    label={!field.tooltip ? field.label : undefined}
-                                    placeholder={field.placeholder}
-                                    fullWidth={field.fullWidth}
-                                    error={!!errors[field.name || ""]}
-                                    helperText={
-                                      !isReadonly
-                                        ? (errors[field.name || ""]
-                                            ?.message as string)
-                                        : "(Admin only field)"
-                                    }
-                                    InputProps={{ readOnly: isReadonly }}
-                                    sx={
-                                      isReadonly
-                                        ? { opacity: 0.5, pointerEvents: "none" }
-                                        : {}
-                                    }
-                                  />
-                                )}
-                              />
-                            </Box>
+                            />
                           );
 
                         case "radio":
                           if (!field.options) return null;
                           const selectedOption = watch(field.name || "");
                           return (
-                            <Box key={fIdx}>
-                              {field.tooltip && (
-                                <Box mb={1}>
-                                  {renderLabelWithTooltip(field.label, field.tooltip)}
-                                </Box>
-                              )}
-                              <RadioGroupWithNestedField
-                                controllerKey={fIdx}
-                                field={field}
-                                control={control}
-                                errors={errors}
-                                selectedOption={selectedOption}
-                                isReadonly={isReadonly || false}
-                              />
-                            </Box>
+                            <RadioGroupWithNestedField
+                              key={fIdx}
+                              controllerKey={fIdx}
+                              field={field}
+                              control={control}
+                              errors={errors}
+                              selectedOption={selectedOption}
+                              isReadonly={isReadonly || false}
+                            />
                           );
 
                         case "checkbox":

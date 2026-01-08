@@ -11,10 +11,7 @@ import {
   TextField,
   Typography,
   MenuItem,
-  Tooltip,
-  IconButton,
 } from "@mui/material";
-import InfoIcon from "@mui/icons-material/Info";
 
 import { SimpleButton } from "../UI";
 
@@ -23,7 +20,6 @@ interface DynamicFieldConfig {
   name: string;
   label: string;
   addButtonLabel: string;
-  tooltip?: string;
   nestedFields: {
     type: string;
     name: string;
@@ -31,7 +27,6 @@ interface DynamicFieldConfig {
     placeholder?: string;
     options?: { label: string; value: string | boolean }[];
     disableOnFirst: boolean;
-    tooltip?: string;
   }[];
 }
 
@@ -51,35 +46,11 @@ const DynamicFieldArray: React.FC<DynamicFieldArrayProps> = ({
     name: fieldConfig.name,
   });
 
-  const renderLabelWithTooltip = (label: string, tooltip?: string) => {
-    if (!tooltip) return label;
-    
-    return (
-      <Box display="flex" alignItems="center" gap={0.5}>
-        <Typography component="span">{label}</Typography>
-        <Tooltip title={tooltip} arrow placement="top">
-          <IconButton size="small" sx={{ padding: 0, margin: 0, minWidth: 'auto' }}>
-            <InfoIcon fontSize="small" color="action" />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    );
-  };
-
   return (
     <Box sx={{ mb: 2 }}>
-      <Box display="flex" alignItems="center" gap={0.5} mb={1}>
-        <Typography variant="subtitle1">
-          {fieldConfig.label}
-        </Typography>
-        {fieldConfig.tooltip && (
-          <Tooltip title={fieldConfig.tooltip} arrow placement="top">
-            <IconButton size="small" sx={{ padding: 0, margin: 0, minWidth: 'auto' }}>
-              <InfoIcon fontSize="small" color="action" />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Box>
+      <Typography variant="subtitle1" sx={{ mb: 1 }}>
+        {fieldConfig.label}
+      </Typography>
       {fields.map((item, index) => (
         <Box
           key={item.id}
@@ -99,11 +70,6 @@ const DynamicFieldArray: React.FC<DynamicFieldArrayProps> = ({
                 case "text":
                   return (
                     <Grid item xs={12} sm={4} key={nestedField.name}>
-                      {nestedField.tooltip && (
-                        <Box mb={0.5}>
-                          {renderLabelWithTooltip(nestedField.label, nestedField.tooltip)}
-                        </Box>
-                      )}
                       <Controller
                         name={fieldName}
                         control={control}
@@ -112,7 +78,7 @@ const DynamicFieldArray: React.FC<DynamicFieldArrayProps> = ({
                           <TextField
                             {...field}
                             value={field.value ?? ""}
-                            label={!nestedField.tooltip ? nestedField.label : undefined}
+                            label={nestedField.label}
                             placeholder={nestedField.placeholder}
                             fullWidth
                             error={Boolean(nestedError)}
@@ -127,11 +93,6 @@ const DynamicFieldArray: React.FC<DynamicFieldArrayProps> = ({
                 case "select":
                   return (
                     <Grid item xs={12} sm={4} key={nestedField.name}>
-                      {nestedField.tooltip && (
-                        <Box mb={0.5}>
-                          {renderLabelWithTooltip(nestedField.label, nestedField.tooltip)}
-                        </Box>
-                      )}
                       <Controller
                         name={fieldName}
                         control={control}
@@ -142,7 +103,7 @@ const DynamicFieldArray: React.FC<DynamicFieldArrayProps> = ({
                             value={field.value ?? ""}
                             select
                             fullWidth
-                            label={!nestedField.tooltip ? nestedField.label : undefined}
+                            label={nestedField.label}
                             disabled={isDisabled}
                             sx={isDisabled ? { opacity: 0.6 } : undefined}
                           >

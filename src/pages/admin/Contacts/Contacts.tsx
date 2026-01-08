@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Stack,
@@ -45,7 +45,6 @@ const ContactsPage = () => {
   const theme = useTheme();
   const { enqueue } = useSnackbar();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [total, setTotal] = useState(0);
@@ -152,25 +151,6 @@ const ContactsPage = () => {
   useEffect(() => {
     loadLists();
   }, []);
-
-  // Handle contact ID from navigation state (e.g., from list view)
-  useEffect(() => {
-    const state = location.state as { contactId?: string } | null;
-    if (state?.contactId) {
-      // Fetch the contact and open the drawer
-      api
-        .get(`/contacts/${state.contactId}`)
-        .then((res) => {
-          setEditing(res.data);
-          setDrawerOpen(true);
-          // Clear the state to avoid reopening on re-render
-          navigate(location.pathname, { replace: true, state: {} });
-        })
-        .catch(() => {
-          enqueue("Contact not found", { variant: "error" });
-        });
-    }
-  }, [location.state, navigate, location.pathname, enqueue]);
 
   return (
     <Box p={3}>

@@ -9,10 +9,7 @@ import {
   FormControl,
   InputLabel,
   CircularProgress,
-  Tooltip,
-  IconButton,
 } from "@mui/material";
-import InfoIcon from "@mui/icons-material/Info";
 
 import useAppStore from "../../../../store/useAppStore";
 import { SimpleButton } from "../../../UI/SimpleButton";
@@ -90,14 +87,6 @@ const CsvImport_step_4 = ({ onPrevious, onConfirm }: any) => {
 
         <Divider />
 
-        <Box display="flex" alignItems="center" gap={0.5} mb={1} mt={2}>
-          <Typography variant="subtitle1">Assign to List</Typography>
-          <Tooltip title="Select the list where imported contacts will be added. All successfully imported contacts will be assigned to this list for dialing." arrow placement="top">
-            <IconButton size="small" sx={{ padding: 0, margin: 0, minWidth: 'auto' }}>
-              <InfoIcon fontSize="small" color="action" />
-            </IconButton>
-          </Tooltip>
-        </Box>
         <FormControl fullWidth>
           <InputLabel id="select-list-label">Assign to List</InputLabel>
           <Controller
