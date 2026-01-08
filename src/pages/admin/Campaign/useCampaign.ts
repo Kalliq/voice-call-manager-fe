@@ -157,7 +157,13 @@ export const useCampaign = ({
     // TO DO -- change to hangUpHandler
     call.on("disconnect", () => {
       if (activeCallRef.current === call) {
-        handleHangUp();
+        // For outbound calls with contact, use handleHangUp
+        // For outbound calls without contact (not known), use handleHangUpNotKnown
+        if (contact) {
+          handleHangUp();
+        } else {
+          handleHangUpNotKnown();
+        }
       }
     });
   };
@@ -217,10 +223,24 @@ export const useCampaign = ({
     const roomEvent = `call-status-user-${userId}`;
 
     socket.on(roomEvent, handleCallStatus);
+    
+    // Listen for inbound call ended events to reset answeredSession
+    const handleInboundCallEnded = (event: CustomEvent) => {
+      // When inbound call ends, reset answeredSession (same logic as handleCallStatus line 131-136)
+      // This ensures UI exits "calling" state when inbound call ends
+      if (answeredSession === true || answeredSessionRef.current === true) {
+        setAnsweredSession(null);
+        activeCallRef.current = null;
+      }
+    };
+    
+    window.addEventListener("inbound-call-ended", handleInboundCallEnded as EventListener);
+    
     return () => {
       socket.off(roomEvent, handleCallStatus);
+      window.removeEventListener("inbound-call-ended", handleInboundCallEnded as EventListener);
     };
-  }, [socket, currentBatch, pendingResultContacts, userId, enabled]);
+  }, [socket, currentBatch, pendingResultContacts, userId, enabled, answeredSession]);
 
   useEffect(() => {
     if (!enabled) return;
