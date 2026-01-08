@@ -132,7 +132,16 @@ export const useCampaign = ({
       !contact &&
       Object.values(TwilioFinalStatus).includes(status as TwilioFinalStatus)
     ) {
+      // This is a not-known call (no contact in currentBatch)
+      // Reset answeredSession and trigger cleanup
       setAnsweredSession(null);
+      
+      // For not-known calls, always trigger cleanup when final status arrives
+      // This handles remote hangup, call failure, etc.
+      // Clear activeCallRef if it exists
+      activeCallRef.current = null;
+      // Reset callStarted for not-known calls when socket indicates call ended
+      window.dispatchEvent(new CustomEvent("not-known-call-ended"));
     }
   };
 
@@ -154,8 +163,9 @@ export const useCampaign = ({
       callToContactMap.current.set(call, contact);
     }
     call.on("volume", callEventHandlers.volumeHandler);
-    // TO DO -- change to hangUpHandler
-    call.on("disconnect", () => {
+    
+    // Handle disconnect, cancel, error, and completed events for cleanup
+    const handleCallEnd = () => {
       if (activeCallRef.current === call) {
         // For outbound calls with contact, use handleHangUp
         // For outbound calls without contact (not known), use handleHangUpNotKnown
@@ -163,9 +173,16 @@ export const useCampaign = ({
           handleHangUp();
         } else {
           handleHangUpNotKnown();
+          // Dispatch event to reset callStarted in Campaign.tsx
+          window.dispatchEvent(new CustomEvent("not-known-call-ended"));
         }
       }
-    });
+    };
+    
+    call.on("disconnect", handleCallEnd);
+    call.on("cancel", handleCallEnd);
+    call.on("error", handleCallEnd);
+    call.on("completed", handleCallEnd);
   };
 
   // Effects

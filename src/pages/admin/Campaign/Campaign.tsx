@@ -258,6 +258,19 @@ const Campaign = () => {
     setCallStarted(false);
   };
 
+  // Listen for not-known call ended events to reset callStarted
+  useEffect(() => {
+    const handleNotKnownCallEnded = () => {
+      setCallStarted(false);
+    };
+    
+    window.addEventListener("not-known-call-ended", handleNotKnownCallEnded);
+    
+    return () => {
+      window.removeEventListener("not-known-call-ended", handleNotKnownCallEnded);
+    };
+  }, []);
+
   const hangUp = () => {
     api.post("/campaign/stop-campaign");
     handleHangUp();
