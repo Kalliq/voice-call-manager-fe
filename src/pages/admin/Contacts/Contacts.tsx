@@ -278,15 +278,7 @@ const ContactsPage = () => {
 
             <TableBody>
               {contacts.map((c) => (
-                <TableRow
-                  key={c.id}
-                  hover
-                  sx={{ cursor: "pointer" }}
-                  onClick={() => {
-                    setEditing(c);
-                    setDrawerOpen(true);
-                  }}
-                >
+                <TableRow key={c.id} hover sx={{ cursor: "pointer" }}>
                   <TableCell padding="checkbox">
                     <CheckboxField
                       label=""

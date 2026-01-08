@@ -45,6 +45,7 @@ interface ContinueDialogInterface {
   answeredSessionId: string | null;
   mode: string;
   defaultDisposition: string;
+  setIsStartingNextCall: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const ContinueDialog = ({
@@ -66,6 +67,7 @@ const ContinueDialog = ({
   isCampaign,
   mode,
   defaultDisposition,
+  setIsStartingNextCall,
 }: ContinueDialogInterface) => {
   const saveHandler = async (stopAfter = false) => {
     await Promise.all(
@@ -172,6 +174,8 @@ const ContinueDialog = ({
         <Button
           variant="contained"
           onClick={() => {
+            // Set transition state immediately (before any async operations)
+            setIsStartingNextCall(true);
             saveHandler(false);
             maybeProceedWithNextBatch();
           }}

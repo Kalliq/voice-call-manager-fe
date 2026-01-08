@@ -39,7 +39,7 @@ export const useCampaign = ({
   const [lastAnsweredId, setLastAnsweredId] = useState<string | null>(null);
 
   const { phoneState } = useAuth();
-  const { twilioDevice, registerCampaignHandler } = phoneState;
+  const { twilioDevice, setIncomingHandler } = phoneState;
 
   // Refs
   const answeredSessionRef = useRef<Contact | boolean | null>(null);
@@ -132,16 +132,7 @@ export const useCampaign = ({
       !contact &&
       Object.values(TwilioFinalStatus).includes(status as TwilioFinalStatus)
     ) {
-      // This is a not-known call (no contact in currentBatch)
-      // Reset answeredSession and trigger cleanup
       setAnsweredSession(null);
-      
-      // For not-known calls, always trigger cleanup when final status arrives
-      // This handles remote hangup, call failure, etc.
-      // Clear activeCallRef if it exists
-      activeCallRef.current = null;
-      // Reset callStarted for not-known calls when socket indicates call ended
-      window.dispatchEvent(new CustomEvent("not-known-call-ended"));
     }
   };
 
@@ -163,40 +154,26 @@ export const useCampaign = ({
       callToContactMap.current.set(call, contact);
     }
     call.on("volume", callEventHandlers.volumeHandler);
-    
-    // Handle disconnect, cancel, error, and completed events for cleanup
-    const handleCallEnd = () => {
+    // TO DO -- change to hangUpHandler
+    call.on("disconnect", () => {
       if (activeCallRef.current === call) {
-        // For outbound calls with contact, use handleHangUp
-        // For outbound calls without contact (not known), use handleHangUpNotKnown
-        if (contact) {
-          handleHangUp();
-        } else {
-          handleHangUpNotKnown();
-          // Dispatch event to reset callStarted in Campaign.tsx
-          window.dispatchEvent(new CustomEvent("not-known-call-ended"));
-        }
+        handleHangUp();
       }
-    };
-    
-    call.on("disconnect", handleCallEnd);
-    call.on("cancel", handleCallEnd);
-    call.on("error", handleCallEnd);
-    call.on("completed", handleCallEnd);
+    });
   };
 
   // Effects
   useEffect(() => {
     if (!enabled) return;
-    if (!twilioDevice || !registerCampaignHandler) return;
+    if (!twilioDevice || !setIncomingHandler) return;
 
     const onIncomingHandler = (call: Call) => {
       const params = new URLSearchParams(call.parameters?.Params || "");
       const contactId = params.get("contactId");
+      const isOutbound = params.get("outbound") === "true";
       const callSid = params.get("callSid");
 
-      // Note: isOutbound check is now done by dispatcher in useAdminPhone
-      // This handler only receives outbound calls
+      if (!isOutbound) return;
 
       if (contactId) {
         const contact = currentBatchRef.current.find(
@@ -223,12 +200,12 @@ export const useCampaign = ({
       }
     };
 
-    registerCampaignHandler(onIncomingHandler);
+    setIncomingHandler(() => onIncomingHandler);
 
     return () => {
-      registerCampaignHandler(null);
+      setIncomingHandler(null);
     };
-  }, [twilioDevice, enabled, registerCampaignHandler]);
+  }, [twilioDevice, enabled]);
 
   useEffect(() => {
     answeredSessionRef.current = answeredSession;
@@ -240,24 +217,10 @@ export const useCampaign = ({
     const roomEvent = `call-status-user-${userId}`;
 
     socket.on(roomEvent, handleCallStatus);
-    
-    // Listen for inbound call ended events to reset answeredSession
-    const handleInboundCallEnded = (event: CustomEvent) => {
-      // When inbound call ends, reset answeredSession (same logic as handleCallStatus line 131-136)
-      // This ensures UI exits "calling" state when inbound call ends
-      if (answeredSession === true || answeredSessionRef.current === true) {
-        setAnsweredSession(null);
-        activeCallRef.current = null;
-      }
-    };
-    
-    window.addEventListener("inbound-call-ended", handleInboundCallEnded as EventListener);
-    
     return () => {
       socket.off(roomEvent, handleCallStatus);
-      window.removeEventListener("inbound-call-ended", handleInboundCallEnded as EventListener);
     };
-  }, [socket, currentBatch, pendingResultContacts, userId, enabled, answeredSession]);
+  }, [socket, currentBatch, pendingResultContacts, userId, enabled]);
 
   useEffect(() => {
     if (!enabled) return;

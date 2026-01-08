@@ -55,10 +55,7 @@ const Lists = () => {
     selectedCalls,
     expandedListId,
     eligibleContacts,
-    eligibleCounts,
     handleExpand,
-    fetchEligibleContacts,
-    fetchEligibleCounts,
     handleConnectionChange,
     anchorEl,
     menuListId,
@@ -101,20 +98,6 @@ const Lists = () => {
     load();
     loadContacts();
   }, [load, loadContacts]);
-
-  useEffect(() => {
-    if (lists && lists.length > 0) {
-      // Fetch counts for all lists (non-blocking)
-      lists.forEach((list) => {
-        if (list.steps?.length && eligibleCounts[list.id] === undefined) {
-          fetchEligibleCounts(list.id, list.steps).catch(() => {
-            // Silently handle failures, count will remain undefined
-          });
-        }
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lists]);
 
   const onCall = (c: Contact) => {
     navigate("/campaign", {
@@ -178,9 +161,7 @@ const Lists = () => {
                         selectedCall={selectedCalls[list.id]}
                         expanded={expandedListId === list.id}
                         eligibleContacts={eligibleContacts[list.id]}
-                        eligibleCount={eligibleCounts[list.id]}
                         onExpand={handleExpand}
-                        onFetchEligibleContacts={fetchEligibleContacts}
                         onConnectionClick={openMenu}
                         onConnectionChange={handleConnectionChange}
                         anchorEl={anchorEl}

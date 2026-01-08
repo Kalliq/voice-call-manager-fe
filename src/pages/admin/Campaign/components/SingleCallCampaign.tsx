@@ -145,9 +145,12 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
     }
   };
 
+  // Stable CallBar visibility - prevent flicker during state transitions
+  const shouldShowCallBar = callStarted || answeredSession;
+
   return (
     <>
-      {callStarted && (
+      {shouldShowCallBar && (
         <CallBar
           session={session}
           callStartTime={callStartTime}
@@ -411,7 +414,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                     color="error"
                     startIcon={<CallEnd />}
                     onClick={onEndCall}
-                    disabled={!answeredSession}
+                    disabled={!answeredSession || !callStarted}
                   >
                     End Call
                   </Button>

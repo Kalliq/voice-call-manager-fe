@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, Stack, Container } from "@mui/material";
 import { TelephonyConnection } from "voice-javascript-common";
@@ -62,7 +62,7 @@ const Campaign = () => {
   const [manualSession, setManualSession] = useState<CallSession | null>(null);
   const [callStarted, setCallStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isCallingNotKnown, setIsCallingNotKnown] = useState(false);
+  const [isStartingNextCall, setIsStartingNextCall] = useState(false);
 
   useEffect(() => {
     if (contactId && !contacts && !mode) {
@@ -113,6 +113,54 @@ const Campaign = () => {
 
   useRingingTone({ ringingSessions, answeredSession });
 
+  // STABLE DIALER STATE MACHINE - Only moves forward, prevents flicker
+  // This centralizes UI interpretation and ensures UI never reacts directly to raw event timing
+  const dialerState = useMemo(() => {
+    // Priority order (highest to lowest) - ensures only ONE state is active
+    if (isStartingNextCall) {
+      return "TRANSITIONING" as const;
+    }
+    if (answeredSession) {
+      return "IN_CALL" as const;
+    }
+    if (callStarted || ringingSessions.length > 0) {
+      return "DIALING" as const;
+    }
+    return "IDLE" as const;
+  }, [isStartingNextCall, answeredSession, callStarted, ringingSessions.length]);
+
+  // STABLE CALL BAR VISIBILITY - Prevents flicker
+  // CallBar stays visible during transitions and active calls
+  const shouldShowCallBar = useMemo(() => {
+    return dialerState === "DIALING" || dialerState === "IN_CALL" || dialerState === "TRANSITIONING";
+  }, [dialerState]);
+
+  // Guaranteed cleanup: reset callStarted when call ends (remote hangup, terminal status, etc.)
+  useEffect(() => {
+    // If callStarted is true but there's no active call (answeredSession is null)
+    // and no ringing calls, then the call has ended → reset to idle
+    if (
+      callStarted &&
+      answeredSession === null &&
+      ringingSessions.length === 0
+    ) {
+      setCallStarted(false);
+    }
+  }, [callStarted, answeredSession, ringingSessions]);
+
+  // Clear isStartingNextCall when call actually starts or on error
+  useEffect(() => {
+    if (callStarted) {
+      setIsStartingNextCall(false);
+    }
+  }, [callStarted]);
+
+  useEffect(() => {
+    if (error) {
+      setIsStartingNextCall(false);
+    }
+  }, [error]);
+
   useEffect(() => {
     if (shouldRedirect)
       navigate("/dashboard", { replace: true, state: { from: location } });
@@ -142,31 +190,25 @@ const Campaign = () => {
 
   const makeCallNotKnown = async (phone: string) => {
     if (guardNoSocket()) return;
-    
-    setIsCallingNotKnown(true);
     try {
       await api.post("/campaign/call-notknown", {
         phone,
       });
-      // Only set callStarted after successful API response
+      // Only set callStarted after backend confirms call creation
       setCallStarted(true);
     } catch (error: any) {
-      // Do NOT set callStarted on error
       const errorMessage =
         error.response?.data?.error ||
         error.message ||
         "Failed to start call. Please try again.";
       enqueue(errorMessage, { variant: "error" });
       setError(errorMessage);
-    } finally {
-      setIsCallingNotKnown(false);
+      // Do NOT set callStarted on error - UI stays in idle state
     }
   };
 
   const makeCallBatch = async () => {
     if (guardNoSocket()) return;
-    setCallStarted(true);
-    // TO-DO implement try-catch
     let slice: Contact[];
     if (contacts) {
       slice = contacts.slice(currentIndex, currentIndex + callsPerBatch);
@@ -192,6 +234,9 @@ const Campaign = () => {
       const activeCalls = await api.post("/campaign/call-campaign", {
         contacts: batchContacts,
       });
+      // Only set callStarted after backend confirms call creation
+      setCallStarted(true);
+      
       const extendedBatchContactsWithSid = batchContacts.map(
         (batchContact: Contact) => {
           const call = activeCalls.data.find((activeCall: any) => {
@@ -209,6 +254,8 @@ const Campaign = () => {
     } catch (error: any) {
       const msg = error.response.data.errors[0].message;
       setError(typeof msg === "string" ? msg : error.message);
+      setIsStartingNextCall(false);
+      // Do NOT set callStarted on error - UI stays in idle state
     }
   };
 
@@ -221,6 +268,7 @@ const Campaign = () => {
 
   const handleContinue = () => {
     setShowContinueDialog(false);
+    setIsStartingNextCall(true);
     makeCallBatch();
   };
 
@@ -258,19 +306,6 @@ const Campaign = () => {
     setCallStarted(false);
   };
 
-  // Listen for not-known call ended events to reset callStarted
-  useEffect(() => {
-    const handleNotKnownCallEnded = () => {
-      setCallStarted(false);
-    };
-    
-    window.addEventListener("not-known-call-ended", handleNotKnownCallEnded);
-    
-    return () => {
-      window.removeEventListener("not-known-call-ended", handleNotKnownCallEnded);
-    };
-  }, []);
-
   const hangUp = () => {
     api.post("/campaign/stop-campaign");
     handleHangUp();
@@ -303,6 +338,11 @@ const Campaign = () => {
             />
           </Stack>
         )}
+        {isStartingNextCall && (
+          <Alert severity="info" sx={{ mt: 3 }}>
+            Starting next call...
+          </Alert>
+        )}
         {error && (
           <Alert severity="error" sx={{ mt: 3 }}>
             {error}
@@ -317,7 +357,6 @@ const Campaign = () => {
             onEndCall={hangUpNotKnown}
             callStarted={callStarted}
             handleNumpadClick={handleNumpadClick}
-            isCalling={isCallingNotKnown}
           />
         )}
 
@@ -336,40 +375,31 @@ const Campaign = () => {
 
         {!phone && !manualSession && !autoStart && (
           <>
-            {!isCampaignFinished &&
-            isCampaignRunning &&
-            mode === TelephonyConnection.SOFT_CALL &&
-            singleSession ? (
+            {/* STABLE DIALER CONTAINER - Always mounted to prevent layout jumps */}
+            {!isCampaignFinished && isCampaignRunning && mode === TelephonyConnection.SOFT_CALL && singleSession && (
               <SingleCallCampaignPanel
                 session={singleSession}
-                answeredSession={answeredSession as Contact}
+                answeredSession={dialerState === "IN_CALL" ? (answeredSession as Contact) : null}
                 onEndCall={hangUp}
                 manual={false}
-                callStarted={callStarted}
+                callStarted={dialerState === "DIALING" || dialerState === "IN_CALL"}
                 handleNumpadClick={handleNumpadClick}
               />
-            ) : (
-              <>
-                {!isCampaignFinished && !answeredSession && (
-                  <DialingCards
-                    sessions={getDialingSessionsWithStatuses(
-                      currentBatch,
-                      ringingSessions,
-                      pendingResultContacts
-                    )}
-                  />
+            )}
+            {/* Fallback: Show DialingCards only when truly idle (not transitioning) */}
+            {!isCampaignFinished && 
+             isCampaignRunning && 
+             mode === TelephonyConnection.SOFT_CALL && 
+             !singleSession && 
+             dialerState === "IDLE" && 
+             currentBatch.length > 0 && (
+              <DialingCards
+                sessions={getDialingSessionsWithStatuses(
+                  currentBatch,
+                  ringingSessions,
+                  pendingResultContacts
                 )}
-                {!isCampaignFinished && answeredSession && (
-                  <SingleCallCampaignPanel
-                    session={answeredSession as CallSession}
-                    answeredSession={answeredSession as Contact}
-                    onEndCall={hangUp}
-                    manual={false}
-                    callStarted={callStarted}
-                    handleNumpadClick={handleNumpadClick}
-                  />
-                )}
-              </>
+              />
             )}
           </>
         )}
@@ -396,6 +426,7 @@ const Campaign = () => {
         answeredSessionId={lastAnsweredId}
         mode={mode}
         defaultDisposition={defaultDisposition}
+        setIsStartingNextCall={setIsStartingNextCall}
       />
       {isCampaignFinished && (
         <Alert severity="success" sx={{ mt: 3 }}>

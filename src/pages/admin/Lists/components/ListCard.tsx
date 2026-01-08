@@ -30,9 +30,7 @@ interface ListCardProps {
   selectedCall: string;
   expanded: boolean;
   eligibleContacts: Record<number, any[]>;
-  eligibleCount?: number;
   onExpand: (id: string, steps?: Step[]) => void;
-  onFetchEligibleContacts: (listId: string, steps: Step[]) => Promise<Record<number, any[]>>;
   onConnectionClick: (e: React.MouseEvent<HTMLElement>, id: string) => void;
   onConnectionChange: (id: string, option: string) => void;
   anchorEl: HTMLElement | null;
@@ -46,9 +44,7 @@ const ListCard = ({
   selectedCall,
   expanded,
   eligibleContacts,
-  eligibleCount,
   onExpand,
-  onFetchEligibleContacts,
   onConnectionClick,
   onConnectionChange,
   anchorEl,
@@ -58,44 +54,20 @@ const ListCard = ({
 }: ListCardProps) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  
-  // Enable DIAL if list has steps (contacts will be fetched on click if needed)
-  const hasSteps = (list.steps?.length ?? 0) > 0;
-  const allEligibleContacts = Object.values(eligibleContacts ?? {}).flat();
-  const fallbackStepContacts = list.steps?.flatMap((step: Step) => step.contacts ?? []) ?? [];
-  const availableContacts = allEligibleContacts.length > 0 ? allEligibleContacts : fallbackStepContacts;
-  // Prefer eligibleCount prop if available, otherwise use local calculation
-  const contactCount = eligibleCount !== undefined 
-    ? eligibleCount 
-    : availableContacts.length;
-  const hasContacts = contactCount > 0;
+  const hasContacts = list.contacts?.length > 0;
+  const contactCount = list.contacts?.length ?? 0;
 
-  const handleDial = async (e: React.MouseEvent<HTMLElement>) => {
+  const handleDial = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
     
-    if (!list.steps?.length) {
-      console.warn("Cannot dial: list has no steps");
-      return;
-    }
-    
     // Aggregate all eligible contacts from all steps
-    let allContacts = Object.values(eligibleContacts ?? {}).flat();
+    const allContacts = Object.values(eligibleContacts ?? {}).flat();
     
     // Fallback to step.contacts if eligibleContacts not available
     const fallbackContacts = list.steps?.flatMap((step: Step) => step.contacts ?? []) ?? [];
-    let contacts = allContacts.length > 0 ? allContacts : fallbackContacts;
+    const contacts = allContacts.length > 0 ? allContacts : fallbackContacts;
     
-    // If no contacts are available, fetch eligible contacts
     if (contacts.length === 0) {
-      const fetchedContacts = await onFetchEligibleContacts(list.id, list.steps);
-      // Use the fetched contacts directly
-      allContacts = Object.values(fetchedContacts ?? {}).flat();
-      contacts = allContacts.length > 0 ? allContacts : fallbackContacts;
-    }
-    
-    // Log clear reason if still no contacts after fetch
-    if (contacts.length === 0) {
-      console.warn(`Cannot dial: no eligible contacts found for list ${list.id} after fetch`);
       return;
     }
     
@@ -132,9 +104,9 @@ const ListCard = ({
         </TableCell>
         <TableCell>
           <Box display="flex" alignItems="center" gap={0.5}>
-            <GroupOutlined color={contactCount > 0 ? "action" : "disabled"} />
+            <GroupOutlined color={hasContacts ? "action" : "disabled"} />
             <Typography variant="body2" color="text.secondary">
-              {contactCount !== undefined ? (contactCount > 0 ? contactCount : "0") : "—"}
+              {hasContacts ? contactCount : "0"}
             </Typography>
           </Box>
         </TableCell>
@@ -160,7 +132,7 @@ const ListCard = ({
               size="small"
               color="primary"
               onClick={handleDial}
-              disabled={!hasSteps}
+              disabled={!hasContacts}
             >
               <Call fontSize="small" />
             </IconButton>
