@@ -35,6 +35,8 @@ import { CallBar } from "./molecules/CallBar";
 
 import api from "../../../../utils/axiosInstance";
 import { CallSession, Contact } from "../../../../types/contact";
+import { Call } from "@twilio/voice-sdk";
+import { Device } from "@twilio/voice-sdk";
 
 interface SingleCallCampaignPanelProps {
   session: CallSession;
@@ -46,6 +48,8 @@ interface SingleCallCampaignPanelProps {
   autoStart?: boolean;
   callStarted?: boolean;
   handleNumpadClick: (char: string) => void;
+  activeCallRef?: React.MutableRefObject<Call | null>;
+  twilioDevice?: Device | null;
 }
 
 const tabLabels = [
@@ -66,6 +70,8 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   autoStart,
   callStarted,
   handleNumpadClick,
+  activeCallRef,
+  twilioDevice,
 }) => {
   const [callStartTime, setCallStartTime] = useState<Date | null>(new Date());
   const [elapsedTime, setElapsedTime] = useState("00:00");
@@ -155,6 +161,8 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
           hasAnsweredSession={!!answeredSession}
           onEndCall={onEndCall}
           handleNumpadClick={handleNumpadClick}
+          activeCallRef={activeCallRef}
+          twilioDevice={twilioDevice}
         />
       )}
       <Paper

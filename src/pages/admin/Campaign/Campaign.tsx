@@ -38,7 +38,7 @@ const Campaign = () => {
   const { contacts, mode, contactId, phone, defaultDisposition, autoStart } =
     (location.state || {}) as LocationState;
   const { phoneState } = useAuth();
-  const { socket, volumeHandler, hangUpHandler } = phoneState;
+  const { socket, volumeHandler, hangUpHandler, twilioDevice } = phoneState;
   const { enqueue } = useSnackbar();
 
   const { user, settings } = useAppStore((state) => state);
@@ -100,6 +100,7 @@ const Campaign = () => {
     handleHangUp,
     handleHangUpNotKnown,
     handleNumpadClick,
+    activeCallRef,
   } = useCampaign({
     userId: user!.id ?? "",
     socket,
@@ -288,6 +289,8 @@ const Campaign = () => {
             onEndCall={hangUpNotKnown}
             callStarted={callStarted}
             handleNumpadClick={handleNumpadClick}
+            activeCallRef={activeCallRef}
+            twilioDevice={twilioDevice}
           />
         )}
 
@@ -301,6 +304,8 @@ const Campaign = () => {
             phone={phone}
             callStarted={callStarted}
             handleNumpadClick={handleNumpadClick}
+            activeCallRef={activeCallRef}
+            twilioDevice={twilioDevice}
           />
         )}
 
@@ -317,6 +322,8 @@ const Campaign = () => {
                 manual={false}
                 callStarted={callStarted}
                 handleNumpadClick={handleNumpadClick}
+                activeCallRef={activeCallRef}
+                twilioDevice={twilioDevice}
               />
             ) : (
               <>
@@ -337,6 +344,8 @@ const Campaign = () => {
                     manual={false}
                     callStarted={callStarted}
                     handleNumpadClick={handleNumpadClick}
+                    activeCallRef={activeCallRef}
+                    twilioDevice={twilioDevice}
                   />
                 )}
               </>

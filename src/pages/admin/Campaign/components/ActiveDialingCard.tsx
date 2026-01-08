@@ -28,6 +28,8 @@ import {
 import { Contact } from "../../../../types/contact";
 import { FieldItem } from "../../../../components/atoms/FieldItem";
 import { CallBar } from "./molecules/CallBar";
+import { Call } from "@twilio/voice-sdk";
+import { Device } from "@twilio/voice-sdk";
 
 const LightPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -41,6 +43,8 @@ interface ActiveDialingCardProps {
   outputVolume: number;
   hangUp: () => void;
   handleNumpadClick: (char: string) => void;
+  activeCallRef?: React.MutableRefObject<Call | null>;
+  twilioDevice?: Device | null;
 }
 
 /* talking‑point mock */
@@ -58,6 +62,8 @@ const ActiveDialingCard = ({
   outputVolume,
   hangUp,
   handleNumpadClick,
+  activeCallRef,
+  twilioDevice,
 }: ActiveDialingCardProps) => {
   const [callStartTime, setCallStartTime] = useState<Date | null>(new Date());
   const [elapsedTime, setElapsedTime] = useState("00:00");
@@ -96,6 +102,8 @@ const ActiveDialingCard = ({
         elapsedTime={elapsedTime}
         onEndCall={hangUp}
         handleNumpadClick={handleNumpadClick}
+        activeCallRef={activeCallRef}
+        twilioDevice={twilioDevice}
       />
 
       <Grid container spacing={3}>
