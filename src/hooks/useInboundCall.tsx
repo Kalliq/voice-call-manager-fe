@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 export const useInboundCall = () => {
   const { phoneState } = useAuth();
-  const { twilioDevice, setIncomingHandler } = phoneState;
+  const { twilioDevice, registerInboundHandler } = phoneState;
 
   const [inboundCall, setInboundCall] = useState<Call | null>(null);
   const [isInboundCallDialogOpen, setIsDialogOpen] = useState(false);
@@ -31,26 +31,25 @@ export const useInboundCall = () => {
   }, [inboundCall]);
 
   useEffect(() => {
-    if (!twilioDevice || !setIncomingHandler) return;
+    if (!twilioDevice || !registerInboundHandler) return;
 
     const onIncomingHandler = (call: Call) => {
-      console.log("useInboundCall");
-      const params = new URLSearchParams(call.parameters?.Params || "");
-      const isOutbound = params.get("outbound") === "true";
+      console.log("useInboundCall - Inbound call received", call);
+      
+      // Note: isOutbound check is now done by dispatcher in useAdminPhone
+      // This handler only receives inbound calls
 
-      if (isOutbound) {
-        console.log("Outbound call received in useInboundCall — skipping.");
-        return;
-      }
-
-      console.log("Inbound call received", call);
       activeCallRef.current = call;
       setInboundCall(call);
       setIsDialogOpen(true);
     };
 
-    setIncomingHandler(() => onIncomingHandler);
-  }, [twilioDevice]);
+    registerInboundHandler(onIncomingHandler);
+
+    return () => {
+      registerInboundHandler(null);
+    };
+  }, [twilioDevice, registerInboundHandler]);
 
   const stagedClose = () => {
     if (hangupTimer.current) clearTimeout(hangupTimer.current);

@@ -39,7 +39,7 @@ export const useCampaign = ({
   const [lastAnsweredId, setLastAnsweredId] = useState<string | null>(null);
 
   const { phoneState } = useAuth();
-  const { twilioDevice, setIncomingHandler } = phoneState;
+  const { twilioDevice, registerCampaignHandler } = phoneState;
 
   // Refs
   const answeredSessionRef = useRef<Contact | boolean | null>(null);
@@ -165,15 +165,15 @@ export const useCampaign = ({
   // Effects
   useEffect(() => {
     if (!enabled) return;
-    if (!twilioDevice || !setIncomingHandler) return;
+    if (!twilioDevice || !registerCampaignHandler) return;
 
     const onIncomingHandler = (call: Call) => {
       const params = new URLSearchParams(call.parameters?.Params || "");
       const contactId = params.get("contactId");
-      const isOutbound = params.get("outbound") === "true";
       const callSid = params.get("callSid");
 
-      if (!isOutbound) return;
+      // Note: isOutbound check is now done by dispatcher in useAdminPhone
+      // This handler only receives outbound calls
 
       if (contactId) {
         const contact = currentBatchRef.current.find(
@@ -200,12 +200,12 @@ export const useCampaign = ({
       }
     };
 
-    setIncomingHandler(() => onIncomingHandler);
+    registerCampaignHandler(onIncomingHandler);
 
     return () => {
-      setIncomingHandler(null);
+      registerCampaignHandler(null);
     };
-  }, [twilioDevice, enabled]);
+  }, [twilioDevice, enabled, registerCampaignHandler]);
 
   useEffect(() => {
     answeredSessionRef.current = answeredSession;

@@ -20,6 +20,13 @@ export const useAdminPhone = (userId: string | undefined) => {
 
   const socketRef = useRef<Socket | null>(null);
   const twilioDeviceRef = useRef<Device | null>(null);
+  
+  // Dispatcher pattern: store both handlers separately
+  const campaignHandlerRef = useRef<((call: any) => void) | null>(null);
+  const inboundHandlerRef = useRef<((call: any) => void) | null>(null);
+  
+  // Queue inbound calls that arrive before handler is registered
+  const queuedInboundCallRef = useRef<any | null>(null);
 
   const getDevices = useCallback(async () => {
     if (twilioDeviceRef.current) {
@@ -34,21 +41,50 @@ export const useAdminPhone = (userId: string | undefined) => {
   };
   const hangUpHandler = () => {};
 
+  // Register single incoming handler that dispatches to appropriate handler
   useEffect(() => {
     const device = twilioDevice;
     console.log("twilioDeviceRef.current: ", twilioDevice);
     if (!device) return;
 
     const onIncoming = (call: any) => {
-      if (incomingHandler) {
-        incomingHandler(call);
+      // STEP 6: Log incoming call event
+      console.log("🔥 DEVICE INCOMING", {
+        parameters: call.parameters,
+        state: call.state,
+        direction: call.direction,
+      });
+
+      // Check if this is an outbound call
+      const params = new URLSearchParams(call.parameters?.Params || "");
+      const isOutbound = params.get("outbound") === "true";
+
+      if (isOutbound) {
+        // Dispatch to campaign handler
+        if (campaignHandlerRef.current) {
+          campaignHandlerRef.current(call);
+        } else {
+          console.warn("Outbound call received but no campaign handler registered");
+        }
       } else {
-        console.warn("No incoming handler set");
+        // Dispatch to inbound handler
+        if (inboundHandlerRef.current) {
+          inboundHandlerRef.current(call);
+        } else {
+          // Queue the call until handler is ready
+          queuedInboundCallRef.current = call;
+          console.log("Inbound call queued — handler not ready");
+        }
       }
     };
 
     device.on("incoming", onIncoming);
-  }, [incomingHandler]);
+
+    // Cleanup: remove listener when device is destroyed
+    return () => {
+      device.off("incoming", onIncoming);
+    };
+  }, [twilioDevice]);
 
   useEffect(() => {
     if (twilioDevice && userId) {
@@ -64,10 +100,22 @@ export const useAdminPhone = (userId: string | undefined) => {
         // Initialize Twilio
         const device = await initTwilioDevice();
 
+        // STEP 6: Log device registration state
+        device.on("registered", () => {
+          console.log("🔥 DEVICE REGISTERED - ready for incoming calls");
+        });
+        device.on("error", (error: any) => {
+          console.error("🔥 DEVICE ERROR:", error);
+        });
+        device.on("tokenWillExpire", () => {
+          console.warn("🔥 DEVICE TOKEN WILL EXPIRE");
+        });
+
         setTwilioDevice(device);
         device.register();
+        console.log("🔥 DEVICE REGISTER CALLED - state:", device.state);
       } catch (error) {
-        console.error(error);
+        console.error("🔥 DEVICE INIT ERROR:", error);
       }
     })();
 
@@ -83,6 +131,23 @@ export const useAdminPhone = (userId: string | undefined) => {
     };
   }, [userId]);
 
+  // Register campaign handler (for outbound calls)
+  const registerCampaignHandler = useCallback((handler: ((call: any) => void) | null) => {
+    campaignHandlerRef.current = handler;
+  }, []);
+
+  // Register inbound handler (for inbound calls)
+  const registerInboundHandler = useCallback((handler: ((call: any) => void) | null) => {
+    inboundHandlerRef.current = handler;
+    
+    // Process any queued inbound call immediately
+    if (handler && queuedInboundCallRef.current) {
+      const queuedCall = queuedInboundCallRef.current;
+      queuedInboundCallRef.current = null;
+      handler(queuedCall);
+    }
+  }, []);
+
   return {
     inputVolume,
     outputVolume,
@@ -91,6 +156,8 @@ export const useAdminPhone = (userId: string | undefined) => {
     twilioDevice,
     socket,
     devices,
-    setIncomingHandler,
+    setIncomingHandler, // Keep for backward compatibility if needed
+    registerCampaignHandler,
+    registerInboundHandler,
   };
 };
