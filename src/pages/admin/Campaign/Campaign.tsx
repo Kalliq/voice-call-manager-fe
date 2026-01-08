@@ -113,11 +113,22 @@ const Campaign = () => {
 
   useRingingTone({ ringingSessions, answeredSession });
 
+  // MODE DETECTION - Determine if this is one-off call vs batch/power dialer
+  // One-off: phone present, no manualSession, no contacts array, no mode
+  // Batch: contacts array present OR isCampaignRunning with mode
+  const isOneOff = useMemo(() => {
+    return !!(phone && !manualSession && !contacts && !mode);
+  }, [phone, manualSession, contacts, mode]);
+
+  const isBatchDial = useMemo(() => {
+    return !!(contacts || (isCampaignRunning && mode));
+  }, [contacts, isCampaignRunning, mode]);
+
   // STABLE DIALER STATE MACHINE - Only moves forward, prevents flicker
   // This centralizes UI interpretation and ensures UI never reacts directly to raw event timing
   const dialerState = useMemo(() => {
     // Priority order (highest to lowest) - ensures only ONE state is active
-    if (isStartingNextCall) {
+    if (isStartingNextCall && isBatchDial) {
       return "TRANSITIONING" as const;
     }
     if (answeredSession) {
@@ -127,7 +138,7 @@ const Campaign = () => {
       return "DIALING" as const;
     }
     return "IDLE" as const;
-  }, [isStartingNextCall, answeredSession, callStarted, ringingSessions.length]);
+  }, [isStartingNextCall, isBatchDial, answeredSession, callStarted, ringingSessions.length]);
 
   // STABLE CALL BAR VISIBILITY - Prevents flicker
   // CallBar stays visible during transitions and active calls
@@ -136,8 +147,16 @@ const Campaign = () => {
   }, [dialerState]);
 
   // Guaranteed cleanup: reset callStarted when call ends (remote hangup, terminal status, etc.)
+  // FIX: For one-off calls, ringingSessions is always empty, so don't use it as a condition
+  // One-off cleanup relies on socket terminal status events, not ringingSessions check
   useEffect(() => {
-    // If callStarted is true but there's no active call (answeredSession is null)
+    // Skip cleanup for one-off calls during initial start phase
+    // One-off calls never populate ringingSessions, so this check would always be true
+    if (isOneOff) {
+      return;
+    }
+    
+    // For batch/power dialer: If callStarted is true but there's no active call (answeredSession is null)
     // and no ringing calls, then the call has ended → reset to idle
     if (
       callStarted &&
@@ -146,7 +165,7 @@ const Campaign = () => {
     ) {
       setCallStarted(false);
     }
-  }, [callStarted, answeredSession, ringingSessions]);
+  }, [callStarted, answeredSession, ringingSessions, isOneOff]);
 
   // Clear isStartingNextCall when call actually starts or on error
   useEffect(() => {
@@ -268,7 +287,10 @@ const Campaign = () => {
 
   const handleContinue = () => {
     setShowContinueDialog(false);
-    setIsStartingNextCall(true);
+    // Only set transition state for batch dialer, not one-off calls
+    if (isBatchDial) {
+      setIsStartingNextCall(true);
+    }
     makeCallBatch();
   };
 
@@ -338,7 +360,8 @@ const Campaign = () => {
             />
           </Stack>
         )}
-        {isStartingNextCall && (
+        {/* "Starting next call..." only for batch/power dialer, not one-off calls */}
+        {isStartingNextCall && isBatchDial && (
           <Alert severity="info" sx={{ mt: 3 }}>
             Starting next call...
           </Alert>

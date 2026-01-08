@@ -175,7 +175,10 @@ const ContinueDialog = ({
           variant="contained"
           onClick={() => {
             // Set transition state immediately (before any async operations)
-            setIsStartingNextCall(true);
+            // Only for batch dialer campaigns, not one-off calls
+            if (isCampaign) {
+              setIsStartingNextCall(true);
+            }
             saveHandler(false);
             maybeProceedWithNextBatch();
           }}

@@ -19,15 +19,17 @@ function SelectField<T>({
   getLabel,
   placeholder,
 }: SelectFieldProps<T>) {
+  // Ensure value is always a string to prevent uncontrolled/controlled warning
+  const controlledValue = typeof value === "string" ? value : "";
+  
   return (
     <FormControl size="small" sx={{ minWidth: 200 }}>
       <InputLabel>{label}</InputLabel>
       <Select
         label={label}
-        value={value ?? ""}
+        value={controlledValue}
         onChange={(e) => {
           const selectedValue = e.target.value;
-          console.log("e.target: ", e.target);
           onChange(selectedValue);
         }}
       >

@@ -17,6 +17,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Autocomplete,
+  Popover,
 } from "@mui/material";
 import {
   Animation,
@@ -35,6 +37,8 @@ import { CallBar } from "./molecules/CallBar";
 
 import api from "../../../../utils/axiosInstance";
 import { CallSession, Contact } from "../../../../types/contact";
+import { useSnackbar } from "../../../../hooks/useSnackbar";
+import { List } from "voice-javascript-common";
 
 interface SingleCallCampaignPanelProps {
   session: CallSession;
@@ -77,6 +81,10 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTalkingPoint, setNewTalkingPoint] = useState("");
+  const [addToListAnchor, setAddToListAnchor] = useState<HTMLElement | null>(null);
+  const [lists, setLists] = useState<{ id: string; listName: string }[]>([]);
+  const [listSearch, setListSearch] = useState("");
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
 
   useEffect(() => {
     let int: NodeJS.Timeout;
@@ -105,6 +113,63 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
       onStartCall?.();
     }
   }, [session.id]);
+
+  // Fetch lists when "Add to list" popover opens
+  useEffect(() => {
+    if (addToListAnchor) {
+      const fetchLists = async () => {
+        try {
+          const { data } = await api.get<List[]>("/lists");
+          setLists(data.map((list) => ({ id: list.id, listName: list.listName })));
+        } catch (error) {
+          console.error("Failed to fetch lists:", error);
+        }
+      };
+      fetchLists();
+    }
+  }, [addToListAnchor]);
+
+  const { enqueue } = useSnackbar();
+
+  const handleAddToList = async () => {
+    if (!selectedListId || !session.id) return;
+
+    try {
+      // Get current contact to find its listId
+      const contactResponse = await api.get(`/contacts/${session.id}`);
+      const contact = contactResponse.data;
+      const sourceListId = contact.listId;
+
+      if (!sourceListId) {
+        enqueue("Contact is not in any list. Cannot move.", { variant: "error" });
+        return;
+      }
+
+      if (sourceListId === selectedListId) {
+        enqueue("Contact is already in this list.", { variant: "info" });
+        setAddToListAnchor(null);
+        setSelectedListId(null);
+        setListSearch("");
+        return;
+      }
+
+      // Use move endpoint to add contact to selected list
+      await api.post("/contacts/move", {
+        sourceListId,
+        targetListId: selectedListId,
+        contactIds: [session.id],
+      });
+
+      enqueue("Contact added to list successfully", { variant: "success" });
+      setAddToListAnchor(null);
+      setSelectedListId(null);
+      setListSearch("");
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to add contact to list";
+      enqueue(errorMessage, { variant: "error" });
+    }
+  };
 
   const onPhoneSubmitHandler = async () => {
     try {
@@ -341,7 +406,11 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
               <Typography variant="h6" gutterBottom>
                 Quick Actions
               </Typography>
-              <Button variant="outlined" startIcon={<PlaylistAdd />}>
+              <Button
+                variant="outlined"
+                startIcon={<PlaylistAdd />}
+                onClick={(e) => setAddToListAnchor(e.currentTarget)}
+              >
                 Add to list
               </Button>
               <Button variant="outlined" startIcon={<Email />}>
@@ -457,6 +526,70 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Add to List Popover */}
+      <Popover
+        open={Boolean(addToListAnchor)}
+        anchorEl={addToListAnchor}
+        onClose={() => {
+          setAddToListAnchor(null);
+          setSelectedListId(null);
+          setListSearch("");
+        }}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+      >
+        <Box sx={{ p: 2, minWidth: 300 }}>
+          <Typography variant="h6" gutterBottom>
+            Add to List
+          </Typography>
+          <Autocomplete
+            options={lists}
+            getOptionLabel={(option) => option.listName}
+            value={lists.find((l) => l.id === selectedListId) || null}
+            onChange={(_, newValue) => {
+              setSelectedListId(newValue?.id || null);
+            }}
+            inputValue={listSearch}
+            onInputChange={(_, newInputValue) => {
+              setListSearch(newInputValue);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Search lists"
+                placeholder="Type to search..."
+                size="small"
+              />
+            )}
+            sx={{ mb: 2 }}
+          />
+          <Stack direction="row" spacing={1} justifyContent="flex-end">
+            <Button
+              onClick={() => {
+                setAddToListAnchor(null);
+                setSelectedListId(null);
+                setListSearch("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleAddToList}
+              disabled={!selectedListId}
+            >
+              Add
+            </Button>
+          </Stack>
+        </Box>
+      </Popover>
     </>
   );
 };

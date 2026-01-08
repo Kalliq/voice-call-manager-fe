@@ -139,7 +139,11 @@ const ContactsPage = () => {
 
   const onCall = (c: Contact) => {
     navigate("/campaign", {
-      state: { contactId: c.id, autoStart: false },
+      state: { 
+        contactId: c.id, 
+        phone: c.phone,
+        autoStart: false 
+      },
     });
   };
 
