@@ -118,6 +118,11 @@ export default function AdminLayout() {
   const closePhoneDialer = () => setPhoneAnchorEl(null);
 
   const onCall = async (phone: string) => {
+    // Validate phone is not empty/invalid
+    if (!phone || typeof phone !== "string" || !phone.trim()) {
+      return;
+    }
+
     let contactId: string | null = null;
     try {
       const { data } = await api.get(
@@ -125,10 +130,14 @@ export default function AdminLayout() {
       );
       contactId = data.id;
     } catch (err: any) {
-      if (err.response?.status !== 404) {
-        // Handle or rethrow unexpected errors
-        console.error("Unexpected error:", err);
-        return;
+      // 404 is expected if contact doesn't exist - proceed as "not known"
+      if (err.response?.status === 404) {
+        // Contact not found - proceed with dialing as "not known"
+        contactId = null;
+      } else {
+        // For other errors, log but still fallback to dialing as "not known"
+        console.error("Unexpected error during contact lookup:", err);
+        // Continue with contactId = null to dial as "not known"
       }
     }
     setPhoneAnchorEl(null);

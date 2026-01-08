@@ -11,6 +11,7 @@ interface MinimalCallPanelProps {
   onEndCall: () => void;
   callStarted: boolean;
   handleNumpadClick: (char: string) => void;
+  isCalling?: boolean;
 }
 
 const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
@@ -20,6 +21,7 @@ const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
   onEndCall,
   callStarted,
   handleNumpadClick,
+  isCalling = false,
 }) => {
   const [callStartTime, setCallStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState("00:00");
@@ -94,8 +96,9 @@ const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
             color="primary"
             startIcon={<Phone />}
             onClick={() => onStartCall(phone)}
+            disabled={isCalling || callStarted}
           >
-            Call
+            {isCalling ? "Calling..." : "Call"}
           </Button>
         </Grid>
       </Paper>

@@ -62,6 +62,7 @@ const Campaign = () => {
   const [manualSession, setManualSession] = useState<CallSession | null>(null);
   const [callStarted, setCallStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCallingNotKnown, setIsCallingNotKnown] = useState(false);
 
   useEffect(() => {
     if (contactId && !contacts && !mode) {
@@ -141,10 +142,25 @@ const Campaign = () => {
 
   const makeCallNotKnown = async (phone: string) => {
     if (guardNoSocket()) return;
-    setCallStarted(true);
-    await api.post("/campaign/call-notknown", {
-      phone,
-    });
+    
+    setIsCallingNotKnown(true);
+    try {
+      await api.post("/campaign/call-notknown", {
+        phone,
+      });
+      // Only set callStarted after successful API response
+      setCallStarted(true);
+    } catch (error: any) {
+      // Do NOT set callStarted on error
+      const errorMessage =
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to start call. Please try again.";
+      enqueue(errorMessage, { variant: "error" });
+      setError(errorMessage);
+    } finally {
+      setIsCallingNotKnown(false);
+    }
   };
 
   const makeCallBatch = async () => {
@@ -288,6 +304,7 @@ const Campaign = () => {
             onEndCall={hangUpNotKnown}
             callStarted={callStarted}
             handleNumpadClick={handleNumpadClick}
+            isCalling={isCallingNotKnown}
           />
         )}
 

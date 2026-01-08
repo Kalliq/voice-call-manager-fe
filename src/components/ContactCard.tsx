@@ -97,7 +97,7 @@ const ContactCard = ({ contact, onDeleteClick }: ContactCardProps) => {
                 <IconButton
                   size="small"
                   onClick={() =>
-                    navigate(`/dashboard/contact-details/${contact.id}`)
+                    navigate("/contacts", { state: { contactId: contact.id } })
                   }
                 >
                   <Visibility fontSize="small" />
