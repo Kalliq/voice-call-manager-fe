@@ -210,8 +210,10 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
     }
   };
 
-  // Stable CallBar visibility - prevent flicker during state transitions
-  const shouldShowCallBar = callStarted || answeredSession;
+  // CallBar visibility: Show immediately when dialing starts, before connection
+  // The bar is a control surface, not a connection indicator
+  // It must appear as soon as callStarted === true to allow early hangup
+  const shouldShowCallBar = callStarted;
 
   return (
     <>
@@ -483,7 +485,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                     color="error"
                     startIcon={<CallEnd />}
                     onClick={onEndCall}
-                    disabled={!answeredSession || !callStarted}
+                    disabled={!callStarted}
                   >
                     End Call
                   </Button>

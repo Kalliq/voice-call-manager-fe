@@ -47,8 +47,10 @@ const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
     return () => clearInterval(int);
   }, [callStartTime]);
 
-  // Stable CallBar visibility - prevent flicker during state transitions
-  const shouldShowCallBar = callStarted || answeredSession;
+  // CallBar visibility: Show immediately when dialing starts, before connection
+  // The bar is a control surface, not a connection indicator
+  // It must appear as soon as callStarted === true to allow early hangup
+  const shouldShowCallBar = callStarted;
 
   return (
     <>
