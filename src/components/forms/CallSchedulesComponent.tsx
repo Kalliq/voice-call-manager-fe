@@ -11,6 +11,9 @@ import {
   Box,
   Typography,
   IconButton,
+  Select,
+  FormControl,
+  Tooltip,
 } from "@mui/material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
@@ -19,6 +22,7 @@ import { WeekDay } from "voice-javascript-common";
 import useAppStore from "../../store/useAppStore";
 import api from "../../utils/axiosInstance";
 import { SimpleButton } from "../UI/SimpleButton";
+import { formatContactLocalTime } from "../../utils/formatContactLocalTime";
 
 interface TimeSlot {
   from: string;
@@ -64,6 +68,17 @@ const timeOptions = [
   "11:00 PM",
 ];
 
+// US-only IANA timezones
+const US_TIMEZONES = [
+  { iana: "America/New_York", label: "Eastern Standard Time — New York", gmt: "GMT-5" },
+  { iana: "America/Chicago", label: "Central Standard Time — Chicago", gmt: "GMT-6" },
+  { iana: "America/Denver", label: "Mountain Standard Time — Denver", gmt: "GMT-7" },
+  { iana: "America/Phoenix", label: "Mountain Standard Time — Phoenix", gmt: "GMT-7" },
+  { iana: "America/Los_Angeles", label: "Pacific Standard Time — Los Angeles", gmt: "GMT-8" },
+  { iana: "America/Anchorage", label: "Alaska Standard Time — Anchorage", gmt: "GMT-9" },
+  { iana: "Pacific/Honolulu", label: "Hawaii-Aleutian Standard Time — Honolulu", gmt: "GMT-10" },
+];
+
 const ScheduleComponent = () => {
   const settings = useAppStore((s) => s.settings);
   const setSettings = useAppStore((s) => s.setSettings);
@@ -76,11 +91,36 @@ const ScheduleComponent = () => {
       : defaultSchedule
   );
 
+  const storedTimezone =
+    (settings?.["General Settings"] as { timezone?: string })?.timezone ?? null;
+  const isTimezoneLocked = Boolean(storedTimezone);
+  const [timezone, setTimezone] = useState<string>(storedTimezone ?? "");
+  const [now, setNow] = useState(new Date());
+
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [fromTime, setFromTime] = useState("");
   const [toTime, setToTime] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
+
+  // Update time every minute for live preview
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // IMPORTANT:
+  // Do NOT sync timezone draft from settings on every render/update.
+  // That was reverting user selection instantly (settings still null until Save).
+  // Only lock happens naturally after Save because storedTimezone becomes non-null.
+  useEffect(() => {
+    if (storedTimezone) {
+      setTimezone(storedTimezone);
+    }
+    // only when storedTimezone changes (after Save or initial load)
+  }, [storedTimezone]);
 
   // keep schedule in sync if settings change
   useEffect(() => {
@@ -130,12 +170,24 @@ const ScheduleComponent = () => {
       setSaveState("loading");
 
       const existingPhoneSettings = { ...settings["Phone Settings"] };
-      const { data } = await api.patch(`/settings`, {
+      const existingGeneralSettings = { ...(settings["General Settings"] || {}) };
+      
+      const patchData: any = {
         "Phone Settings": {
           ...existingPhoneSettings,
           schedulesManagement: schedule,
         },
-      });
+      };
+
+      // Only persist timezone if it's currently unset (first-time selection)
+      if (!isTimezoneLocked && timezone) {
+        patchData["General Settings"] = {
+          ...existingGeneralSettings,
+          timezone,
+        };
+      }
+      
+      const { data } = await api.patch(`/settings`, patchData);
       setSettings(data);
 
       setSaveState("success"); // flash success for 3s (effect above resets to idle)
@@ -152,6 +204,64 @@ const ScheduleComponent = () => {
       <Typography variant="h6" fontWeight="bold" color="info" mb={4}>
         CALL SCHEDULE
       </Typography>
+
+      {/* Your Operating Timezone Section */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+          Your Operating Timezone
+        </Typography>
+        <Tooltip
+          title={
+            isTimezoneLocked
+              ? "Timezone can only be set once. Contact support if this needs to be changed."
+              : ""
+          }
+          arrow
+          placement="top"
+          disableHoverListener={!isTimezoneLocked}
+        >
+          <span>
+            <FormControl fullWidth sx={{ mb: 0.5 }}>
+              <Select
+                value={timezone}
+                onChange={(e) => setTimezone(String(e.target.value))}
+                disabled={isBusy || isTimezoneLocked}
+                displayEmpty
+                renderValue={(val) =>
+                  val ? val : "Select your operating timezone"
+                }
+                sx={{
+                  "& .MuiSelect-select": {
+                    py: 1.5,
+                    fontSize: 14,
+                  },
+                }}
+              >
+                {US_TIMEZONES.map((tz) => {
+                  const tzPreview = formatContactLocalTime(tz.iana, undefined, now);
+                  return (
+                    <MenuItem key={tz.iana} value={tz.iana}>
+                      <Box>
+                        <Typography variant="body2" fontWeight={500}>
+                          {tz.label} ({tz.gmt})
+                        </Typography>
+                        {tzPreview && (
+                          <Typography variant="caption" color="text.secondary">
+                            {tzPreview}
+                          </Typography>
+                        )}
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+          </span>
+        </Tooltip>
+        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+          This timezone is used for call schedules and reporting.
+        </Typography>
+      </Box>
 
       <Box
         className="hide-scrollbar"

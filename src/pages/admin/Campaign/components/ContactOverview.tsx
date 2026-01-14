@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Box, Grid, Paper, Typography, Stack, Tabs, Tab } from "@mui/material";
+import { Box, Grid, Paper, Typography, Stack, Tabs, Tab, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import {
   Business,
   Person,
@@ -21,6 +21,7 @@ import ActivityRow from "./molecules/ActivityRow";
 
 import { Contact } from "../../../../types/contact";
 import { EditableFieldItem } from "../../../../components/atoms/EditableFieldItem";
+import { formatContactLocalTime } from "../../../../utils/formatContactLocalTime";
 
 interface ContactOverviewProps {
   contact: Contact;
@@ -30,10 +31,13 @@ interface ContactOverviewProps {
 const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
+  const [now, setNow] = useState(new Date());
 
   const { settings } = useAppStore((s) => s);
   const callResults: CallResult[] =
     (settings?.["Phone Settings"]?.callResults as CallResult[]) ?? [];
+  
+  const userTimeZone = settings?.["General Settings"]?.timezone as string | undefined;
 
   useEffect(() => {
     const fetchCallLogs = async () => {
@@ -46,6 +50,21 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
 
     fetchCallLogs();
   }, []);
+
+  // Update time every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const localTimeDisplay = formatContactLocalTime(
+    contact.timezone,
+    userTimeZone,
+    now
+  );
 
   const visibleCallLogs = useMemo(
     () => callLogs.filter((l) => !!l.action?.result?.trim()),
@@ -175,18 +194,67 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                 value={contact.linkedIn || ""}
                 onSave={onUpdate ? (value) => onUpdate("linkedIn", value) : undefined}
               />
-              <EditableFieldItem
-                icon={<AccessTime color="primary" />}
-                label="Timezone"
-                value={contact.timezone || ""}
-                onSave={onUpdate ? (value) => onUpdate("timezone", value) : undefined}
-              />
+              <Box
+                display="flex"
+                alignItems="center"
+                sx={{ py: 1 }}
+              >
+                <AccessTime color="primary" sx={{ mr: 1, fontSize: 20 }} />
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography fontSize={13} fontWeight={500} color="text.secondary" sx={{ mb: 0.5 }}>
+                    Timezone
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      value={contact.timezone || ""}
+                      onChange={(e) => {
+                        if (onUpdate) {
+                          onUpdate("timezone", e.target.value);
+                        }
+                      }}
+                      displayEmpty
+                      sx={{
+                        fontSize: 13,
+                        "& .MuiSelect-select": {
+                          py: 0.5,
+                        },
+                      }}
+                    >
+                      <MenuItem value="">
+                        <em>None</em>
+                      </MenuItem>
+                      <MenuItem value="America/New_York">Eastern (New York)</MenuItem>
+                      <MenuItem value="America/Chicago">Central (Chicago)</MenuItem>
+                      <MenuItem value="America/Denver">Mountain (Denver)</MenuItem>
+                      <MenuItem value="America/Phoenix">Mountain (Phoenix)</MenuItem>
+                      <MenuItem value="America/Los_Angeles">Pacific (Los Angeles)</MenuItem>
+                      <MenuItem value="America/Anchorage">Alaska (Anchorage)</MenuItem>
+                      <MenuItem value="Pacific/Honolulu">Hawaii (Honolulu)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Box>
               <EditableFieldItem
                 icon={<LocationOn color="primary" />}
                 label="State"
                 value={contact.state || ""}
                 onSave={onUpdate ? (value) => onUpdate("state", value) : undefined}
               />
+              <Box
+                display="flex"
+                alignItems="center"
+                sx={{ py: 1 }}
+              >
+                <AccessTime color="primary" sx={{ mr: 1, fontSize: 20 }} />
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography fontSize={13} fontWeight={500} color="text.secondary">
+                    Local Time
+                  </Typography>
+                  <Typography fontSize={13} sx={{ mt: 0.5 }}>
+                    {localTimeDisplay || "—"}
+                  </Typography>
+                </Box>
+              </Box>
               {contact.subject && (
                 <EditableFieldItem
                   icon={<InsertDriveFile color="primary" />}
