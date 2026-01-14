@@ -106,9 +106,16 @@ const ActivityRow = ({
           <Typography color="text.secondary" fontSize={13}>
             {formattedTime}
           </Typography>
-          <Button size="small" onClick={() => setIsOpen((p) => !p)}>
-            {isOpen ? "Hide" : "Show"} Voice Recording
-          </Button>
+          {!entry?.recordingUrl && (
+            <Typography color="text.secondary" fontSize={11}>
+              No recording
+            </Typography>
+          )}
+          {entry?.recordingUrl && (
+            <Button size="small" onClick={() => setIsOpen((p) => !p)}>
+              {isOpen ? "Hide" : "Show"} Voice Recording
+            </Button>
+          )}
         </Stack>
       </Box>
 
