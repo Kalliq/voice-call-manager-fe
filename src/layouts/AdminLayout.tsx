@@ -39,6 +39,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ContactPhone as ContactPhoneIcon,
   Summarize as ReportsIcon,
+  Extension as IntegrationsIcon,
 } from "@mui/icons-material";
 
 import MenuIcon from "@mui/icons-material/Menu";
@@ -71,6 +72,12 @@ const navItems = [
     label: "Reports",
     path: "/reports",
     icon: <ReportsIcon />,
+    adminOnly: true,
+  },
+  {
+    label: "Integrations",
+    path: "/integrations",
+    icon: <IntegrationsIcon />,
     adminOnly: true,
   },
 ];

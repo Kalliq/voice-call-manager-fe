@@ -1,0 +1,207 @@
+import { useState, useEffect } from "react";
+import { Box, Typography, Paper, TextField, Switch, Stack, CircularProgress } from "@mui/material";
+import api from "../../../utils/axiosInstance";
+import { useSnackbar } from "../../../hooks/useSnackbar";
+import { SimpleButton } from "../../../components/UI/SimpleButton";
+import { useAuth } from "../../../contexts/AuthContext";
+
+interface IntegrationConfig {
+  aiWebhookUrl: string;
+  enabled: boolean;
+  hasSecret: boolean;
+}
+
+const Integrations = () => {
+  const { enqueue } = useSnackbar();
+  const { isAdmin } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [saveState, setSaveState] = useState<"idle" | "loading" | "success">("idle");
+  const [testState, setTestState] = useState<"idle" | "loading">("idle");
+
+  // Form state
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [secret, setSecret] = useState("");
+  const [enabled, setEnabled] = useState(false);
+
+  // Initial values to track dirty state
+  const [initialWebhookUrl, setInitialWebhookUrl] = useState("");
+  const [initialEnabled, setInitialEnabled] = useState(false);
+  const [initialHasSecret, setInitialHasSecret] = useState(false);
+
+  // Fetch config on mount
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        setLoading(true);
+        const { data } = await api.get<IntegrationConfig>("/integrations/ai");
+        setWebhookUrl(data.aiWebhookUrl || "");
+        setEnabled(data.enabled || false);
+        setSecret(""); // Never display existing secret
+        setInitialWebhookUrl(data.aiWebhookUrl || "");
+        setInitialEnabled(data.enabled || false);
+        setInitialHasSecret(data.hasSecret || false);
+      } catch (err: any) {
+        console.error("Failed to fetch integration config:", err);
+        enqueue("Failed to load integration configuration", { variant: "error" });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConfig();
+  }, [enqueue]);
+
+  // Check if form is dirty
+  const isDirty =
+    webhookUrl !== initialWebhookUrl ||
+    enabled !== initialEnabled ||
+    secret !== ""; // Any non-empty secret is a change
+
+  const handleSave = async () => {
+    if (saveState === "loading") return;
+    if (!isDirty) return;
+
+    try {
+      setSaveState("loading");
+
+      const updateData: any = {};
+
+      if (webhookUrl !== initialWebhookUrl) {
+        updateData.aiWebhookUrl = webhookUrl;
+      }
+
+      if (secret !== "") {
+        updateData.aiWebhookSecret = secret;
+      }
+
+      if (enabled !== initialEnabled) {
+        updateData.enabled = enabled;
+      }
+
+      const { data } = await api.put<IntegrationConfig>("/integrations/ai", updateData);
+
+      // Update state from response
+      setWebhookUrl(data.aiWebhookUrl || "");
+      setEnabled(data.enabled || false);
+      setSecret(""); // Clear secret field after save
+      setInitialWebhookUrl(data.aiWebhookUrl || "");
+      setInitialEnabled(data.enabled || false);
+      setInitialHasSecret(data.hasSecret || false);
+
+      setSaveState("success");
+      enqueue("Integration configuration saved", { variant: "success" });
+      setTimeout(() => setSaveState("idle"), 3000);
+    } catch (err: any) {
+      console.error("Failed to save integration config:", err);
+      enqueue("Failed to save integration configuration", { variant: "error" });
+      setSaveState("idle");
+    }
+  };
+
+  const handleTest = async () => {
+    if (testState === "loading") return;
+    if (!webhookUrl || !enabled) {
+      enqueue("Webhook URL must be set and integration must be enabled", { variant: "warning" });
+      return;
+    }
+
+    try {
+      setTestState("loading");
+      const { data } = await api.post<{ ok?: boolean; success?: boolean; message?: string }>("/integrations/ai/test");
+
+      if (data.ok || data.success) {
+        enqueue("Test webhook sent successfully", { variant: "success" });
+      } else {
+        enqueue(data.message || "Integration not enabled", { variant: "warning" });
+      }
+    } catch (err: any) {
+      console.error("Failed to send test webhook:", err);
+      enqueue("Failed to send test webhook", { variant: "error" });
+    } finally {
+      setTestState("idle");
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box p={3} display="flex" justifyContent="center" alignItems="center" minHeight={400}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box p={3}>
+      <Box mb={3}>
+        <Typography variant="h5" fontWeight="bold">
+          Integrations
+        </Typography>
+      </Box>
+
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6" fontWeight={600} mb={3}>
+          Outbound Webhook
+        </Typography>
+        <Stack spacing={3}>
+          <TextField
+            label="Webhook URL"
+            fullWidth
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            placeholder="https://example.com/webhook"
+            disabled={!isAdmin || saveState === "loading"}
+          />
+          <TextField
+            label="Secret"
+            type="password"
+            fullWidth
+            value={secret}
+            onChange={(e) => setSecret(e.target.value)}
+            placeholder={initialHasSecret ? "Enter new secret to update" : "Enter secret key"}
+            disabled={!isAdmin || saveState === "loading"}
+            helperText={initialHasSecret ? "Leave blank to keep existing secret" : ""}
+          />
+          <Box display="flex" alignItems="center" gap={2}>
+            <Typography>Enabled</Typography>
+            <Switch
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
+              disabled={!isAdmin || saveState === "loading"}
+            />
+          </Box>
+          {!isAdmin && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: -2 }}>
+              Only admins can modify integration settings.
+            </Typography>
+          )}
+          {isAdmin && (
+            <Box>
+              <SimpleButton
+                label="Save"
+                onClick={handleSave}
+                loading={saveState === "loading"}
+                success={saveState === "success"}
+                disabled={!isDirty || saveState === "loading"}
+              />
+            </Box>
+          )}
+          {isAdmin && (
+            <Box>
+              <SimpleButton
+                label="Send test"
+                onClick={handleTest}
+                loading={testState === "loading"}
+                disabled={!webhookUrl || !enabled || testState === "loading" || saveState === "loading"}
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1 }}>
+                Sends an integration.test event to verify delivery.
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+      </Paper>
+    </Box>
+  );
+};
+
+export default Integrations;

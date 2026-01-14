@@ -27,6 +27,7 @@ import CreateNewList from "./pages/admin/CreateNewList";
 import Coaching from "./pages/admin/Coaching/Coaching";
 import MyPhoneNumbersList from "./pages/admin/MyNumbersList";
 import Reports from "./pages/admin/Reports/Reports";
+import Integrations from "./pages/admin/Integrations/Integrations";
 
 // Superadmin pages
 import SuperDashboard from "./pages/superadmin/SuperDashboard";
@@ -90,6 +91,7 @@ function App() {
             <Route path="/my-numbers" element={<MyPhoneNumbersList />} />
             <Route path="/coaching" element={<Coaching />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/integrations" element={<Integrations />} />
           </Route>
         </Route>
         <Route element={<SuperadminRoute />}>
