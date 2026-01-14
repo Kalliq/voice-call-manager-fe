@@ -20,9 +20,14 @@ import api from "../../../../utils/axiosInstance";
 import ActivityRow from "./molecules/ActivityRow";
 
 import { Contact } from "../../../../types/contact";
-import { FieldItem } from "../../../../components/atoms/FieldItem";
+import { EditableFieldItem } from "../../../../components/atoms/EditableFieldItem";
 
-const ContactOverview = ({ contact }: { contact: Contact }) => {
+interface ContactOverviewProps {
+  contact: Contact;
+  onUpdate?: (field: string, value: string) => Promise<void>;
+}
+
+const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
 
@@ -102,35 +107,41 @@ const ContactOverview = ({ contact }: { contact: Contact }) => {
           {/* Left */}
           <Grid item xs={12} md={6}>
             <Stack spacing={2}>
-              <FieldItem
+              <EditableFieldItem
                 icon={<Business color="primary" />}
                 label="Account Name"
                 value={contact.accountName || ""}
+                onSave={onUpdate ? (value) => onUpdate("accountName", value) : undefined}
               />
-              <FieldItem
+              <EditableFieldItem
                 icon={<Title color="primary" />}
                 label="Title"
                 value={contact.title || contact.capacity || ""}
+                onSave={onUpdate ? (value) => onUpdate("title", value) : undefined}
               />
-              <FieldItem
+              <EditableFieldItem
                 icon={<Email color="primary" />}
                 label="Email"
                 value={contact.email || ""}
+                onSave={onUpdate ? (value) => onUpdate("email", value) : undefined}
               />
-              <FieldItem
+              <EditableFieldItem
                 icon={<Phone color="primary" />}
                 label="Direct Phone"
-                value={contact.phone || contact.phone || ""}
+                value={contact.phone || ""}
+                onSave={onUpdate ? (value) => onUpdate("phone", value) : undefined}
               />
-              <FieldItem
+              <EditableFieldItem
                 icon={<LocationOn color="primary" />}
                 label="City"
                 value={contact.city || ""}
+                onSave={onUpdate ? (value) => onUpdate("city", value) : undefined}
               />
-              <FieldItem
+              <EditableFieldItem
                 icon={<InsertDriveFile color="primary" />}
                 label="Record Type"
                 value={contact.recordType || ""}
+                onSave={onUpdate ? (value) => onUpdate("recordType", value) : undefined}
               />
             </Stack>
           </Grid>
@@ -138,35 +149,51 @@ const ContactOverview = ({ contact }: { contact: Contact }) => {
           {/* Right */}
           <Grid item xs={12} md={6}>
             <Stack spacing={2}>
-              <FieldItem
+              <EditableFieldItem
                 icon={<Person color="primary" />}
                 label="Contact Name"
                 value={`${contact.first_name} ${contact.last_name}`}
+                onSave={onUpdate ? async (value) => {
+                  const parts = value.trim().split(/\s+/);
+                  const firstName = parts[0] || "";
+                  const lastName = parts.slice(1).join(" ") || "";
+                  await onUpdate("first_name", firstName);
+                  if (lastName || !contact.last_name) {
+                    await onUpdate("last_name", lastName);
+                  }
+                } : undefined}
               />
-              <FieldItem
+              <EditableFieldItem
                 icon={<Phone color="primary" />}
                 label="Phone"
-                value={contact.phone || contact.phone || ""}
+                value={contact.phone || ""}
+                onSave={onUpdate ? (value) => onUpdate("phone", value) : undefined}
               />
-              <FieldItem
+              <EditableFieldItem
                 icon={<LinkedIn color="primary" />}
                 label="LinkedIn URL"
                 value={contact.linkedIn || ""}
+                onSave={onUpdate ? (value) => onUpdate("linkedIn", value) : undefined}
               />
-              <FieldItem
+              <EditableFieldItem
                 icon={<AccessTime color="primary" />}
                 label="Timezone"
                 value={contact.timezone || ""}
+                onSave={onUpdate ? (value) => onUpdate("timezone", value) : undefined}
               />
-              <FieldItem
+              <EditableFieldItem
                 icon={<LocationOn color="primary" />}
                 label="State"
                 value={contact.state || ""}
+                onSave={onUpdate ? (value) => onUpdate("state", value) : undefined}
               />
-              <FieldItem
-                icon={<InsertDriveFile color="primary" />}
-                label={contact.subject || ""}
-              />
+              {contact.subject && (
+                <EditableFieldItem
+                  icon={<InsertDriveFile color="primary" />}
+                  label={contact.subject}
+                  value=""
+                />
+              )}
             </Stack>
           </Grid>
         </Grid>

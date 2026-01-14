@@ -85,6 +85,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   const [lists, setLists] = useState<{ id: string; listName: string }[]>([]);
   const [listSearch, setListSearch] = useState("");
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [updateKey, setUpdateKey] = useState(0);
 
   useEffect(() => {
     let int: NodeJS.Timeout;
@@ -195,6 +196,19 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
       session.status = status;
     } catch (err) {
       console.error("Failed to update phone number", err);
+    }
+  };
+
+  const handleFieldUpdate = async (field: string, value: string) => {
+    try {
+      await api.patch(`/contacts/basic/${session.id}`, {
+        [field]: value,
+      });
+      (session as any)[field] = value;
+      setUpdateKey((prev) => prev + 1);
+    } catch (err) {
+      console.error(`Failed to update ${field}:`, err);
+      throw err;
     }
   };
 
@@ -378,14 +392,35 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
             {activeTab === 0 && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
-                  <ContactOverview contact={session} />
+                  <ContactOverview key={updateKey} contact={session} onUpdate={handleFieldUpdate} />
                 </Grid>
               </Grid>
             )}
-            {activeTab !== 0 && (
+            {activeTab === 1 && (
               <Box px={3} py={2}>
                 <Typography variant="body1" color="text.secondary">
-                  "{tabLabels[activeTab]}" tab content goes here.
+                  No sequences yet.
+                </Typography>
+              </Box>
+            )}
+            {activeTab === 2 && (
+              <Box px={3} py={2}>
+                <Typography variant="body1" color="text.secondary">
+                  No deals yet.
+                </Typography>
+              </Box>
+            )}
+            {activeTab === 3 && (
+              <Box px={3} py={2}>
+                <Typography variant="body1" color="text.secondary">
+                  No conversations yet.
+                </Typography>
+              </Box>
+            )}
+            {activeTab === 4 && (
+              <Box px={3} py={2}>
+                <Typography variant="body1" color="text.secondary">
+                  No meetings yet.
                 </Typography>
               </Box>
             )}

@@ -207,52 +207,56 @@ export default function AdminLayout() {
                     {!collapsed && <ListItemText primary={item.label} />}
                   </ListItem>
                 ))
-            : settingsKeys.map((category) => (
-                <Accordion
-                  key={category}
-                  square
-                  disableGutters
-                  elevation={0}
-                  defaultExpanded={category === "Phone Settings"}
-                  sx={{
-                    boxShadow: "none",
-                    borderRadius: 0,
-                    "&:before": { display: "none" },
-                    "&.Mui-expanded": {
-                      margin: 0,
-                    },
-                  }}
-                >
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography variant="subtitle1" fontWeight="bold">
-                      {category}
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <List disablePadding>
-                      {Object.keys(settings![category]).map((subKey) => (
-                        <ListItemButton
-                          key={subKey}
-                          selected={
-                            selected?.parent === category &&
-                            selected?.child === subKey
-                          }
-                          onClick={() => handleChildClick(category, subKey)}
-                          sx={{
-                            borderBottom: `1px solid ${theme.palette.divider}`,
-                            pl: 3,
-                            pr: 2,
-                          }}
-                        >
-                          <ListItemText
-                            primary={translateToTitleCase(subKey)}
-                          />
-                        </ListItemButton>
-                      ))}
-                    </List>
-                  </AccordionDetails>
-                </Accordion>
-              ))}
+            : settings && settingsKeys.length > 0
+              ? settingsKeys
+                  .filter((category) => settings[category] != null)
+                  .map((category) => (
+                    <Accordion
+                      key={category}
+                      square
+                      disableGutters
+                      elevation={0}
+                      defaultExpanded={category === "Phone Settings"}
+                      sx={{
+                        boxShadow: "none",
+                        borderRadius: 0,
+                        "&:before": { display: "none" },
+                        "&.Mui-expanded": {
+                          margin: 0,
+                        },
+                      }}
+                    >
+                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography variant="subtitle1" fontWeight="bold">
+                          {category}
+                        </Typography>
+                      </AccordionSummary>
+                      <AccordionDetails>
+                        <List disablePadding>
+                          {Object.keys(settings[category] ?? {}).map((subKey) => (
+                            <ListItemButton
+                              key={subKey}
+                              selected={
+                                selected?.parent === category &&
+                                selected?.child === subKey
+                              }
+                              onClick={() => handleChildClick(category, subKey)}
+                              sx={{
+                                borderBottom: `1px solid ${theme.palette.divider}`,
+                                pl: 3,
+                                pr: 2,
+                              }}
+                            >
+                              <ListItemText
+                                primary={translateToTitleCase(subKey)}
+                              />
+                            </ListItemButton>
+                          ))}
+                        </List>
+                      </AccordionDetails>
+                    </Accordion>
+                  ))
+              : null}
         </List>
         <Box sx={{ flexGrow: 1 }} />
       </Drawer>
