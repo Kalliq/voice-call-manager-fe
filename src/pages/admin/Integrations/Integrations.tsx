@@ -1,14 +1,21 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Paper, TextField, Switch, Stack, CircularProgress } from "@mui/material";
+import { Box, Typography, Paper, TextField, Switch, Stack, CircularProgress, FormControlLabel, Checkbox } from "@mui/material";
 import api from "../../../utils/axiosInstance";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import { SimpleButton } from "../../../components/UI/SimpleButton";
 import { useAuth } from "../../../contexts/AuthContext";
 
+const ALLOWED_EVENTS = [
+  "contact.created",
+  "note.created",
+  "integration.test",
+] as const;
+
 interface IntegrationConfig {
   aiWebhookUrl: string;
   enabled: boolean;
   hasSecret: boolean;
+  events?: string[];
 }
 
 const Integrations = () => {
@@ -22,11 +29,13 @@ const Integrations = () => {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [secret, setSecret] = useState("");
   const [enabled, setEnabled] = useState(false);
+  const [events, setEvents] = useState<string[]>([]);
 
   // Initial values to track dirty state
   const [initialWebhookUrl, setInitialWebhookUrl] = useState("");
   const [initialEnabled, setInitialEnabled] = useState(false);
   const [initialHasSecret, setInitialHasSecret] = useState(false);
+  const [initialEvents, setInitialEvents] = useState<string[]>([]);
 
   // Fetch config on mount
   useEffect(() => {
@@ -37,9 +46,12 @@ const Integrations = () => {
         setWebhookUrl(data.aiWebhookUrl || "");
         setEnabled(data.enabled || false);
         setSecret(""); // Never display existing secret
+        const fetchedEvents = Array.isArray(data.events) ? data.events : [];
+        setEvents(fetchedEvents);
         setInitialWebhookUrl(data.aiWebhookUrl || "");
         setInitialEnabled(data.enabled || false);
         setInitialHasSecret(data.hasSecret || false);
+        setInitialEvents(fetchedEvents);
       } catch (err: any) {
         console.error("Failed to fetch integration config:", err);
         enqueue("Failed to load integration configuration", { variant: "error" });
@@ -55,7 +67,8 @@ const Integrations = () => {
   const isDirty =
     webhookUrl !== initialWebhookUrl ||
     enabled !== initialEnabled ||
-    secret !== ""; // Any non-empty secret is a change
+    secret !== "" || // Any non-empty secret is a change
+    JSON.stringify([...events].sort()) !== JSON.stringify([...initialEvents].sort());
 
   const handleSave = async () => {
     if (saveState === "loading") return;
@@ -78,15 +91,23 @@ const Integrations = () => {
         updateData.enabled = enabled;
       }
 
+      // Send events if changed
+      if (JSON.stringify([...events].sort()) !== JSON.stringify([...initialEvents].sort())) {
+        updateData.events = events;
+      }
+
       const { data } = await api.put<IntegrationConfig>("/integrations/ai", updateData);
 
       // Update state from response
       setWebhookUrl(data.aiWebhookUrl || "");
       setEnabled(data.enabled || false);
       setSecret(""); // Clear secret field after save
+      const savedEvents = Array.isArray(data.events) ? data.events : [];
+      setEvents(savedEvents);
       setInitialWebhookUrl(data.aiWebhookUrl || "");
       setInitialEnabled(data.enabled || false);
       setInitialHasSecret(data.hasSecret || false);
+      setInitialEvents(savedEvents);
 
       setSaveState("success");
       enqueue("Integration configuration saved", { variant: "success" });
@@ -168,6 +189,35 @@ const Integrations = () => {
               onChange={(e) => setEnabled(e.target.checked)}
               disabled={!isAdmin || saveState === "loading"}
             />
+          </Box>
+          <Box>
+            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+              Events
+            </Typography>
+            <Stack spacing={1}>
+              {ALLOWED_EVENTS.map((eventType) => (
+                <FormControlLabel
+                  key={eventType}
+                  control={
+                    <Checkbox
+                      checked={events.includes(eventType)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEvents([...events, eventType]);
+                        } else {
+                          setEvents(events.filter((e) => e !== eventType));
+                        }
+                      }}
+                      disabled={!isAdmin || saveState === "loading"}
+                    />
+                  }
+                  label={eventType}
+                />
+              ))}
+            </Stack>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+              Select which events to send to the webhook endpoint.
+            </Typography>
           </Box>
           {!isAdmin && (
             <Typography variant="caption" color="text.secondary" sx={{ mt: -2 }}>
