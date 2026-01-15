@@ -2,6 +2,24 @@ import * as z from "zod";
 import { isListNameUnique } from "../../utils/listApi";
 import api from "../../utils/axiosInstance";
 
+// Factory function to create validation schema with optional excludeListId
+const createListSettingsValidationSchema = (excludeListId?: string) => z.object({
+  listName: z
+    .string()
+    .min(1, "List name is required")
+    .refine(
+      // async check: pull all lists and see if this name exists (excluding current list if editing)
+      async (name) => {
+        return await isListNameUnique(name, excludeListId);
+      },
+      { message: "That name already exists — please type a new one." }
+    ),
+
+  listPriority: z.enum(["high", "medium", "low"], {
+    errorMap: () => ({ message: "List priority is required" }),
+  }),
+});
+
 const createListValidationSchema = z.object({
   listName: z.string(),
   listPriority: z.enum(["high", "medium", "low"]),
@@ -32,26 +50,8 @@ const createListValidationSchema = z.object({
     .optional(),
 });
 
-const listSettingsValidationSchema = z.object({
-  listName: z
-    .string()
-    .min(1, "List name is required")
-    .refine(
-      // async check: pull all lists and see if this name exists
-      async (name) => {
-        const { data } = await api.get<{ listName: string }[]>("/lists");
-        return !data.some(
-          (l) =>
-            l.listName.trim().toLowerCase() === name.trim().toLowerCase()
-        );
-      },
-      { message: "That name already exists — please type a new one." }
-    ),
-
-  listPriority: z.enum(["high", "medium", "low"], {
-    errorMap: () => ({ message: "List priority is required" }),
-  }),
-});
+// Default schema for create mode (no exclusion)
+const listSettingsValidationSchema = createListSettingsValidationSchema();
 
 const listFiltersValidationSchema = z.object({
   filters: z
@@ -103,14 +103,16 @@ const listExitStrategyValidationSchema = z.object({
 });
 
 
-function getValidationSchemaForStep(step: number) {
-  if (step === 1) return listSettingsValidationSchema;
+function getValidationSchemaForStep(step: number, excludeListId?: string) {
+  if (step === 1) return createListSettingsValidationSchema(excludeListId);
   if (step === 2) return listFiltersValidationSchema;
+  if (step === 3) return listExitStrategyValidationSchema;
   return undefined;
 }
 
 export {
   getValidationSchemaForStep,
+  createListSettingsValidationSchema,
   listSettingsValidationSchema,
   listFiltersValidationSchema,
   listExitStrategyValidationSchema,

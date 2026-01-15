@@ -309,7 +309,10 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                         </Typography>
                         <Button
                           size="small"
-                          onClick={() => setEditingPhone(true)}
+                          onClick={() => {
+                            setNewPhone(session.phone || "");
+                            setEditingPhone(true);
+                          }}
                           sx={{ minWidth: "auto", fontSize: "11px", px: 1 }}
                         >
                           Change
@@ -319,45 +322,44 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                       <>
                         {editingPhone ? (
                           <>
-                            <Box
-                              component="input"
-                              type="tel"
-                              value={newPhone}
-                              onChange={(e) => setNewPhone(e.target.value)}
-                              placeholder="Enter phone"
-                              sx={{
-                                fontSize: "12px",
-                                padding: "2px 6px",
-                                border: "1px solid #ccc",
-                                borderRadius: 1,
-                                height: 24,
-                                lineHeight: 1.2,
-                                display: "inline-block",
-                              }}
-                            />
-                            <Button
-                              size="small"
-                              onClick={onPhoneSubmitHandler}
-                              sx={{
-                                minWidth: "auto",
-                                fontSize: "11px",
-                                px: 1,
-                              }}
-                            >
-                              Add
-                            </Button>
-                            <Button
-                              size="small"
-                              onClick={() => setEditingPhone(false)}
-                              sx={{
-                                minWidth: "auto",
-                                fontSize: "11px",
-                                px: 1,
-                              }}
-                              color="inherit"
-                            >
-                              Cancel
-                            </Button>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <TextField
+                                type="tel"
+                                value={newPhone}
+                                onChange={(e) => setNewPhone(e.target.value)}
+                                placeholder="Enter phone"
+                                size="small"
+                                autoFocus
+                                sx={{
+                                  "& .MuiInputBase-root": {
+                                    fontSize: "12px",
+                                  },
+                                }}
+                              />
+                              <Button
+                                size="small"
+                                onClick={onPhoneSubmitHandler}
+                                sx={{
+                                  minWidth: "auto",
+                                  fontSize: "11px",
+                                  px: 1,
+                                }}
+                              >
+                                Add
+                              </Button>
+                              <Button
+                                size="small"
+                                onClick={() => setEditingPhone(false)}
+                                sx={{
+                                  minWidth: "auto",
+                                  fontSize: "11px",
+                                  px: 1,
+                                }}
+                                color="inherit"
+                              >
+                                Cancel
+                              </Button>
+                            </Stack>
                           </>
                         ) : (
                           <>
@@ -368,7 +370,10 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                               fontSize="0.9rem"
                               color="primary"
                               sx={{ cursor: "pointer", ml: 0.5 }}
-                              onClick={() => setEditingPhone(true)}
+                              onClick={() => {
+                                setNewPhone(session.phone || "");
+                                setEditingPhone(true);
+                              }}
                             >
                               • Add phone
                             </Typography>

@@ -32,6 +32,8 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
   const [now, setNow] = useState(new Date());
+  const [isTimezoneHovered, setIsTimezoneHovered] = useState(false);
+  const [isTimezoneOpen, setIsTimezoneOpen] = useState(false);
 
   const { settings } = useAppStore((s) => s);
   const callResults: CallResult[] =
@@ -65,6 +67,7 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
     userTimeZone,
     now
   );
+  const showTimezoneSelect = isTimezoneHovered || isTimezoneOpen;
 
   const visibleCallLogs = useMemo(
     () => callLogs.filter((l) => !!l.action?.result?.trim()),
@@ -198,40 +201,66 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                 display="flex"
                 alignItems="center"
                 sx={{ py: 1 }}
+                onMouseEnter={() => setIsTimezoneHovered(true)}
+                onMouseLeave={() => {
+                  if (!isTimezoneOpen) {
+                    setIsTimezoneHovered(false);
+                  }
+                }}
               >
-                <AccessTime color="primary" sx={{ mr: 1, fontSize: 20 }} />
+                <AccessTime
+                  color="primary"
+                  sx={{ mr: 1, fontSize: 20, cursor: "pointer" }}
+                  onClick={() => setIsTimezoneOpen(true)}
+                />
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography fontSize={13} fontWeight={500} color="text.secondary" sx={{ mb: 0.5 }}>
                     Timezone
                   </Typography>
-                  <FormControl fullWidth size="small">
-                    <Select
-                      value={contact.timezone || ""}
-                      onChange={(e) => {
-                        if (onUpdate) {
-                          onUpdate("timezone", e.target.value);
-                        }
-                      }}
-                      displayEmpty
-                      sx={{
-                        fontSize: 13,
-                        "& .MuiSelect-select": {
-                          py: 0.5,
-                        },
-                      }}
-                    >
-                      <MenuItem value="">
-                        <em>None</em>
-                      </MenuItem>
-                      <MenuItem value="America/New_York">Eastern (New York)</MenuItem>
-                      <MenuItem value="America/Chicago">Central (Chicago)</MenuItem>
-                      <MenuItem value="America/Denver">Mountain (Denver)</MenuItem>
-                      <MenuItem value="America/Phoenix">Mountain (Phoenix)</MenuItem>
-                      <MenuItem value="America/Los_Angeles">Pacific (Los Angeles)</MenuItem>
-                      <MenuItem value="America/Anchorage">Alaska (Anchorage)</MenuItem>
-                      <MenuItem value="Pacific/Honolulu">Hawaii (Honolulu)</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <Box
+                    sx={{
+                      minHeight: 32,
+                      opacity: showTimezoneSelect ? 1 : 0,
+                      transition: "opacity 0.2s",
+                      pointerEvents: showTimezoneSelect ? "auto" : "none",
+                    }}
+                    onClick={() => setIsTimezoneOpen(true)}
+                  >
+                    <FormControl fullWidth size="small">
+                      <Select
+                        open={isTimezoneOpen}
+                        onOpen={() => setIsTimezoneOpen(true)}
+                        onClose={() => {
+                          setIsTimezoneOpen(false);
+                          setIsTimezoneHovered(false);
+                        }}
+                        value={contact.timezone || ""}
+                        onChange={(e) => {
+                          if (onUpdate) {
+                            onUpdate("timezone", e.target.value);
+                          }
+                        }}
+                        displayEmpty
+                        sx={{
+                          fontSize: 13,
+                          "& .MuiSelect-select": {
+                            py: 0.5,
+                          },
+                        }}
+                      >
+                        <MenuItem value="">
+                          <em>None</em>
+                        </MenuItem>
+                        <MenuItem value="America/New_York">Eastern (New York)</MenuItem>
+                        <MenuItem value="America/Chicago">Central (Chicago)</MenuItem>
+                        <MenuItem value="America/Denver">Mountain (Denver)</MenuItem>
+                        <MenuItem value="America/Phoenix">Mountain (Phoenix)</MenuItem>
+                        <MenuItem value="America/Los_Angeles">Pacific (Los Angeles)</MenuItem>
+                        <MenuItem value="America/Anchorage">Alaska (Anchorage)</MenuItem>
+                        <MenuItem value="Pacific/Honolulu">Hawaii (Honolulu)</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
                 </Box>
               </Box>
               <EditableFieldItem
@@ -240,12 +269,8 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                 value={contact.state || ""}
                 onSave={onUpdate ? (value) => onUpdate("state", value) : undefined}
               />
-              <Box
-                display="flex"
-                alignItems="center"
-                sx={{ py: 1 }}
-              >
-                <AccessTime color="primary" sx={{ mr: 1, fontSize: 20 }} />
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ py: 1 }}>
+                <AccessTime color="primary" sx={{ fontSize: 20 }} />
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography fontSize={13} fontWeight={500} color="text.secondary">
                     Local Time
@@ -254,7 +279,7 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                     {localTimeDisplay || "—"}
                   </Typography>
                 </Box>
-              </Box>
+              </Stack>
               {contact.subject && (
                 <EditableFieldItem
                   icon={<InsertDriveFile color="primary" />}

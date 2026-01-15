@@ -37,7 +37,7 @@ const IntegrationsGrid = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "primary.light",
+                  backgroundColor: "common.white",
                   color: "primary.main",
                 }}
               >
