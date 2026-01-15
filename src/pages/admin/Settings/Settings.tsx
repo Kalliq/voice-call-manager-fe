@@ -10,16 +10,19 @@ import "./Settings.css";
 import { useSettingsContext } from "../../../contexts/SettingsContext";
 
 const Settings: React.FC = () => {
-  const { selected, settings } = useSettingsContext();
+  const { selected, settings, keyMap } = useSettingsContext();
   const navigate = useNavigate();
 
+  // Get original key for data lookup
+  const originalParentKey = selected ? (keyMap?.[selected.parent] || selected.parent) : null;
+
   useEffect(() => {
-    if (!settings || !selected || !settings[selected.parent]) {
+    if (!settings || !selected || !originalParentKey || !settings[originalParentKey]) {
       navigate("/dashboard", { replace: true, state: { from: "settings" } });
     }
-  }, [settings, selected, navigate]);
+  }, [settings, selected, navigate, originalParentKey]);
 
-  if (!settings || !selected || !settings[selected.parent]) {
+  if (!settings || !selected || !originalParentKey || !settings[originalParentKey]) {
     return null;
   }
 
@@ -52,7 +55,7 @@ const Settings: React.FC = () => {
             return (
               <SettingsTypeWrapper
                 settingsName={selected.child}
-                data={settings[selected.parent][selected.child]}
+                data={settings[originalParentKey]?.[selected.child]}
                 Component={Component}
               />
             );

@@ -87,37 +87,8 @@ const WebhookDetailPage = () => {
   const [initialHasSecret, setInitialHasSecret] = useState(false);
   const [initialEvents, setInitialEvents] = useState<string[]>([]);
 
-  // Handle OAuth return URL parameters
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const gmailError = params.get("gmail_error");
-    const gmailSuccess = params.get("gmail_success");
-
-    if (gmailSuccess === "true") {
-      enqueue("Gmail connected successfully", { variant: "success" });
-      // Clean URL
-      navigate(location.pathname, { replace: true });
-    } else if (gmailError) {
-      let errorMessage = "Failed to connect Gmail";
-      if (gmailError === "cancelled") {
-        errorMessage = "Gmail connection was cancelled";
-      } else if (gmailError === "missing_code") {
-        errorMessage = "Gmail connection failed: Missing authorization code";
-      } else if (gmailError === "invalid_state") {
-        errorMessage = "Gmail connection failed: Invalid session";
-      } else {
-        // Decode error message if it's URL encoded
-        try {
-          errorMessage = decodeURIComponent(gmailError);
-        } catch {
-          errorMessage = `Gmail connection failed: ${gmailError}`;
-        }
-      }
-      enqueue(errorMessage, { variant: "error" });
-      // Clean URL
-      navigate(location.pathname, { replace: true });
-    }
-  }, [location.search, navigate, location.pathname, enqueue]);
+  // Note: OAuth return handling is now centralized in Email Settings
+  // This handler is removed to prevent duplicate toasts
 
   // Fetch config on mount
   useEffect(() => {

@@ -117,7 +117,7 @@ export default function AdminLayout() {
     navigate("/");
   };
 
-  const { selected, settings, settingsKeys, handleChildClick } =
+  const { selected, settings, settingsKeys, handleChildClick, keyMap } =
     useSettingsContext();
   const { options, loading: searchLoading, fetch } = useGlobalSearch();
 
@@ -258,8 +258,17 @@ export default function AdminLayout() {
                 ))
             : settings && settingsKeys.length > 0
               ? settingsKeys
-                  .filter((category) => settings[category] != null)
-                  .map((category) => (
+                  .filter((category) => {
+                    // Use original key from keyMap for lookup
+                    const originalKey = keyMap?.[category] || category;
+                    return settings[originalKey] != null;
+                  })
+                  .map((category) => {
+                    // Get original key for data lookup
+                    const originalKey = keyMap?.[category] || category;
+                    return { category, originalKey };
+                  })
+                  .map(({ category, originalKey }) => (
                     <Accordion
                       key={category}
                       square
@@ -282,7 +291,7 @@ export default function AdminLayout() {
                       </AccordionSummary>
                       <AccordionDetails>
                         <List disablePadding>
-                          {Object.keys(settings[category] ?? {})
+                          {Object.keys(settings[originalKey] ?? {})
                             .filter((subKey) => {
                               // Only show sub-items that have registered components
                               return settingsComponentRegistry[category]?.[subKey] != null;

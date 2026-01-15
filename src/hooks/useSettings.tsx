@@ -16,11 +16,17 @@ export const useSettings = () => {
     Record<string, any>
   > | null;
 
-  const settingsKeys = settings
+  // Map original keys to display keys for lookup
+  const keyMap = settings
     ? Object.keys(settings)
-        .filter((key) => key !== "user" && key !== "id")
-        .map((key) => translateToTitleCase(key))
-    : [];
+        .filter((key) => key !== "user" && key !== "id" && key !== "createdAt" && key !== "updatedAt")
+        .reduce((acc, key) => {
+          acc[translateToTitleCase(key)] = key;
+          return acc;
+        }, {} as Record<string, string>)
+    : {};
+
+  const settingsKeys = Object.keys(keyMap);
 
   const [selected, setSelected] = useState<SelectedType>({
     parent: "Phone Settings",
@@ -33,7 +39,8 @@ export const useSettings = () => {
         k.toLowerCase().includes("power dialer")
       );
       if (parent) {
-        const child = Object.keys(settings[parent]).find(
+        const originalKey = keyMap[parent] || parent;
+        const child = Object.keys(settings[originalKey] || {}).find(
           (subKey) =>
             subKey.toLowerCase().includes("powerdialer") ||
             subKey.toLowerCase().includes("power_dialer")
@@ -41,7 +48,7 @@ export const useSettings = () => {
         if (child) setSelected({ parent, child });
       }
     }
-  }, [settings, settingsKeys, selected]);
+  }, [settings, settingsKeys, selected, keyMap]);
 
   const handleChildClick = (parent: string, child: string) => {
     setSelected({ parent, child });
@@ -52,5 +59,6 @@ export const useSettings = () => {
     settingsKeys,
     settings,
     handleChildClick,
+    keyMap, // Map display keys back to original keys
   };
 };
