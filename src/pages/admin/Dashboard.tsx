@@ -76,7 +76,11 @@ const Dashboard = () => {
   }, [user, setSettings]);
 
   useEffect(() => {
-    fetchCallStats("today");
+    if (fetchCallStats) {
+      fetchCallStats("today").catch((err) => {
+        console.error("[dashboard] Failed to fetch call stats:", err);
+      });
+    }
   }, [fetchCallStats]);
 
   const kpi = useMemo(() => {
@@ -91,29 +95,47 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchTasks = async () => {
-      const { data } = await api.get("/tasks");
+      try {
+        const { data } = await api.get("/tasks");
 
-      const grouped = {
-        "To Do": [] as Task[],
-        "In Progress": [] as Task[],
-        Completed: [] as Task[],
-      };
+        const grouped = {
+          "To Do": [] as Task[],
+          "In Progress": [] as Task[],
+          Completed: [] as Task[],
+        };
 
-      data.forEach((task: Task) => {
-        if (grouped[task.status]) {
-          grouped[task.status].push(task);
+        if (Array.isArray(data)) {
+          data.forEach((task: Task) => {
+            if (grouped[task.status]) {
+              grouped[task.status].push(task);
+            }
+          });
         }
-      });
 
-      setTasks(data);
-      setGroupedTasks(grouped);
+        setTasks(data || []);
+        setGroupedTasks(grouped);
+      } catch (err) {
+        console.error("[dashboard] Failed to fetch tasks:", err);
+        setTasks([]);
+        setGroupedTasks({
+          "To Do": [] as Task[],
+          "In Progress": [] as Task[],
+          Completed: [] as Task[],
+        });
+      }
     };
 
     fetchTasks();
   }, []);
 
   const outcomeData = useMemo(() => {
-    if (!callStats || !settings) return;
+    if (!callStats || !settings) {
+      return [
+        { name: "Successful", value: 0, color: "#2cb67d" },
+        { name: "Connected", value: 0, color: "#facc15" },
+        { name: "Unanswered", value: 0, color: "#ef4444" },
+      ];
+    }
 
     const total = callStats!.callsTotal || 0;
     const successful = callStats!.callsSuccessful || 0;
@@ -129,12 +151,17 @@ const Dashboard = () => {
     ];
   }, [callStats, settings]);
 
-  return (
-    <Box p={3} sx={{backgroundColor: "white", width:"100%"}}>
-      <Box>
-        <Typography variant="h5" fontWeight="bold" mb={3}>
-          Dashboard
-        </Typography>      </Box>
+  // Debug: Log to verify component is rendering
+  console.log("[Dashboard] Rendering", { user, callStats, settings, tasks });
+
+  try {
+    return (
+      <Box p={3} sx={{backgroundColor: "white", width:"100%", minHeight: "100vh"}}>
+        <Box>
+          <Typography variant="h5" fontWeight="bold" mb={3}>
+            Dashboard
+          </Typography>
+        </Box>
       <Grid container spacing={2} mb={3}>
         <Grid item xs={12} md={3} sx={{ display: "flex" }}>
           <Card
@@ -295,22 +322,29 @@ const Dashboard = () => {
                 Call Outcomes
               </Typography>
               <Divider sx={{ my: 1 }} />
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    dataKey="value"
-                    data={outcomeData}
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
-                  >
-                    {outcomeData &&
-                      outcomeData.map((entry, index) => (
+              {outcomeData && outcomeData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      dataKey="value"
+                      data={outcomeData}
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                    >
+                      {outcomeData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <Box sx={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No data available
+                  </Typography>
+                </Box>
+              )}
 
               <Stack direction="row" justifyContent="space-around">
                 {outcomeData &&
@@ -346,8 +380,21 @@ const Dashboard = () => {
           </Card>
         </Grid>
       </Grid> */}
-    </Box>
-  );
+      </Box>
+    );
+  } catch (error) {
+    console.error("[Dashboard] Render error:", error);
+    return (
+      <Box p={3}>
+        <Typography variant="h5" color="error">
+          Dashboard Error
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {error instanceof Error ? error.message : "Unknown error"}
+        </Typography>
+      </Box>
+    );
+  }
 };
 
 export default Dashboard;

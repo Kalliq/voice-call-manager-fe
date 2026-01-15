@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   AppBar,
@@ -40,15 +40,16 @@ import {
   ContactPhone as ContactPhoneIcon,
   Summarize as ReportsIcon,
   Extension as IntegrationsIcon,
+  ChevronLeft,
+  ChevronRight,
 } from "@mui/icons-material";
-
-import MenuIcon from "@mui/icons-material/Menu";
 import Logo from "../assets/kalliq_grey.png";
 import { useAuth } from "../contexts/AuthContext";
 import { useSettingsContext } from "../contexts/SettingsContext";
 import { translateToTitleCase } from "../utils/translateToTitle";
 import { useGlobalSearch } from "../hooks/useGlobalSearch";
 import PhoneDialerPopover from "../components/PhoneDialPopover";
+import { settingsComponentRegistry } from "../registry/settings-component-registry";
 
 import api from "../utils/axiosInstance";
 
@@ -88,8 +89,18 @@ export default function AdminLayout() {
   const location = useLocation();
   const { signout, isAdmin, isSuperadmin } = useAuth();
 
+  // Declare isSettingsPage immediately after location to avoid initialization error
+  const isSettingsPage = location.pathname === "/settings";
+
   const [collapsed, setCollapsed] = useState(false);
   const drawerWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
+
+  // Lock sidebar open when on Settings route
+  useEffect(() => {
+    if (isSettingsPage && collapsed) {
+      setCollapsed(false);
+    }
+  }, [isSettingsPage, collapsed]);
 
   const [avatarAnchor, setAvatarAnchor] = useState<null | HTMLElement>(null);
   const openAvatarMenu = (e: React.MouseEvent<HTMLElement>) =>
@@ -106,10 +117,17 @@ export default function AdminLayout() {
     navigate("/");
   };
 
-  const isSettingsPage = location.pathname === "/settings";
   const { selected, settings, settingsKeys, handleChildClick } =
     useSettingsContext();
   const { options, loading: searchLoading, fetch } = useGlobalSearch();
+
+  // Custom label mapping for settings sub-items
+  const getSettingsLabel = (subKey: string): string => {
+    const customLabels: Record<string, string> = {
+      schedulesManagement: "Timezone & Schedules",
+    };
+    return customLabels[subKey] || translateToTitleCase(subKey);
+  };
 
   const onSearchSelect = (_: any, value: { id: string; label: string }) => {
     if (!value) return;
@@ -156,12 +174,20 @@ export default function AdminLayout() {
         sx={{
           width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
           flexShrink: 0,
+          transition: theme.transitions.create("width", {
+            easing: theme.transitions.easing.easeInOut,
+            duration: theme.transitions.duration.standard,
+          }),
           "& .MuiDrawer-paper": {
             width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
             boxSizing: "border-box",
             backgroundColor: "#fff",
             borderRight: `1px solid ${theme.palette.divider}`,
             overflowX: "hidden",
+            transition: theme.transitions.create("width", {
+              easing: theme.transitions.easing.easeInOut,
+              duration: theme.transitions.duration.standard,
+            }),
           },
         }}
       >
@@ -206,12 +232,28 @@ export default function AdminLayout() {
                         color: "inherit",
                         minWidth: "auto",
                         justifyContent: "center",
-                        marginRight: "10px",
+                        marginRight: collapsed ? 0 : "10px",
+                        transition: theme.transitions.create("margin-right", {
+                          easing: theme.transitions.easing.easeInOut,
+                          duration: theme.transitions.duration.shorter,
+                        }),
                       }}
                     >
                       {item.icon}
                     </ListItemIcon>
-                    {!collapsed && <ListItemText primary={item.label} />}
+                    {!collapsed && (
+                      <ListItemText 
+                        primary={item.label}
+                        sx={{
+                          transition: theme.transitions.create("opacity", {
+                            easing: theme.transitions.easing.easeInOut,
+                            duration: theme.transitions.duration.shorter,
+                          }),
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                        }}
+                      />
+                    )}
                   </ListItem>
                 ))
             : settings && settingsKeys.length > 0
@@ -240,25 +282,30 @@ export default function AdminLayout() {
                       </AccordionSummary>
                       <AccordionDetails>
                         <List disablePadding>
-                          {Object.keys(settings[category] ?? {}).map((subKey) => (
-                            <ListItemButton
-                              key={subKey}
-                              selected={
-                                selected?.parent === category &&
-                                selected?.child === subKey
-                              }
-                              onClick={() => handleChildClick(category, subKey)}
-                              sx={{
-                                borderBottom: `1px solid ${theme.palette.divider}`,
-                                pl: 3,
-                                pr: 2,
-                              }}
-                            >
-                              <ListItemText
-                                primary={translateToTitleCase(subKey)}
-                              />
-                            </ListItemButton>
-                          ))}
+                          {Object.keys(settings[category] ?? {})
+                            .filter((subKey) => {
+                              // Only show sub-items that have registered components
+                              return settingsComponentRegistry[category]?.[subKey] != null;
+                            })
+                            .map((subKey) => (
+                              <ListItemButton
+                                key={subKey}
+                                selected={
+                                  selected?.parent === category &&
+                                  selected?.child === subKey
+                                }
+                                onClick={() => handleChildClick(category, subKey)}
+                                sx={{
+                                  borderBottom: `1px solid ${theme.palette.divider}`,
+                                  pl: 3,
+                                  pr: 2,
+                                }}
+                              >
+                                <ListItemText
+                                  primary={getSettingsLabel(subKey)}
+                                />
+                              </ListItemButton>
+                            ))}
                         </List>
                       </AccordionDetails>
                     </Accordion>
@@ -266,6 +313,63 @@ export default function AdminLayout() {
               : null}
         </List>
         <Box sx={{ flexGrow: 1 }} />
+        {/* Bottom toggle button */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 2,
+            borderTop: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <IconButton
+            onClick={() => {
+              if (!isSettingsPage) {
+                setCollapsed(!collapsed);
+              }
+            }}
+            disabled={isSettingsPage}
+            sx={{
+              color: theme.palette.text.secondary,
+              transition: theme.transitions.create(["background-color", "transform"], {
+                easing: theme.transitions.easing.easeInOut,
+                duration: theme.transitions.duration.shorter,
+              }),
+              "&:hover": {
+                backgroundColor: theme.palette.action.hover,
+                transform: "scale(1.1)",
+              },
+              "&:active": {
+                transform: "scale(0.95)",
+              },
+              "&.Mui-disabled": {
+                opacity: 0.5,
+                transform: "none",
+              },
+            }}
+          >
+            {collapsed ? (
+              <ChevronRight 
+                sx={{
+                  transition: theme.transitions.create("transform", {
+                    easing: theme.transitions.easing.easeInOut,
+                    duration: theme.transitions.duration.shorter,
+                  }),
+                }}
+              />
+            ) : (
+              <ChevronLeft 
+                sx={{
+                  transition: theme.transitions.create("transform", {
+                    easing: theme.transitions.easing.easeInOut,
+                    duration: theme.transitions.duration.shorter,
+                  }),
+                }}
+              />
+            )}
+          </IconButton>
+        </Box>
       </Drawer>
 
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
@@ -281,11 +385,6 @@ export default function AdminLayout() {
           }}
         >
           <Toolbar>
-             {!isSettingsPage && (
-              <IconButton onClick={() => setCollapsed(!collapsed)} sx={{ mr: 2 }}>
-                <MenuIcon />
-              </IconButton>
-             )}
             <Box sx={{ width: 300 }}>
               <Autocomplete<SearchResult, false, false, false>
                 freeSolo={false}

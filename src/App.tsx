@@ -94,6 +94,7 @@ function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/integrations" element={<IntegrationsGrid />} />
             <Route path="/integrations/webhook" element={<Integrations />} />
+            <Route path="/auth/me" element={<MyProfile />} />
           </Route>
         </Route>
         <Route element={<SuperadminRoute />}>
