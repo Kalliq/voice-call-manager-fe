@@ -94,7 +94,15 @@ const ScheduleComponent = () => {
   const storedTimezone =
     (settings?.["General Settings"] as { timezone?: string })?.timezone ?? null;
   const isTimezoneLocked = Boolean(storedTimezone);
-  const [timezone, setTimezone] = useState<string>(storedTimezone ?? "");
+  
+  // Validate timezone is in allowed list, fallback to empty string if invalid
+  const getValidTimezone = (tz: string | null): string => {
+    if (!tz) return "";
+    const isValid = US_TIMEZONES.some((t) => t.iana === tz);
+    return isValid ? tz : "";
+  };
+  
+  const [timezone, setTimezone] = useState<string>(getValidTimezone(storedTimezone));
   const [now, setNow] = useState(new Date());
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -117,7 +125,10 @@ const ScheduleComponent = () => {
   // Only lock happens naturally after Save because storedTimezone becomes non-null.
   useEffect(() => {
     if (storedTimezone) {
-      setTimezone(storedTimezone);
+      const validTz = getValidTimezone(storedTimezone);
+      if (validTz) {
+        setTimezone(validTz);
+      }
     }
     // only when storedTimezone changes (after Save or initial load)
   }, [storedTimezone]);
@@ -180,11 +191,15 @@ const ScheduleComponent = () => {
       };
 
       // Only persist timezone if it's currently unset (first-time selection)
+      // Validate timezone is in allowed list before saving
       if (!isTimezoneLocked && timezone) {
-        patchData["General Settings"] = {
-          ...existingGeneralSettings,
-          timezone,
-        };
+        const isValidTimezone = US_TIMEZONES.some((t) => t.iana === timezone);
+        if (isValidTimezone) {
+          patchData["General Settings"] = {
+            ...existingGeneralSettings,
+            timezone,
+          };
+        }
       }
       
       const { data } = await api.patch(`/settings`, patchData);
@@ -223,8 +238,15 @@ const ScheduleComponent = () => {
           <span>
             <FormControl fullWidth sx={{ mb: 0.5 }}>
               <Select
-                value={timezone}
-                onChange={(e) => setTimezone(String(e.target.value))}
+                value={timezone || ""}
+                onChange={(e) => {
+                  const newValue = String(e.target.value);
+                  // Validate the selected value is in allowed list
+                  const isValid = US_TIMEZONES.some((t) => t.iana === newValue);
+                  if (isValid || newValue === "") {
+                    setTimezone(newValue);
+                  }
+                }}
                 disabled={isBusy || isTimezoneLocked}
                 displayEmpty
                 renderValue={(val) =>

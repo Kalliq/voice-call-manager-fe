@@ -2,12 +2,12 @@ const schema = {
   title: "CALL RECORDINGS MANAGEMENT",
   sections: [
     {
-      title: "ENABLE CALL RECORDINGS",
+      title: "ENABLE RECORDING",
       fields: [
         {
           type: "checkbox",
           name: "enableCallRecording",
-          label: "Enable recording globally for every call",
+          label: "Enable call recording",
         },
         {
           type: "button",
@@ -17,13 +17,21 @@ const schema = {
       ],
     },
     {
-      title: "EXCLUDE CALLS THAT START WITH",
+      title: "RECORDING RULES",
       fields: [
         {
-          type: "text",
-          name: "excludePhonesStartingWith",
-          label: "",
-          placeholder: "Enter an expression here",
+          type: "textarea",
+          name: "recordingExcludePrefixes",
+          label: "Exclude calls starting with",
+          placeholder: "Enter one prefix per line (e.g., +1, 555)",
+          helperText: "One prefix per line. Calls matching any prefix will not be recorded.",
+        },
+        {
+          type: "textarea",
+          name: "recordingIncludePrefixes",
+          label: "Include only calls starting with (optional)",
+          placeholder: "Enter one prefix per line (e.g., +1, 555)",
+          helperText: "If specified, only calls matching these prefixes will be recorded. Overrides exclude rules.",
         },
         {
           type: "button",
@@ -33,18 +41,11 @@ const schema = {
       ],
     },
     {
-      title: "INCLUDE ONLY CALLS THAT START WITH",
+      title: "LEGAL DISCLAIMER",
       fields: [
         {
-          type: "text",
-          name: "includeOnlyPhonesStartingWith",
-          label: "",
-          placeholder: "Enter an expression here",
-        },
-        {
-          type: "button",
-          label: "Save",
-          action: "submit",
+          type: "static",
+          content: "You are responsible for complying with local call recording laws.",
         },
       ],
     },

@@ -18,6 +18,8 @@ interface Field {
   fullWidth?: boolean;
   onClick?: (data: any) => {};
   adminOnly?: boolean;
+  helperText?: string;
+  content?: string;
 }
 
 interface Section {

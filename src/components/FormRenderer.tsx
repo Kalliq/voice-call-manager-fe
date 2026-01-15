@@ -5,7 +5,7 @@ import {
   SubmitHandler,
   FieldValues,
 } from "react-hook-form";
-import { Box, Typography, Switch } from "@mui/material";
+import { Box, Typography, Switch, TextField } from "@mui/material";
 
 import { useAuth } from "../contexts/AuthContext";
 import { FormRendererProps } from "../interfaces/form-renderer";
@@ -234,6 +234,50 @@ const FormRenderer = ({
                                 </Box>
                               )}
                             />
+                          );
+
+                        case "textarea":
+                          return (
+                            <Controller
+                              key={fIdx}
+                              name={field.name || ""}
+                              control={control}
+                              render={({ field: controllerField }) => (
+                                <TextField
+                                  {...controllerField}
+                                  label={field.label}
+                                  placeholder={field.placeholder}
+                                  fullWidth
+                                  multiline
+                                  rows={4}
+                                  error={!!errors[field.name || ""]}
+                                  helperText={
+                                    field.helperText ||
+                                    (errors[field.name || ""]?.message as string) ||
+                                    ""
+                                  }
+                                  InputProps={{ readOnly: isReadonly }}
+                                  sx={
+                                    isReadonly
+                                      ? { opacity: 0.5, pointerEvents: "none" }
+                                      : {}
+                                  }
+                                />
+                              )}
+                            />
+                          );
+
+                        case "static":
+                          return (
+                            <Box key={fIdx} sx={{ py: 1 }}>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ fontStyle: "italic" }}
+                              >
+                                {field.content}
+                              </Typography>
+                            </Box>
                           );
 
                         case "dynamic":
