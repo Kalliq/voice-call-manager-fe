@@ -21,7 +21,7 @@ import {
 } from "@mui/material";
 import { WebhookIcon, ActivityIcon } from "../../../components/integrations/integrationIcons";
 import { ArrowBack } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../../utils/axiosInstance";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import { SimpleButton } from "../../../components/UI/SimpleButton";
@@ -86,6 +86,38 @@ const WebhookDetailPage = () => {
   const [initialEnabled, setInitialEnabled] = useState(false);
   const [initialHasSecret, setInitialHasSecret] = useState(false);
   const [initialEvents, setInitialEvents] = useState<string[]>([]);
+
+  // Handle OAuth return URL parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const gmailError = params.get("gmail_error");
+    const gmailSuccess = params.get("gmail_success");
+
+    if (gmailSuccess === "true") {
+      enqueue("Gmail connected successfully", { variant: "success" });
+      // Clean URL
+      navigate(location.pathname, { replace: true });
+    } else if (gmailError) {
+      let errorMessage = "Failed to connect Gmail";
+      if (gmailError === "cancelled") {
+        errorMessage = "Gmail connection was cancelled";
+      } else if (gmailError === "missing_code") {
+        errorMessage = "Gmail connection failed: Missing authorization code";
+      } else if (gmailError === "invalid_state") {
+        errorMessage = "Gmail connection failed: Invalid session";
+      } else {
+        // Decode error message if it's URL encoded
+        try {
+          errorMessage = decodeURIComponent(gmailError);
+        } catch {
+          errorMessage = `Gmail connection failed: ${gmailError}`;
+        }
+      }
+      enqueue(errorMessage, { variant: "error" });
+      // Clean URL
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.search, navigate, location.pathname, enqueue]);
 
   // Fetch config on mount
   useEffect(() => {

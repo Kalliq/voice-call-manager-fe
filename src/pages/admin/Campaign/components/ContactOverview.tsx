@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Grid,
@@ -16,6 +17,11 @@ import {
   Divider,
   CircularProgress,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import {
   Business,
@@ -37,6 +43,7 @@ import useAppStore from "../../../../store/useAppStore";
 import { CallResult } from "../../../../types/call-results";
 import api from "../../../../utils/axiosInstance";
 import { useSnackbar } from "../../../../hooks/useSnackbar";
+import cfg from "../../../../config";
 
 import ActivityRow from "./molecules/ActivityRow";
 
@@ -79,6 +86,8 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   const { settings } = useAppStore((s) => s);
   const callResults: CallResult[] =
@@ -86,6 +95,8 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
   
   const userTimeZone = settings?.["General Settings"]?.timezone as string | undefined;
   const { enqueue } = useSnackbar();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCallLogs = async () => {
@@ -99,22 +110,112 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
     fetchCallLogs();
   }, []);
 
+  // Track if we've already shown OAuth success message
+  const oauthSuccessShownRef = useRef(false);
+
   // Fetch Gmail status when Email tab is opened
   useEffect(() => {
     if (tabIndex === 2) {
+      // Always refetch status when tab opens (handles OAuth return)
       fetchGmailStatus();
-      fetchEmailReplies();
     }
   }, [tabIndex, contact.id]);
+
+  // Refetch status when window regains focus (handles OAuth return)
+  useEffect(() => {
+    if (tabIndex !== 2) return;
+
+    const handleFocus = () => {
+      // Refetch status when window regains focus (user might have returned from OAuth)
+      fetchGmailStatus();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [tabIndex]);
+
+  // Handle OAuth return URL parameters (if user navigates to Contact page after OAuth)
+  useEffect(() => {
+    if (tabIndex !== 2) return;
+
+    const params = new URLSearchParams(location.search);
+    const gmailError = params.get("gmail_error");
+    const gmailSuccess = params.get("gmail_success");
+
+    if (gmailSuccess === "true") {
+      // Refetch status to get updated connection state
+      fetchGmailStatus();
+      // Clean URL
+      navigate(location.pathname + location.hash, { replace: true });
+    } else if (gmailError) {
+      let errorMessage = "Failed to connect Gmail";
+      if (gmailError === "cancelled") {
+        errorMessage = "Gmail connection was cancelled";
+      } else if (gmailError === "missing_code") {
+        errorMessage = "Gmail connection failed: Missing authorization code";
+      } else if (gmailError === "invalid_state") {
+        errorMessage = "Gmail connection failed: Invalid session";
+      } else {
+        try {
+          errorMessage = decodeURIComponent(gmailError);
+        } catch {
+          errorMessage = `Gmail connection failed: ${gmailError}`;
+        }
+      }
+      enqueue(errorMessage, { variant: "error" });
+      // Refetch status to ensure UI reflects backend state
+      fetchGmailStatus();
+      // Clean URL
+      navigate(location.pathname + location.hash, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabIndex, location.search]);
+
+  // Fetch replies after status is loaded (only if connected)
+  useEffect(() => {
+    if (tabIndex === 2 && gmailStatus?.connected && contact.id) {
+      // Only fetch if we have a valid status and it's connected
+      fetchEmailReplies();
+    } else if (tabIndex === 2 && gmailStatus?.connected === false) {
+      // Clear replies if disconnected
+      setEmailReplies([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabIndex, gmailStatus?.connected, contact.id]);
 
   const fetchGmailStatus = async () => {
     setLoadingStatus(true);
     try {
       const response = await api.get<GmailStatus>("/email/gmail/status");
+      const wasConnected = gmailStatus?.connected;
+      const isNowConnected = response.data.connected;
+
       setGmailStatus(response.data);
+
+      // Show success message if Gmail was just connected (OAuth return)
+      // Only show if not already shown and not triggered by URL param (URL param handler shows its own message)
+      if (
+        !wasConnected &&
+        isNowConnected &&
+        !oauthSuccessShownRef.current &&
+        !new URLSearchParams(location.search).get("gmail_success")
+      ) {
+        enqueue("Gmail connected successfully", { variant: "success" });
+        oauthSuccessShownRef.current = true;
+      }
+
+      // Reset success message ref if disconnected (allows showing message again on reconnect)
+      if (!isNowConnected) {
+        oauthSuccessShownRef.current = false;
+      }
     } catch (error: any) {
       console.error("Failed to fetch Gmail status:", error);
       setGmailStatus({ connected: false });
+      
+      // Show error if it's not a 409 (which is expected when not connected)
+      if (error.response?.status !== 409) {
+        enqueue("Failed to check Gmail connection status", { variant: "error" });
+      }
     } finally {
       setLoadingStatus(false);
     }
@@ -122,6 +223,7 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
 
   const fetchEmailReplies = async () => {
     if (!contact.id) return;
+    // Note: gmailStatus?.connected check is handled by useEffect dependency
     setLoadingReplies(true);
     try {
       const response = await api.get<EmailReply[]>("/email/gmail/replies", {
@@ -130,7 +232,16 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
       setEmailReplies(response.data);
     } catch (error: any) {
       if (error.response?.status === 409) {
-        // Gmail not connected - this is expected, don't show error
+        // Gmail not connected - check if it was revoked externally
+        const errorMessage = error.response?.data?.message;
+        if (errorMessage?.includes("revoked")) {
+          enqueue(
+            "Gmail access has been revoked. Please reconnect your Gmail account.",
+            { variant: "error" }
+          );
+          // Refresh status to reflect revoked state
+          fetchGmailStatus();
+        }
         setEmailReplies([]);
       } else {
         console.error("Failed to fetch email replies:", error);
@@ -138,6 +249,28 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
       }
     } finally {
       setLoadingReplies(false);
+    }
+  };
+
+  const handleDisconnectGmail = async () => {
+    setDisconnecting(true);
+    try {
+      await api.delete("/email/gmail/disconnect");
+      enqueue("Gmail disconnected successfully", { variant: "success" });
+      setDisconnectDialogOpen(false);
+      
+      // Refresh status to reflect disconnected state
+      await fetchGmailStatus();
+      // Clear replies
+      setEmailReplies([]);
+    } catch (error: any) {
+      console.error("Failed to disconnect Gmail:", error);
+      enqueue(
+        error.response?.data?.message || "Failed to disconnect Gmail",
+        { variant: "error" }
+      );
+    } finally {
+      setDisconnecting(false);
     }
   };
 
@@ -163,10 +296,14 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
       await fetchEmailReplies();
     } catch (error: any) {
       if (error.response?.status === 409) {
-        enqueue("Gmail is not connected. Please connect your Gmail account.", {
+        const errorMessage =
+          error.response?.data?.message ||
+          "Gmail is not connected. Please connect your Gmail account.";
+        enqueue(errorMessage, {
           variant: "error",
         });
-        fetchGmailStatus(); // Refresh status
+        // Refresh status to reflect backend state (might be revoked externally)
+        fetchGmailStatus();
       } else {
         enqueue(
           error.response?.data?.message || "Failed to send email",
@@ -465,14 +602,44 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
             ) : gmailStatus?.connected ? (
               <>
                 <CheckCircle color="success" />
-                <Typography variant="body2">
+                <Typography variant="body2" sx={{ flexGrow: 1 }}>
                   Gmail connected as {gmailStatus.emailAddress || "unknown"}
                 </Typography>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => setDisconnectDialogOpen(true)}
+                  disabled={disconnecting}
+                >
+                  Disconnect Gmail
+                </Button>
               </>
             ) : (
               <>
                 <Cancel color="error" />
-                <Typography variant="body2">Gmail not connected</Typography>
+                <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                  Gmail not connected
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  onClick={() => {
+                    // Use full-page redirect (not popup) to avoid popup blockers
+                    // Backend will handle OAuth flow and redirect back
+                    try {
+                      window.location.href = `${cfg.backendUrl}/api/auth/google`;
+                    } catch (error) {
+                      console.error("Failed to redirect to OAuth:", error);
+                      enqueue("Failed to start Gmail connection. Please try again.", {
+                        variant: "error",
+                      });
+                    }
+                  }}
+                >
+                  Connect Gmail
+                </Button>
               </>
             )}
           </Box>
@@ -576,6 +743,36 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
           </Paper>
         </Box>
       )}
+
+      {/* Disconnect Confirmation Dialog */}
+      <Dialog
+        open={disconnectDialogOpen}
+        onClose={() => !disconnecting && setDisconnectDialogOpen(false)}
+      >
+        <DialogTitle>Disconnect Gmail?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to disconnect your Gmail account? You will no longer be able to send emails or view replies until you reconnect.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDisconnectDialogOpen(false)}
+            disabled={disconnecting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDisconnectGmail}
+            color="error"
+            variant="contained"
+            disabled={disconnecting}
+            startIcon={disconnecting ? <CircularProgress size={16} /> : null}
+          >
+            {disconnecting ? "Disconnecting..." : "Disconnect"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };
