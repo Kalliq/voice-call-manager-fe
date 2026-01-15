@@ -1,21 +1,42 @@
 import { useEffect, useState, useMemo } from "react";
-import { Box, Grid, Paper, Typography, Stack, Tabs, Tab, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
+import {
+  Box,
+  Grid,
+  Paper,
+  Typography,
+  Stack,
+  Tabs,
+  Tab,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  TextField,
+  Button,
+  Divider,
+  CircularProgress,
+  Chip,
+} from "@mui/material";
 import {
   Business,
   Person,
   Phone,
-  Email,
+  Email as EmailIcon,
   LinkedIn,
   LocationOn,
   AccessTime,
   Title,
   InsertDriveFile,
+  Send,
+  CheckCircle,
+  Cancel,
 } from "@mui/icons-material";
 import { CallLog } from "voice-javascript-common";
 
 import useAppStore from "../../../../store/useAppStore";
 import { CallResult } from "../../../../types/call-results";
 import api from "../../../../utils/axiosInstance";
+import { useSnackbar } from "../../../../hooks/useSnackbar";
 
 import ActivityRow from "./molecules/ActivityRow";
 
@@ -28,6 +49,21 @@ interface ContactOverviewProps {
   onUpdate?: (field: string, value: string) => Promise<void>;
 }
 
+interface GmailStatus {
+  connected: boolean;
+  emailAddress?: string;
+}
+
+interface EmailReply {
+  id: string;
+  threadId: string;
+  from: string;
+  to: string;
+  subject: string;
+  date: string;
+  snippet: string;
+}
+
 const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
@@ -35,11 +71,21 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
   const [isTimezoneHovered, setIsTimezoneHovered] = useState(false);
   const [isTimezoneOpen, setIsTimezoneOpen] = useState(false);
 
+  // Email state
+  const [gmailStatus, setGmailStatus] = useState<GmailStatus | null>(null);
+  const [emailReplies, setEmailReplies] = useState<EmailReply[]>([]);
+  const [loadingStatus, setLoadingStatus] = useState(false);
+  const [loadingReplies, setLoadingReplies] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+
   const { settings } = useAppStore((s) => s);
   const callResults: CallResult[] =
     (settings?.["Phone Settings"]?.callResults as CallResult[]) ?? [];
   
   const userTimeZone = settings?.["General Settings"]?.timezone as string | undefined;
+  const { enqueue } = useSnackbar();
 
   useEffect(() => {
     const fetchCallLogs = async () => {
@@ -52,6 +98,85 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
 
     fetchCallLogs();
   }, []);
+
+  // Fetch Gmail status when Email tab is opened
+  useEffect(() => {
+    if (tabIndex === 2) {
+      fetchGmailStatus();
+      fetchEmailReplies();
+    }
+  }, [tabIndex, contact.id]);
+
+  const fetchGmailStatus = async () => {
+    setLoadingStatus(true);
+    try {
+      const response = await api.get<GmailStatus>("/email/gmail/status");
+      setGmailStatus(response.data);
+    } catch (error: any) {
+      console.error("Failed to fetch Gmail status:", error);
+      setGmailStatus({ connected: false });
+    } finally {
+      setLoadingStatus(false);
+    }
+  };
+
+  const fetchEmailReplies = async () => {
+    if (!contact.id) return;
+    setLoadingReplies(true);
+    try {
+      const response = await api.get<EmailReply[]>("/email/gmail/replies", {
+        params: { contactId: contact.id },
+      });
+      setEmailReplies(response.data);
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        // Gmail not connected - this is expected, don't show error
+        setEmailReplies([]);
+      } else {
+        console.error("Failed to fetch email replies:", error);
+        enqueue("Failed to load email replies", { variant: "error" });
+      }
+    } finally {
+      setLoadingReplies(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!contact.id || !emailSubject.trim() || !emailBody.trim()) {
+      enqueue("Subject and body are required", { variant: "warning" });
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const response = await api.post("/email/gmail/send", {
+        contactId: contact.id,
+        subject: emailSubject.trim(),
+        body: emailBody.trim(),
+      });
+
+      enqueue("Email sent successfully", { variant: "success" });
+      setEmailSubject("");
+      setEmailBody("");
+      
+      // Refresh replies after sending
+      await fetchEmailReplies();
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        enqueue("Gmail is not connected. Please connect your Gmail account.", {
+          variant: "error",
+        });
+        fetchGmailStatus(); // Refresh status
+      } else {
+        enqueue(
+          error.response?.data?.message || "Failed to send email",
+          { variant: "error" }
+        );
+      }
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   // Update time every minute
   useEffect(() => {
@@ -121,10 +246,17 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
             color: tabIndex === 1 ? "#0f59ff" : "text.secondary",
           }}
         />
+        <Tab
+          label="Email"
+          sx={{
+            fontWeight: 600,
+            color: tabIndex === 2 ? "#0f59ff" : "text.secondary",
+          }}
+        />
       </Tabs>
 
       {/* Tab Content */}
-      {tabIndex === 0 ? (
+      {tabIndex === 0 && (
         <Grid container spacing={3}>
           {/* Left */}
           <Grid item xs={12} md={6}>
@@ -142,7 +274,7 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                 onSave={onUpdate ? (value) => onUpdate("title", value) : undefined}
               />
               <EditableFieldItem
-                icon={<Email color="primary" />}
+                icon={<EmailIcon color="primary" />}
                 label="Email"
                 value={contact.email || ""}
                 onSave={onUpdate ? (value) => onUpdate("email", value) : undefined}
@@ -290,7 +422,8 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
             </Stack>
           </Grid>
         </Grid>
-      ) : (
+      )}
+      {tabIndex === 1 && (
         <Box px={2}>
           {visibleCallLogs.length > 0 ? (
             <Stack spacing={2}>
@@ -308,6 +441,139 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
               No activity history available yet.
             </Typography>
           )}
+        </Box>
+      )}
+      {tabIndex === 2 && (
+        // Email Tab
+        <Box px={2} py={2}>
+          {/* Gmail Connection Status */}
+          <Box
+            sx={{
+              mb: 3,
+              p: 2,
+              borderRadius: 1,
+              backgroundColor: gmailStatus?.connected
+                ? "success.light"
+                : "error.light",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            {loadingStatus ? (
+              <CircularProgress size={20} />
+            ) : gmailStatus?.connected ? (
+              <>
+                <CheckCircle color="success" />
+                <Typography variant="body2">
+                  Gmail connected as {gmailStatus.emailAddress || "unknown"}
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Cancel color="error" />
+                <Typography variant="body2">Gmail not connected</Typography>
+              </>
+            )}
+          </Box>
+
+          {/* Compose Email */}
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              mb: 3,
+              backgroundColor: gmailStatus?.connected ? "#fff" : "action.disabledBackground",
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Send Email
+            </Typography>
+            <Stack spacing={2}>
+              <TextField
+                label="Subject"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                fullWidth
+                size="small"
+                disabled={!gmailStatus?.connected || sendingEmail}
+              />
+              <TextField
+                label="Message"
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                fullWidth
+                multiline
+                rows={4}
+                size="small"
+                disabled={!gmailStatus?.connected || sendingEmail}
+              />
+              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button
+                  variant="contained"
+                  startIcon={sendingEmail ? <CircularProgress size={16} /> : <Send />}
+                  onClick={handleSendEmail}
+                  disabled={
+                    !gmailStatus?.connected ||
+                    sendingEmail ||
+                    !emailSubject.trim() ||
+                    !emailBody.trim()
+                  }
+                >
+                  {sendingEmail ? "Sending..." : "Send"}
+                </Button>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Email Replies */}
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Email Replies
+            </Typography>
+            {loadingReplies ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : !gmailStatus?.connected ? (
+              <Typography variant="body2" color="text.secondary">
+                Connect Gmail to view email replies
+              </Typography>
+            ) : emailReplies.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                No email replies yet
+              </Typography>
+            ) : (
+              <Stack spacing={2}>
+                {emailReplies.map((reply) => (
+                  <Box
+                    key={reply.id}
+                    sx={{
+                      p: 2,
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
+                      <Typography variant="subtitle2" fontWeight={600}>
+                        {reply.subject || "(No subject)"}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(reply.date).toLocaleString()}
+                      </Typography>
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                      From: {reply.from} | To: {reply.to}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      {reply.snippet || "(No preview available)"}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+            )}
+          </Paper>
         </Box>
       )}
     </Paper>
