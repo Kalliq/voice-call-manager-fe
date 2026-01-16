@@ -4,7 +4,9 @@ import CallResultsComponent from "../components/forms/CallResultsComponent";
 import CallRecordingsFormComponent from "../components/forms/CallRecordingsFormComponent";
 import CallSchedulesComponent from "../components/forms/CallSchedulesComponent";
 import DataIntegrationComponent from "../components/forms/DataIntegrationComponent";
-import EmailSettingsFormComponent from "../components/forms/EmailSettingsFormComponent";
+import EmailAccountFormComponent from "../components/forms/EmailAccountFormComponent";
+import EmailSignatureFormComponent from "../components/forms/EmailSignatureFormComponent";
+import EmailTemplatesListComponent from "../components/forms/EmailTemplatesListComponent";
 
 export const settingsComponentRegistry: Record<
   string,
@@ -19,6 +21,8 @@ export const settingsComponentRegistry: Record<
     integrationSettings: DataIntegrationComponent,
   },
   "Email Settings": {
-    emailAccount: EmailSettingsFormComponent,
+    emailAccount: EmailAccountFormComponent,
+    signature: EmailSignatureFormComponent,
+    templates: EmailTemplatesListComponent,
   },
 };

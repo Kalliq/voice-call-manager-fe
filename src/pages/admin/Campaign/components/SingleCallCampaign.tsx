@@ -34,6 +34,7 @@ import {
 import ContactOverview from "./ContactOverview";
 import ContactStageChip from "./ContactStageChip";
 import { CallBar } from "./molecules/CallBar";
+import SendEmailModal from "../../../../components/SendEmailModal";
 
 import api from "../../../../utils/axiosInstance";
 import { CallSession, Contact } from "../../../../types/contact";
@@ -82,6 +83,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTalkingPoint, setNewTalkingPoint] = useState("");
   const [addToListAnchor, setAddToListAnchor] = useState<HTMLElement | null>(null);
+  const [isSendEmailModalOpen, setIsSendEmailModalOpen] = useState(false);
   const [lists, setLists] = useState<{ id: string; listName: string }[]>([]);
   const [listSearch, setListSearch] = useState("");
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
@@ -455,7 +457,11 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
               >
                 Add to list
               </Button>
-              <Button variant="outlined" startIcon={<Email />}>
+              <Button
+                variant="outlined"
+                startIcon={<Email />}
+                onClick={() => setIsSendEmailModalOpen(true)}
+              >
                 Send email
               </Button>
               <Button variant="outlined" startIcon={<Animation />}>
@@ -632,6 +638,14 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
           </Stack>
         </Box>
       </Popover>
+
+      {/* Send Email Modal */}
+      <SendEmailModal
+        open={isSendEmailModalOpen}
+        onClose={() => setIsSendEmailModalOpen(false)}
+        contactId={session.id}
+        contactEmail={session.email || ""}
+      />
     </>
   );
 };

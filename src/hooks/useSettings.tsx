@@ -19,7 +19,14 @@ export const useSettings = () => {
   // Map original keys to display keys for lookup
   const keyMap = settings
     ? Object.keys(settings)
-        .filter((key) => key !== "user" && key !== "id" && key !== "createdAt" && key !== "updatedAt")
+        .filter((key) => {
+          const lowerKey = key.toLowerCase().replace(/\s+/g, "");
+          return (
+            key !== "user" &&
+            key !== "id" &&
+            !["createdat", "updatedat", "created_at", "updated_at"].includes(lowerKey)
+          );
+        })
         .reduce((acc, key) => {
           acc[translateToTitleCase(key)] = key;
           return acc;

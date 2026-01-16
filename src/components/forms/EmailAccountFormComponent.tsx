@@ -28,7 +28,7 @@ interface GmailStatus {
   emailAddress?: string;
 }
 
-const EmailSettingsFormComponent = () => {
+const EmailAccountFormComponent = () => {
   const [gmailStatus, setGmailStatus] = useState<GmailStatus | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
@@ -166,7 +166,7 @@ const EmailSettingsFormComponent = () => {
     <Box sx={{ maxWidth: 800, mx: "auto" }}>
       <Paper variant="outlined" sx={{ p: 3 }}>
         <Typography variant="h5" sx={{ mb: 3 }}>
-          Email Settings
+          Accounts
         </Typography>
 
         <Stack spacing={3}>
@@ -283,4 +283,4 @@ const EmailSettingsFormComponent = () => {
   );
 };
 
-export default EmailSettingsFormComponent;
+export default EmailAccountFormComponent;

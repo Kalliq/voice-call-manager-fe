@@ -125,6 +125,9 @@ export default function AdminLayout() {
   const getSettingsLabel = (subKey: string): string => {
     const customLabels: Record<string, string> = {
       schedulesManagement: "Timezone & Schedules",
+      emailAccount: "Accounts",
+      signature: "Signature",
+      templates: "Templates",
     };
     return customLabels[subKey] || translateToTitleCase(subKey);
   };
