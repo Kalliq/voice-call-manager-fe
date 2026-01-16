@@ -50,10 +50,28 @@ import { translateToTitleCase } from "../utils/translateToTitle";
 import { useGlobalSearch } from "../hooks/useGlobalSearch";
 import PhoneDialerPopover from "../components/PhoneDialPopover";
 import { settingsComponentRegistry } from "../registry/settings-component-registry";
+import useAppStore from "../store/useAppStore";
+import { initSocket } from "../utils/initSocket";
 
 import api from "../utils/axiosInstance";
 
 type SearchResult = { id: string; label: string };
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+  meta?: {
+    threadId?: string;
+    messageId?: string;
+    contactId?: string;
+    from?: string;
+    subject?: string;
+  };
+}
 
 const DRAWER_WIDTH = 240;
 const COLLAPSED_WIDTH = 80;
@@ -88,12 +106,15 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signout, isAdmin, isSuperadmin } = useAuth();
+  const { user } = useAppStore();
 
   // Declare isSettingsPage immediately after location to avoid initialization error
   const isSettingsPage = location.pathname === "/settings";
 
   const [collapsed, setCollapsed] = useState(false);
   const drawerWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   // Lock sidebar open when on Settings route
   useEffect(() => {
@@ -168,6 +189,86 @@ export default function AdminLayout() {
         autoStart: false,
       },
     });
+  };
+
+  // Fetch notifications on mount
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchNotifications = async () => {
+      setLoadingNotifications(true);
+      try {
+        const response = await api.get<Notification[]>("/notifications?limit=50");
+        setNotifications(response.data || []);
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+        setNotifications([]);
+      } finally {
+        setLoadingNotifications(false);
+      }
+    };
+
+    fetchNotifications();
+
+    // Subscribe to socket events for realtime updates
+    const socket = initSocket(user.id);
+    socket.on("notification:new", (newNotification: Notification) => {
+      // Check if notification already exists (dedupe by id or meta.messageId)
+      setNotifications((prev) => {
+        const exists = prev.some(
+          (n) =>
+            n.id === newNotification.id ||
+            (n.meta?.messageId &&
+              newNotification.meta?.messageId &&
+              n.meta.messageId === newNotification.meta.messageId)
+        );
+        if (exists) return prev;
+        // Prepend new notification
+        return [newNotification, ...prev].slice(0, 50);
+      });
+    });
+
+    return () => {
+      socket.off("notification:new");
+    };
+  }, [user?.id]);
+
+  // Calculate unread count
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // Format time ago
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  };
+
+  // Mark notification as read
+  const handleNotificationClick = async (notification: Notification) => {
+    if (notification.isRead) {
+      closeNotifMenu();
+      return;
+    }
+
+    try {
+      await api.patch(`/notifications/${notification.id}/read`);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notification.id ? { ...n, isRead: true } : n
+        )
+      );
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+    closeNotifMenu();
   };
 
   return (
@@ -439,7 +540,7 @@ export default function AdminLayout() {
               <Phone />
             </IconButton>
             <IconButton onClick={openNotifMenu}>
-              <Badge color="error">
+              <Badge badgeContent={unreadCount} color="error">
                 <NotificationsIcon />
               </Badge>
             </IconButton>
@@ -447,9 +548,52 @@ export default function AdminLayout() {
               anchorEl={notifAnchor}
               open={!!notifAnchor}
               onClose={closeNotifMenu}
+              PaperProps={{
+                sx: {
+                  width: 320,
+                  maxHeight: 400,
+                },
+              }}
             >
-              <MenuItem onClick={closeNotifMenu}>Notification 1</MenuItem>
-              <MenuItem onClick={closeNotifMenu}>Notification 2</MenuItem>
+              <Typography variant="h6" sx={{ p: 2 }}>
+                Notifications
+              </Typography>
+              <Divider />
+              {loadingNotifications ? (
+                <Typography variant="body2" sx={{ p: 2 }}>
+                  Loading...
+                </Typography>
+              ) : notifications.length > 0 ? (
+                notifications.map((notification) => (
+                  <MenuItem
+                    key={notification.id}
+                    onClick={() => handleNotificationClick(notification)}
+                    sx={{
+                      backgroundColor: notification.isRead
+                        ? "transparent"
+                        : "rgba(25, 118, 210, 0.08)",
+                    }}
+                  >
+                    <ListItemText
+                      primary={notification.title || notification.message}
+                      secondary={formatTimeAgo(notification.createdAt)}
+                      sx={{
+                        "& .MuiListItemText-primary": {
+                          fontSize: "0.875rem",
+                          fontWeight: notification.isRead ? "normal" : 600,
+                        },
+                        "& .MuiListItemText-secondary": {
+                          fontSize: "0.75rem",
+                        },
+                      }}
+                    />
+                  </MenuItem>
+                ))
+              ) : (
+                <Typography variant="body2" sx={{ p: 2 }}>
+                  No new notifications
+                </Typography>
+              )}
             </Menu>
             <IconButton onClick={() => navigate("/settings")}>
               <SettingsIcon />
