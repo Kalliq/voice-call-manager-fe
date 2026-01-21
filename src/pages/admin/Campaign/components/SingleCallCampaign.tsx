@@ -29,12 +29,17 @@ import {
   PlaylistAdd,
   Person,
   Close,
+  Edit,
+  Delete,
 } from "@mui/icons-material";
 
 import ContactOverview from "./ContactOverview";
 import ContactStageChip from "./ContactStageChip";
 import { CallBar } from "./molecules/CallBar";
 import SendEmailModal from "../../../../components/SendEmailModal";
+import AddDealModal from "./AddDealModal";
+import EditDealModal from "./EditDealModal";
+import { DeleteDialog } from "../../../../components/DeleteDialog";
 
 import api from "../../../../utils/axiosInstance";
 import { CallSession, Contact } from "../../../../types/contact";
@@ -88,6 +93,12 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   const [listSearch, setListSearch] = useState("");
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [updateKey, setUpdateKey] = useState(0);
+  const [deals, setDeals] = useState<any[]>([]);
+  const [isAddDealModalOpen, setIsAddDealModalOpen] = useState(false);
+  const [isEditDealModalOpen, setIsEditDealModalOpen] = useState(false);
+  const [selectedDeal, setSelectedDeal] = useState<any | null>(null);
+  const [isDeleteDealDialogOpen, setIsDeleteDealDialogOpen] = useState(false);
+  const [dealToDelete, setDealToDelete] = useState<any | null>(null);
 
   useEffect(() => {
     let int: NodeJS.Timeout;
@@ -131,6 +142,13 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
       fetchLists();
     }
   }, [addToListAnchor]);
+
+  // Fetch deals when active tab is 2 (Deals tab)
+  useEffect(() => {
+    if (activeTab === 2) {
+      getDeals();
+    }
+  }, [activeTab]);
 
   const { enqueue } = useSnackbar();
 
@@ -223,6 +241,35 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
       setTalkingPoints(updated);
     } catch (err) {
       console.error("Failed to remove talking point", err);
+    }
+  };
+
+  const getDeals = async () => {
+    try {
+      const { data } = await api.get(`/deals?contactId=${session.id}`);
+      console.log("deals: ", data);
+      setDeals(data);
+    } catch (error) {
+      console.error("Failed to get deals:", error);
+      setDeals([]);
+    }
+  };
+
+  const handleDeleteDeal = async () => {
+    if (!dealToDelete?.id) {
+      return;
+    }
+
+    try {
+      await api.delete(`/deals/${dealToDelete.id}`);
+      enqueue("Deal deleted successfully", { variant: "success" });
+      setIsDeleteDealDialogOpen(false);
+      setDealToDelete(null);
+      getDeals();
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to delete deal";
+      enqueue(errorMessage, { variant: "error" });
     }
   };
 
@@ -412,9 +459,84 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
             )}
             {activeTab === 2 && (
               <Box px={3} py={2}>
-                <Typography variant="body1" color="text.secondary">
-                  No deals yet.
-                </Typography>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  mb={2}
+                >
+                  <Typography variant="h6">Deals</Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={() => setIsAddDealModalOpen(true)}
+                  >
+                    Add Deal
+                  </Button>
+                </Box>
+                {deals.length === 0 ? (
+                  <Typography variant="body1" color="text.secondary">
+                    No deals yet.
+                  </Typography>
+                ) : (
+                  <Stack spacing={2}>
+                    {deals.map((deal) => (
+                      <Paper key={deal.id} variant="outlined" sx={{ p: 2 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="h6">
+                              {deal.dealname || deal.name}
+                            </Typography>
+                            {deal.description && (
+                              <Typography variant="body2" color="text.secondary" mt={1}>
+                                {deal.description}
+                              </Typography>
+                            )}
+                            {deal.amount !== undefined && (
+                              <Typography variant="body2" mt={1}>
+                                Amount: ${deal.amount.toLocaleString()}
+                              </Typography>
+                            )}
+                            <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
+                              {deal.pipeline && (
+                                <Chip label={deal.pipeline} size="small" />
+                              )}
+                              {deal.dealstage && (
+                                <Chip label={deal.dealstage} size="small" />
+                              )}
+                              {deal.hs_is_closed && (
+                                <Chip label="Closed" size="small" color="success" />
+                              )}
+                            </Stack>
+                          </Box>
+                          <Stack direction="row" spacing={1} sx={{ ml: 2 }}>
+                            <Button
+                              size="small"
+                              startIcon={<Edit />}
+                              onClick={() => {
+                                setSelectedDeal(deal);
+                                setIsEditDealModalOpen(true);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="small"
+                              startIcon={<Delete />}
+                              color="error"
+                              onClick={() => {
+                                setDealToDelete(deal);
+                                setIsDeleteDealDialogOpen(true);
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          </Stack>
+                        </Box>
+                      </Paper>
+                    ))}
+                  </Stack>
+                )}
               </Box>
             )}
             {activeTab === 3 && (
@@ -645,6 +767,43 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
         onClose={() => setIsSendEmailModalOpen(false)}
         contactId={session.id}
         contactEmail={session.email || ""}
+      />
+
+      {/* Add Deal Modal */}
+      <AddDealModal
+        open={isAddDealModalOpen}
+        onClose={() => setIsAddDealModalOpen(false)}
+        contactId={session.id}
+        onSuccess={() => {
+          // Refresh deals list when a new deal is added
+          getDeals();
+        }}
+      />
+
+      {/* Edit Deal Modal */}
+      <EditDealModal
+        open={isEditDealModalOpen}
+        onClose={() => {
+          setIsEditDealModalOpen(false);
+          setSelectedDeal(null);
+        }}
+        deal={selectedDeal}
+        onSuccess={() => {
+          // Refresh deals list when a deal is updated
+          getDeals();
+        }}
+      />
+
+      {/* Delete Deal Dialog */}
+      <DeleteDialog
+        open={isDeleteDealDialogOpen}
+        title="Delete Deal"
+        text={`Are you sure you want to delete "${dealToDelete?.dealname || dealToDelete?.name || "this deal"}"? This action cannot be undone.`}
+        onClose={() => {
+          setIsDeleteDealDialogOpen(false);
+          setDealToDelete(null);
+        }}
+        onConfirm={handleDeleteDeal}
       />
     </>
   );
