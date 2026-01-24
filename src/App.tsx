@@ -29,13 +29,20 @@ import MyPhoneNumbersList from "./pages/admin/MyNumbersList";
 import Reports from "./pages/admin/Reports/Reports";
 import IntegrationsGrid from "./pages/admin/Integrations/IntegrationsGrid";
 import Integrations from "./pages/admin/Integrations/Integrations";
+import Accounts from "./pages/admin/Accounts/Accounts";
+import AccountDetails from "./pages/admin/Accounts/AccountDetails";
+import AccountContacts from "./pages/admin/Accounts/AccountContacts";
 
 // Superadmin pages
 import SuperDashboard from "./pages/superadmin/SuperDashboard";
 import NumberPoolSettings from "./pages/superadmin/NumberPoolSettings";
 import UsersManagement from "./pages/superadmin/UserManagement";
+import TenantManagement from "./pages/superadmin/TenantManagement";
+import TenantDetails from "./pages/superadmin/TenantDetails";
+import SuperadminAccountDetails from "./pages/superadmin/AccountDetails";
 
 import "./App.css";
+
 
 function App() {
   const { isAuthenticated, isSuperadmin, authLoading } = useAuth();
@@ -85,6 +92,11 @@ function App() {
             <Route path="/campaign" element={<Campaign />} />
             <Route path="/lists" element={<Lists />} />
             <Route path="/contacts" element={<Contacts />} />
+            <Route path="/accounts">
+              <Route index element={<Accounts />} />
+              <Route path=":id" element={<AccountDetails />} />
+              <Route path="contacts/:id" element={<AccountContacts />} />
+            </Route>
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/import-contacts" element={<ImportContacts />} />
             <Route path="/create-new-list/:id?" element={<CreateNewList />} />
@@ -108,6 +120,17 @@ function App() {
               path="users"
               element={<WithHeader component={UsersManagement} />}
             />
+            <Route path="tenants">
+              <Route index element={<WithHeader component={TenantManagement} />} />
+              <Route
+                path=":id"
+                element={<WithHeader component={TenantDetails} />}
+              />
+              <Route
+                path=":tenantId/accounts/:accountId"
+                element={<WithHeader component={SuperadminAccountDetails} />}
+              />
+            </Route>
           </Route>
         </Route>
       </Routes>
