@@ -32,6 +32,7 @@ const fieldOptions: FieldOptionsMap = {
     { id: "timezone", name: "Timezone" },
     { id: "state", name: "State" },
     { id: "title", name: "Title" },
+    { id: "accountWebsite", name: "Company Website" },
   ],
   leads: [
     { id: "first_name", name: "First Name" },

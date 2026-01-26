@@ -63,13 +63,13 @@ const AccountsPage = () => {
             <Typography variant="h5" fontWeight="bold">
                 Accounts
             </Typography>
-            <TextField
+            {/* <TextField
                 label="Search"
                 value={searchInput}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchInput(e.target.value)}
                 fullWidth
                 margin="normal"
-            />
+            /> */}
             <TableContainer component={Paper}>
                 <Table>
                     <TableHead>

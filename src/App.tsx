@@ -21,6 +21,7 @@ import Campaign from "./pages/admin/Campaign/Campaign";
 import Settings from "./pages/admin/Settings/Settings";
 import Lists from "./pages/admin/Lists/Lists";
 import Contacts from "./pages/admin/Contacts/Contacts";
+import ContactDetails from "./pages/admin/Contacts/ContactDetails";
 import Tasks from "./pages/admin/Tasks/Tasks";
 import ImportContacts from "./pages/admin/ImportContacts";
 import CreateNewList from "./pages/admin/CreateNewList";
@@ -91,7 +92,10 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/campaign" element={<Campaign />} />
             <Route path="/lists" element={<Lists />} />
-            <Route path="/contacts" element={<Contacts />} />
+            <Route path="/contacts">
+              <Route index element={<Contacts />} />
+              <Route path=":id" element={<ContactDetails />} />
+            </Route>
             <Route path="/accounts">
               <Route index element={<Accounts />} />
               <Route path=":id" element={<AccountDetails />} />

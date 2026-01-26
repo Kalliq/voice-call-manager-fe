@@ -80,6 +80,23 @@ export default function SuperDashboard() {
         </Grid>
       </Grid>
       <Grid container spacing={3}>
+      <Grid item xs={12} sm={6} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="subtitle1" mb={1}>
+                Manage Tenants
+              </Typography>
+              <Button
+                component={Link}
+                to="/superdashboard/tenants"
+                variant="contained"
+                fullWidth
+              >
+                Go to Tenant Management
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
         <Grid item xs={12} sm={6} md={4}>
           <Card>
             <CardContent>
@@ -114,23 +131,7 @@ export default function SuperDashboard() {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="subtitle1" mb={1}>
-                Manage Tenants
-              </Typography>
-              <Button
-                component={Link}
-                to="/superdashboard/tenants"
-                variant="contained"
-                fullWidth
-              >
-                Go to Tenant Management
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
+        
       </Grid>
       {/* Optionally: Add a recent activity section or logs here */}
     </Box>

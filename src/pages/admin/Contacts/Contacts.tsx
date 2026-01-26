@@ -282,8 +282,16 @@ const ContactsPage = () => {
 
             <TableBody>
               {contacts.map((c) => (
-                <TableRow key={c.id} hover sx={{ cursor: "pointer" }}>
-                  <TableCell padding="checkbox">
+                <TableRow 
+                  key={c.id} 
+                  hover 
+                  sx={{ cursor: "pointer" }}
+                  onClick={() => navigate(`/contacts/${c.id}`)}
+                >
+                  <TableCell 
+                    padding="checkbox"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <CheckboxField
                       label=""
                       checked={selectedContactIds.includes(c.id)}
@@ -304,7 +312,10 @@ const ContactsPage = () => {
                   <TableCell sx={{ py: 1.5 }}>{c.company}</TableCell>
                   <TableCell sx={{ py: 1.5 }}>{c.email}</TableCell>
                   <TableCell sx={{ py: 1.5 }}>{c.phone}</TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
+                  <TableCell 
+                    sx={{ py: 1.5 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Stack
                       direction="row"
                       spacing={1}
