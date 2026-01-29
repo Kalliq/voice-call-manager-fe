@@ -67,6 +67,11 @@ export default function TenantManagement() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [tenantMinutes, setTenantMinutes] = useState<
+    { id: string; minutes: number, totalCalls: number }[]
+  >([]);
+  const [loadingMinutes, setLoadingMinutes] = useState(false);
+
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
 
   // Form state
@@ -94,6 +99,24 @@ export default function TenantManagement() {
     try {
       const res = await api.get("/tenants");
       setTenants(res.data);
+
+      const tenantsData = res.data;
+      const results = await Promise.all(
+        (tenantsData || []).map(async (tenant: any) => {
+          try {
+            const {data} = await api.get("/call-logs/stats/tenant", {
+              params: { period: "month", tenantId: tenant.id },
+            });
+
+            return { id: tenant.id, minutes: data.totalMinutes, totalCalls: data.callsTotal };
+          } catch (err) {
+            console.error("Failed to fetch minutes for tenant", err);
+            return { id: tenant.id, minutes: 0, totalCalls: 0 };
+          }
+        })
+      );
+      setTenantMinutes(results);
+
     } catch (error) {
       console.error("Failed to fetch tenants", error);
     } finally {
@@ -118,7 +141,7 @@ export default function TenantManagement() {
     loadTenants();
     loadUsers();
   }, []);
-
+  
   const handleCreateTenant = async () => {
     try {
       const tenantData: any = {
@@ -257,6 +280,19 @@ export default function TenantManagement() {
                         🌐 {tenant.website}
                       </Typography>
                     )}
+                    <Box mt={1}>
+                      <Typography variant="body2" color="text.secondary">
+                        Minutes this month
+                      </Typography>
+                      <Typography variant="h6">
+                        {(() => {
+                          const entry = tenantMinutes.find(
+                            (t) => t.id === tenant.id
+                          );
+                          return  entry ? "Total calls : " +entry.totalCalls + ' lasted ' + entry.minutes + 'm': "0";
+                        })()}
+                      </Typography>
+                    </Box>
                     <Box display="flex" gap={1} flexWrap="wrap" mt={1}>
                       {tenant.settings?.subscription?.plan && (
                         <Chip
