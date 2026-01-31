@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Stack,
@@ -26,13 +26,14 @@ import {
   Edit as EditIcon,
   Search as SearchIcon,
   Delete as DeleteIcon,
+  ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import _ from "lodash";
 import { List } from "voice-javascript-common";
 
 import api from "../../../utils/axiosInstance";
 import { Contact } from "../../../types/contact";
-import ContactDrawer from "./components/ContactDrawer";
+import ContactDrawer from "../Contacts/components/ContactDrawer";
 import { DeleteDialog } from "../../../components/DeleteDialog";
 import SelectField from "../../../components/UI/SelectField";
 import { useSnackbar } from "../../../hooks/useSnackbar";
@@ -41,10 +42,11 @@ import { useMoveContacts } from "../../../hooks/useMoveContacts";
 import Loading from "../../../components/UI/Loading";
 import CheckboxField from "../../../components/UI/CheckboxField";
 
-const ContactsPage = () => {
+const AccountContacts = () => {
   const theme = useTheme();
   const { enqueue } = useSnackbar();
   const navigate = useNavigate();
+  const { id: accountId } = useParams<{ id: string }>();
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [total, setTotal] = useState(0);
@@ -54,6 +56,7 @@ const ContactsPage = () => {
   const [selectedListId, setSelectedListId] = useState<string>("");
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [lists, setLists] = useState<List[]>([]);
+  const [accountName, setAccountName] = useState<string>("");
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -78,7 +81,19 @@ const ContactsPage = () => {
     await moveContacts(selectedListId, targetListId, selectedContactIds);
   };
 
+  const loadAccount = async () => {
+    if (!accountId) return;
+    try {
+      const res = await api.get(`/accounts/${accountId}`);
+      setAccountName(res.data?.companyName || res.data?.name || "Account");
+    } catch {
+      // If account loading fails, just use a default name
+      setAccountName("Account");
+    }
+  };
+
   const load = useCallback(async () => {
+    if (!accountId) return;
     setLoading(true);
     try {
       const res = await api.get("/contacts", {
@@ -86,17 +101,18 @@ const ContactsPage = () => {
           search,
           page: page + 1,
           limit: rowsPerPage,
+          accountId,
           listId: selectedListId || undefined,
         },
       });
-      setContacts(res.data.data);
-      setTotal(res.data.total);
+      setContacts(res.data.data || res.data.contacts || res.data || []);
+      setTotal(res.data.total || res.data.length || 0);
     } catch {
       enqueue("Failed to load contacts", { variant: "error" });
     } finally {
       setLoading(false);
     }
-  }, [search, page, rowsPerPage, selectedListId, enqueue]);
+  }, [search, page, rowsPerPage, selectedListId, accountId, enqueue]);
 
   const loadLists = async () => {
     try {
@@ -113,7 +129,7 @@ const ContactsPage = () => {
     () =>
       _.debounce((val: string) => {
         setPage(0);
-        setSearch(val); 
+        setSearch(val);
       }, 300),
     []
   );
@@ -121,14 +137,9 @@ const ContactsPage = () => {
     return () => debouncedSetSearch.cancel();
   }, [debouncedSetSearch]);
   const onSearchChange = (val: string) => {
-    setSearchInput(val);      
-    debouncedSetSearch(val); 
+    setSearchInput(val);
+    debouncedSetSearch(val);
   };
-
-  const onSearch = _.debounce((val: string) => {
-    setPage(0);
-    setSearch(val);
-  }, 300);
 
   const onDelete = async (c: Contact) => {
     await api.delete(`/contacts/${c.id}`);
@@ -139,31 +150,50 @@ const ContactsPage = () => {
 
   const onCall = (c: Contact) => {
     navigate("/campaign", {
-      state: { 
-        contactId: c.id, 
+      state: {
+        contactId: c.id,
         phone: c.phone,
-        autoStart: false 
+        autoStart: false,
       },
     });
   };
 
   useEffect(() => {
-    load();
-    setSelectedContactIds([]);
-  }, [load]);
+    if (accountId) {
+      loadAccount();
+      load();
+      loadLists();
+      setSelectedContactIds([]);
+    }
+  }, [accountId]);
 
   useEffect(() => {
-    loadLists();
-  }, []);
+    if (accountId) {
+      load();
+      setSelectedContactIds([]);
+    }
+  }, [load]);
 
   return (
     <Box p={3}>
-      <Box mb={3} display="flex" justifyContent="space-between">
+      <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
         <Box>
+          <Box display="flex" alignItems="center" gap={2} mb={1}>
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate("/accounts")}
+              variant="outlined"
+              size="small"
+            >
+              Back to Accounts
+            </Button>
+          </Box>
           <Typography variant="h5" fontWeight="bold">
-            Contacts
+            Contacts for {accountName}
           </Typography>
-          <Typography color="text.secondary">Manage your contacts</Typography>
+          <Typography color="text.secondary">
+            Manage contacts for this account
+          </Typography>
         </Box>
         <Button
           variant="outlined"
@@ -185,7 +215,7 @@ const ContactsPage = () => {
         <TextField
           size="small"
           placeholder="Search..."
-          value={searchInput}                     
+          value={searchInput}
           onChange={(e) => onSearchChange(e.target.value)}
           autoComplete="off"
           InputProps={{
@@ -281,85 +311,84 @@ const ContactsPage = () => {
             </TableHead>
 
             <TableBody>
-              {contacts.map((c) => (
-                <TableRow 
-                  key={c.id} 
-                  hover 
-                  sx={{ cursor: "pointer" }}
-                  onClick={() => navigate(`/contacts/${c.id}`)}
-                >
-                  <TableCell 
-                    padding="checkbox"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <CheckboxField
-                      label=""
-                      checked={selectedContactIds.includes(c.id)}
-                      onChange={(checked) => {
-                        if (checked) {
-                          setSelectedContactIds((prev) => [...prev, c.id]);
-                        } else {
-                          setSelectedContactIds((prev) =>
-                            prev.filter((id) => id !== c.id)
-                          );
-                        }
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    {c.first_name} {c.last_name}
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>{c.company}</TableCell>
-                  <TableCell sx={{ py: 1.5 }}>{c.email}</TableCell>
-                  <TableCell sx={{ py: 1.5 }}>{c.phone}</TableCell>
-                  <TableCell 
-                    sx={{ py: 1.5 }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      justifyContent="flex-end"
-                    >
-                      <Tooltip title="Edit">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditing(c);
-                            setDrawerOpen(true);
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Call">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onCall(c);
-                          }}
-                        >
-                          <CallIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleting(c);
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
+              {contacts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                    <Typography color="text.secondary">
+                      No contacts found for this account
+                    </Typography>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                contacts.map((c) => (
+                  <TableRow key={c.id} hover sx={{ cursor: "pointer" }}>
+                    <TableCell padding="checkbox">
+                      <CheckboxField
+                        label=""
+                        checked={selectedContactIds.includes(c.id)}
+                        onChange={(checked) => {
+                          if (checked) {
+                            setSelectedContactIds((prev) => [...prev, c.id]);
+                          } else {
+                            setSelectedContactIds((prev) =>
+                              prev.filter((id) => id !== c.id)
+                            );
+                          }
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5 }}>
+                      {c.first_name} {c.last_name}
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5 }}>{c.company}</TableCell>
+                    <TableCell sx={{ py: 1.5 }}>{c.email}</TableCell>
+                    <TableCell sx={{ py: 1.5 }}>{c.phone}</TableCell>
+                    <TableCell sx={{ py: 1.5 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        justifyContent="flex-end"
+                      >
+                        <Tooltip title="Edit">
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditing(c);
+                              setDrawerOpen(true);
+                            }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Call">
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onCall(c);
+                            }}
+                          >
+                            <CallIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleting(c);
+                            }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
 
             <TableFooter>
@@ -417,4 +446,4 @@ const ContactsPage = () => {
   );
 };
 
-export default ContactsPage;
+export default AccountContacts;

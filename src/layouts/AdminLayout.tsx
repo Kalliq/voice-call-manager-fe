@@ -42,6 +42,7 @@ import {
   Extension as IntegrationsIcon,
   ChevronLeft,
   ChevronRight,
+  AccountBalance,
 } from "@mui/icons-material";
 import Logo from "../assets/kalliq_grey.png";
 import { useAuth } from "../contexts/AuthContext";
@@ -79,6 +80,7 @@ const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
   { label: "Lists", path: "/lists", icon: <ListsIcon /> },
   { label: "Contacts", path: "/contacts", icon: <ContactsIcon /> },
+  { label: "Accounts", path: "/accounts", icon: <AccountBalance /> },
   { label: "Tasks", path: "/tasks", icon: <TasksIcon /> },
   { label: "My Numbers", path: "/my-numbers", icon: <ContactPhoneIcon /> },
   {
