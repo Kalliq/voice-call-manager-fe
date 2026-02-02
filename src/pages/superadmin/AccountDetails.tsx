@@ -84,9 +84,7 @@ const AccountDetails = () => {
     if (!accountId) return;
     try {
       setLoadingDeals(true);
-      const res = await api.get("/deals", {
-        params: { accountId },
-      });
+      const res = await api.get(`/deals/account/${accountId}`);
       setDeals(res.data.deals || res.data.data || res.data || []);
     } catch (error) {
       console.error("Failed to load deals", error);
