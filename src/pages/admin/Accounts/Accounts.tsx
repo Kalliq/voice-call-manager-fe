@@ -1,8 +1,8 @@
-import { Box, TableCell, TableHead, Table, TableContainer, Typography, useTheme, TableRow, Paper, TableBody, TableFooter, TablePagination, TextField, Button } from "@mui/material";
+import { Box, TableCell, TableHead, Table, TableContainer, Typography, useTheme, TableRow, Paper, TableBody, TableFooter, TablePagination, TextField, Button, CircularProgress } from "@mui/material";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import { useNavigate } from "react-router-dom";
 import api from "../../../utils/axiosInstance";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 interface Account {
     id: string;
@@ -30,14 +30,11 @@ const AccountsPage = () => {
     const [accounts, setAccounts] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(3);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
-    const [searchInput, setSearchInput] = useState("");
-    useEffect(() => {
-        loadAccounts();
-    }, []); 
-    const loadAccounts = async () => {
+    
+    const loadAccounts = useCallback(async () => {
         try {
             setLoading(true);
             const res = await api.get("/accounts/all", {
@@ -54,7 +51,11 @@ const AccountsPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, rowsPerPage, search, enqueue]);
+
+    useEffect(() => {
+        loadAccounts();
+    }, [loadAccounts]);
 
 
 
@@ -63,13 +64,13 @@ const AccountsPage = () => {
             <Typography variant="h5" fontWeight="bold">
                 Accounts
             </Typography>
-            {/* <TextField
+            <TextField
                 label="Search"
-                value={searchInput}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchInput(e.target.value)}
+                value={search}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
                 fullWidth
                 margin="normal"
-            /> */}
+            />
             <TableContainer component={Paper}>
                 <Table>
                     <TableHead>
@@ -88,7 +89,14 @@ const AccountsPage = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {accounts.map((account) => (
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={10} align="center">
+                                    <CircularProgress />
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            accounts.map((account) => (
                             <TableRow key={account.id} onClick={() => navigate(`/accounts/${account.id}`)} hover sx={{ cursor: "pointer" }}>
                                 <TableCell>{account.companyName}</TableCell>
                                 <TableCell>{account.website}</TableCell>
@@ -121,14 +129,15 @@ const AccountsPage = () => {
                                     >
                                         Contacts
                                     </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                     <TableFooter>
                         <TableRow>
                             <TablePagination
-                                rowsPerPageOptions={[10, 25, 50]}
+                                rowsPerPageOptions={[3, 6, 9]}
                                 count={total}
                                 page={page}
                                 rowsPerPage={rowsPerPage}

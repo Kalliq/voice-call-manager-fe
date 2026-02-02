@@ -285,7 +285,7 @@ const AccountDetails = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          {deal.contactId.first_name && deal.contactId.last_name ? (
+                          {deal && deal.contactId && deal.contactId.first_name && deal.contactId.last_name ? (
                             <Chip label={deal.contactId.first_name + " " + deal.contactId.last_name} size="small" />
                           ) : (
                             "-"
