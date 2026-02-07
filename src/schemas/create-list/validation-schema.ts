@@ -20,6 +20,7 @@ const createListSettingsValidationSchema = (excludeListId?: string) => z.object(
   }),
 });
 
+// Legacy full create-list schema (no longer used directly but kept for reference)
 const createListValidationSchema = z.object({
   listName: z.string(),
   listPriority: z.enum(["high", "medium", "low"]),
@@ -30,46 +31,10 @@ const createListValidationSchema = z.object({
   restrictToOwnedLeads: z.boolean().optional(),
   restrictToOwnedAccounts: z.boolean().optional(),
   tags: z.string().optional(),
-  filters: z
-    .array(
-      z.object({
-        value: z.string(),
-        field: z.enum(["city", "state", "country"]),
-        operator: z.enum(["equals", "notEquals", "contains"]),
-      })
-    )
-    .optional(),
-  crossFilters: z
-    .array(
-      z.object({
-        value: z.string(),
-        operator: z.enum(["equals", "notEquals", "contains"]),
-        taskField: z.enum(["status", "priority"]),
-      })
-    )
-    .optional(),
 });
 
 // Default schema for create mode (no exclusion)
 const listSettingsValidationSchema = createListSettingsValidationSchema();
-
-const listFiltersValidationSchema = z.object({
-  filters: z
-    .array(
-      z.object({
-        field: z.enum(["city", "state", "country"], {
-          errorMap: () => ({ message: "Select a field" })
-        }),
-        operator: z.enum(["equals", "notEquals", "contains"], {
-          errorMap: () => ({ message: "Select an operator" })
-        }),
-        value: z
-          .string()
-          .min(1, "Enter value"),
-      })
-    )
-    .min(1, "Choose at least one filter"), 
-});
 
 // Only require exitStrategy and exitStrategyDescription for now
 const listExitStrategyValidationSchema = z.object({
@@ -105,8 +70,7 @@ const listExitStrategyValidationSchema = z.object({
 
 function getValidationSchemaForStep(step: number, excludeListId?: string) {
   if (step === 1) return createListSettingsValidationSchema(excludeListId);
-  if (step === 2) return listFiltersValidationSchema;
-  if (step === 3) return listExitStrategyValidationSchema;
+  if (step === 2) return listExitStrategyValidationSchema;
   return undefined;
 }
 
@@ -114,6 +78,5 @@ export {
   getValidationSchemaForStep,
   createListSettingsValidationSchema,
   listSettingsValidationSchema,
-  listFiltersValidationSchema,
   listExitStrategyValidationSchema,
 };

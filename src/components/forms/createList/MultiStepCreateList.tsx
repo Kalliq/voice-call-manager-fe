@@ -8,13 +8,10 @@ import { z } from "zod";
 
 import useAppStore from "../../../store/useAppStore";
 import CreateList_step_1 from "./steps/CreateList_step_1";
-import CreateList_step_2 from "./steps/CreateList_step_2";
 import CreateList_step_3 from "./steps/CreateList_step_3";
 
 import {
   getValidationSchemaForStep,
-  listFiltersValidationSchema,
-  listExitStrategyValidationSchema,
 } from "../../../schemas/create-list/validation-schema";
 
 import api from "../../../utils/axiosInstance";
@@ -81,12 +78,19 @@ const MultiStepForm = () => {
   }, [id]);
 
   const onNextStepHandler = (data: any) => {
-    setStep(prev => prev + 1);
+    // Since we removed the old step 2 (filters), we only have:
+    // step 1 -> step 2 (exit strategy) -> submit
+    if (step === 1) {
+      setStep(2);
+    } else if (step === 2) {
+      onConfirmHandler();
+    }
   };
 
   const onPreviousStepHandler = () => {
-    const previousStep = step - 1;
-    setStep(previousStep);
+    if (step === 2) {
+      setStep(1);
+    }
   };
 
   const submitList = async (formData: any) => {
@@ -162,12 +166,6 @@ const MultiStepForm = () => {
               />
             )}
             {step === 2 && (
-              <CreateList_step_2
-                onNext={onNextStepHandler}
-                onPrevious={onPreviousStepHandler}
-              />
-            )}
-            {step === 3 && (
               <CreateList_step_3
                 onPrevious={onPreviousStepHandler}
                 onConfirm={onConfirmHandler}

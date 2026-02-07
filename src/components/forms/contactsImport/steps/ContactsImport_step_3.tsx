@@ -130,18 +130,28 @@ const CsvImport_step_3 = ({
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
-                      <Select
-                        labelId={`mapping-${col}-label`}
-                        label="Field"
-                        {...field}
-                        value={field.value ?? ""}
-                      >
-                        {integrationSettings.contacts.map((contact: any) => (
-                          <MenuItem key={String(contact.id)} value={contact.id}>
-                            {contact.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
+                      <Box display="flex" gap={1}>
+                        <Select
+                          labelId={`mapping-${col}-label`}
+                          label="Field"
+                          {...field}
+                          value={field.value ?? ""}
+                          sx={{ flex: 1 }}
+                        >
+                          {integrationSettings.contacts.map((contact: any) => (
+                            <MenuItem key={String(contact.id)} value={contact.id}>
+                              {contact.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {field.value && (
+                          <SimpleButton
+                            label="Clear"
+                            type="button"
+                            onClick={() => field.onChange("")}
+                          />
+                        )}
+                      </Box>
                     )}
                   />
                 </FormControl>
