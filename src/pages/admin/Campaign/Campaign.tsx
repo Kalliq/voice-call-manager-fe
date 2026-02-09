@@ -74,33 +74,6 @@ const Campaign = () => {
     }
   }, [contactId]);
 
-  // Auto-start campaign when arriving on the page (no need to click "Start campaign")
-  useEffect(() => {
-    const isOneOffCall = !!(phone && !manualSession && !contacts && !mode);
-    const hasCampaignData =
-      (contacts && contacts.length > 0) || (contactId && manualSession);
-    if (
-      isSocketReady &&
-      !shouldRedirect &&
-      hasCampaignData &&
-      !isOneOffCall &&
-      !hasAutoStartedRef.current
-    ) {
-      hasAutoStartedRef.current = true;
-      setIsCampaignRunning(true);
-      setIsCampaignFinished(false);
-      setCurrentIndex(0);
-      makeCallBatch();
-    }
-  }, [
-    isSocketReady,
-    shouldRedirect,
-    contacts,
-    contactId,
-    manualSession,
-    phone,
-    mode,
-  ]);
 
   // State management for the dialog box
   const [contactNotes, setContactNotes] = useState<Record<string, string>>({});
@@ -170,15 +143,6 @@ const Campaign = () => {
     return "IDLE" as const;
   }, [isStartingNextCall, isBatchDial, answeredSession, callStarted, ringingSessions.length]);
 
-  // Cancel pre-dial when call is ringing or answered (so it doesn't get cut off before playing)
-  useEffect(() => {
-    const shouldCancel = ringingSessions.length > 0 || answeredSession;
-    if (shouldCancel && preDialAudioRef.current) {
-      preDialAudioRef.current.pause();
-      preDialAudioRef.current.currentTime = 0;
-      preDialAudioRef.current = null;
-    }
-  }, [ringingSessions.length, answeredSession]);
 
   // STABLE CALL BAR VISIBILITY - Prevents flicker
   // CallBar stays visible during transitions and active calls
@@ -399,6 +363,20 @@ const Campaign = () => {
         </Alert>
       )}
       <Stack spacing={3}>
+      {!contactId && !phone && (
+          <Stack direction="row" spacing={1} justifyContent="center">
+            <SimpleButton
+              label="Start campaign"
+              onClick={handleStartCampaign}
+              disabled={!isSocketReady || isCampaignRunning}
+            />
+            <SimpleButton
+              label="Stop campaign"
+              onClick={handleStopCampaign}
+              disabled={!isCampaignRunning}
+            />
+          </Stack>
+        )}
         {/* "Starting next call..." only for batch/power dialer, not one-off calls */}
         {isStartingNextCall && isBatchDial && (
           <Alert severity="info" sx={{ mt: 3 }}>
@@ -422,7 +400,7 @@ const Campaign = () => {
           />
         )}
 
-        {manualSession && (
+        {!autoStart && manualSession && (
           <SingleCallCampaignPanel
             session={manualSession}
             answeredSession={answeredSession as Contact}
@@ -435,7 +413,7 @@ const Campaign = () => {
           />
         )}
 
-        {!phone && !manualSession && (
+        {!phone && !manualSession && !autoStart && (
           <>
             {/* STABLE DIALER CONTAINER - Always mounted to prevent layout jumps */}
             {!isCampaignFinished && isCampaignRunning && mode === TelephonyConnection.SOFT_CALL && singleSession && (
@@ -449,11 +427,11 @@ const Campaign = () => {
               />
             )}
             {/* Fallback: Show DialingCards only when truly idle (not transitioning) */}
-            {!isCampaignFinished &&
-             isCampaignRunning &&
-             mode === TelephonyConnection.SOFT_CALL &&
-             !singleSession &&
-             dialerState === "IDLE" &&
+            {!isCampaignFinished && 
+             isCampaignRunning && 
+             mode === TelephonyConnection.SOFT_CALL && 
+             !singleSession && 
+             dialerState === "IDLE" && 
              currentBatch.length > 0 && (
               <DialingCards
                 sessions={getDialingSessionsWithStatuses(

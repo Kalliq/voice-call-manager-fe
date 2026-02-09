@@ -59,7 +59,6 @@ const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
           phone={phone}
           callStartTime={callStartTime}
           elapsedTime={elapsedTime}
-          hasAnsweredSession={answeredSession}
           onEndCall={onEndCall}
           handleNumpadClick={handleNumpadClick}
         />
