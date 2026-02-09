@@ -54,16 +54,16 @@ const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
 
   return (
     <>
-      
+      {shouldShowCallBar && (
         <CallBar
           phone={phone}
           callStartTime={callStartTime}
           elapsedTime={elapsedTime}
+          hasAnsweredSession={answeredSession}
           onEndCall={onEndCall}
-          hasAnsweredSession={false}
           handleNumpadClick={handleNumpadClick}
         />
-
+      )}
       <Paper
         variant="outlined"
         sx={{

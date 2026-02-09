@@ -23,6 +23,7 @@ export const initTwilioDevice = async (): Promise<Device> => {
   const device = new Device(data.token, {
     logLevel: "error",
     codecPreferences,
+    edge: ['ashburn', 'us1']
   });
 
   twilioDeviceInstance = device;
