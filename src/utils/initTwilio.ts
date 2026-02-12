@@ -1,6 +1,7 @@
 import { Device, Call } from "@twilio/voice-sdk";
 
 import api from "./axiosInstance";
+import useAppStore from "../store/useAppStore";
 
 let twilioDeviceInstance: Device | null = null;
 
@@ -13,9 +14,13 @@ enum TwilioEvent {
 export const getTwilioDevice = () => twilioDeviceInstance;
 
 export const initTwilioDevice = async (): Promise<Device> => {
+
+  // use current user id
+  const userId = useAppStore.getState().user?.id;
+
   if (twilioDeviceInstance) return twilioDeviceInstance;
 
-  const identity = "webrtc_user";
+  const identity = userId;
 
   const { data } = await api.post("/twilio/token", { identity });
   const codecPreferences: any[] = ["opus", "pcmu"];
