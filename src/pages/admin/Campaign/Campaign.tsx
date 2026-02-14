@@ -259,11 +259,11 @@ const Campaign = () => {
       });
 
       // play pre-dial sound (stopped when dialer state becomes DIALING)
-      const audio = new Audio(`${import.meta.env.BASE_URL}pre-dial.wav`);
-      preDialAudioRef.current = audio;
-      audio.play().catch(() => {
-        // Autoplay may be blocked; pre-dial is best-effort
-      });
+      // const audio = new Audio(`${import.meta.env.BASE_URL}pre-dial.wav`);
+      // preDialAudioRef.current = audio;
+      // audio.play().catch(() => {
+      //   // Autoplay may be blocked; pre-dial is best-effort
+      // });
 
       // Only set callStarted after backend confirms call creation
       setCallStarted(true);
