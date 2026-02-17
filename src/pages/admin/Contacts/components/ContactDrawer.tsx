@@ -53,9 +53,11 @@ export default function ContactDrawer({
       phone: "",
     },
   });
-  const [selectedListId, setSelectedListId] = useState<string>("");
+  const [selectedListId, setSelectedListId] = useState<string | undefined>(
+    undefined,
+  );
   const [listIdError, setListIdError] = useState<string>("");
-  
+
   // Watch form values to enable/disable submit button
   const data = watch();
 
@@ -66,7 +68,7 @@ export default function ContactDrawer({
       });
     } else {
       reset({});
-      setSelectedListId("");
+      setSelectedListId(undefined);
       setListIdError("");
     }
   }, [contact, reset]);
@@ -80,27 +82,22 @@ export default function ContactDrawer({
         enqueue("Updated", { variant: "success" });
       } else {
         // SUBMIT GUARD: Ensure listId is valid before sending
-        const trimmedListId = (selectedListId || "").trim();
-        if (!trimmedListId) {
-          setListIdError("Please select a list");
-          enqueue("Please select a list to create the contact", { variant: "error" });
-          return;
-        }
-
         // PAYLOAD GUARANTEE: Filter out empty optional fields (email, company)
         // Backend .optional().isEmail() fails on empty string - must be undefined if not provided
         const contactData: Record<string, any> = {
           first_name: data.first_name,
           last_name: data.last_name,
           phone: data.phone,
-          listId: trimmedListId,
         };
-        
+        if (selectedListId && selectedListId.trim() !== "") {
+          contactData.listId = selectedListId.trim();
+        }
+
         // Only include email if it's not empty
         if (data.email && data.email.trim() !== "") {
           contactData.email = data.email.trim();
         }
-        
+
         // Only include company if it's not empty
         if (data.company && data.company.trim() !== "") {
           contactData.company = data.company.trim();
@@ -150,10 +147,9 @@ export default function ContactDrawer({
                 <SelectField
                   items={lists}
                   label="Select List"
-                  value={selectedListId || ""}
+                  value={selectedListId}
                   onChange={(val) => {
-                    const newValue = val || "";
-                    setSelectedListId(newValue);
+                    setSelectedListId(val);
                     setListIdError(""); // Clear error on selection
                   }}
                   getValue={(l) => l.id}
@@ -181,8 +177,7 @@ export default function ContactDrawer({
                 disabled={
                   isSubmitting ||
                   (!contact &&
-                    (selectedListId === "" ||
-                      !data.first_name?.trim() ||
+                    (!data.first_name?.trim() ||
                       !data.last_name?.trim() ||
                       !data.phone?.trim()))
                 }
