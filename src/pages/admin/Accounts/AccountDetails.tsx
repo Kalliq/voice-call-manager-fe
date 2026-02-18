@@ -32,24 +32,7 @@ import api from "../../../utils/axiosInstance";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import Loading from "../../../components/UI/Loading";
 import { Contact } from "../../../types/contact";
-
-interface Account {
-  id: string;
-  name?: string;
-  account_name?: string;
-  industry?: string;
-  website?: string;
-  revenue?: string;
-  employees?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  country?: string;
-  [key: string]: any;
-}
+import { Account } from "../../../types/account";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -152,19 +135,16 @@ const AccountDetails = () => {
     );
   }
 
-  const accountName = account.name || account.account_name || "N/A";
+  const accountName = account.companyName || "N/A";
   const displayFields = [
     { label: "Account Name", value: account.companyName },
     { label: "Industry", value: account.industry },
     { label: "Website", value: account.website },
-    { label: "Revenue", value: account.revenue },
-    { label: "Employees", value: account.employees },
     { label: "Phone", value: account.phone },
-    { label: "Email", value: account.email },
     { label: "Address", value: account.address },
     { label: "City", value: account.city },
     { label: "State", value: account.state },
-    { label: "Zip Code", value: account.zip },
+    { label: "Zip Code", value: account.zipCode },
     { label: "Country", value: account.country },
   ].filter((field) => field.value);
 
@@ -179,7 +159,7 @@ const AccountDetails = () => {
           Back to Accounts
         </Button>
         <Typography variant="h5" fontWeight="bold">
-          {account.companyName || account.name || "Account Details"}
+          {account.companyName || "Account Details"}
         </Typography>
       </Box>
 
