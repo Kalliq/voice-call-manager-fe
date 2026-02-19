@@ -17,7 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   csvFileImportStep_1_ValidationSchema,
   csvFileImportStep_2_ValidationSchema,
-  // csvFileImportStep_3_ValidationSchema,
+  csvFileImportStep_3_ValidationSchema,
   csvFileImportStep_4_ValidationSchema,
 } from '../../../schemas/contacts-import/csv-file-import/validation-schema';
 
@@ -36,8 +36,7 @@ const getValidationSchemaForStep = (step: number) => {
     case 2:
       return csvFileImportStep_2_ValidationSchema;
     case 3:
-      return z.object({});
-      //return csvFileImportStep_3_ValidationSchema;
+      return csvFileImportStep_3_ValidationSchema;
     case 4:
       return csvFileImportStep_4_ValidationSchema;
     default:
@@ -95,8 +94,13 @@ const MultiStepForm = () => {
     formData.append("duplicateField", formDataValues.duplicateField);
     formData.append("selectedListId", formDataValues.selectedListId);
 
-    // mapping is an object, so stringify it
-    formData.append("mapping", JSON.stringify(formDataValues.mapping));
+    // mapping is stored as { fieldId: csvColumn }, API expects { csvColumn: fieldId }
+    const mappingForApi = Object.fromEntries(
+      Object.entries(formDataValues.mapping || {})
+        .filter(([, csvCol]) => csvCol)
+        .map(([fieldId, csvCol]) => [csvCol, fieldId])
+    );
+    formData.append("mapping", JSON.stringify(mappingForApi));
 
     try {
       const { data } = await api.post("/contacts/import", formData, {

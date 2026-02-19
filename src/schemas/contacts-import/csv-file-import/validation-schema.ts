@@ -13,13 +13,13 @@ export const csvFileImportStep_2_ValidationSchema = z.object({
 
 export const csvFileImportStep_3_ValidationSchema = z
   .object({
-    mapping: z.record(
-      z.string().min(1, "Please map every column to a data field")
-    ),
+    mapping: z.record(z.string()),
   })
+  .passthrough()
   .refine(
-    (data) => Object.keys(data.mapping).length > 0,
-    { message: "You must map at least one column" }
+    (data) =>
+      Object.values(data.mapping || {}).some((v) => v && v.length > 0),
+    { message: "Please map at least one field to a CSV column", path: ["mapping"] }
   );
 
 export const csvFileImportStep_4_ValidationSchema = z.object({
