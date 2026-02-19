@@ -38,6 +38,15 @@ const CsvImport_step_3 = ({
 
   const hasHeader = watch("hasHeader");
   const selectedFile = watch("file");
+  const duplicateField = watch("duplicateField");
+
+  const REQUIRED_FIELD_IDS = new Set([
+    "first_name",
+    "last_name",
+    "accountWebsite",
+    "phone",
+    ...(duplicateField ? [duplicateField] : []),
+  ]);
 
   // Debug logs
   console.log("[Step 3] selectedFile:", selectedFile);
@@ -97,20 +106,35 @@ const CsvImport_step_3 = ({
         mt={1}
         gap={1}
       >
-        <Typography variant="h6">Map CSV Columns to Data Fields</Typography>
+        <Typography variant="h6">Map Data Fields to CSV Columns</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
+          Required: First Name, Last Name, Company Website, Phone, and the Duplicate Filter Field. Select which CSV column maps to each field.
+        </Typography>
+        {(errors.mapping as { message?: string })?.message && (
+          <Typography color="error" variant="body2" sx={{ mb: 1 }}>
+            {(errors.mapping as { message: string }).message}
+          </Typography>
+        )}
         <Grid container spacing={2}>
-          {csvColumns.map((col) => (
+          {integrationSettings.contacts.map((contact: any) => (
             <Grid
               container
               item
               xs={12}
-              key={col}
+              key={String(contact.id)}
               alignItems="center"
               spacing={2}
             >
-              {/* Column label */}
+              {/* Our field name (left) */}
               <Grid item xs={3}>
-                <Typography variant="body1">{col}</Typography>
+                <Typography variant="body1">
+                  {contact.name}
+                  {REQUIRED_FIELD_IDS.has(contact.id) && (
+                    <Box component="span" color="error.main">
+                      *
+                    </Box>
+                  )}
+                </Typography>
               </Grid>
 
               {/* Arrow icon */}
@@ -118,29 +142,34 @@ const CsvImport_step_3 = ({
                 <KeyboardArrowRightIcon />
               </Grid>
 
-              {/* Select input */}
+              {/* CSV column select (right) */}
               <Grid item xs={8}>
-                <FormControl fullWidth  error={!!(
-                    errors.mapping &&
-                    (errors.mapping as Record<string, any>)[col]
-                  )}>
-                  <InputLabel id={`mapping-${col}-label`}>Field</InputLabel>
+                <FormControl
+                  fullWidth
+                  error={!!(errors.mapping as Record<string, any>)?.[contact.id]}
+                >
+                  <InputLabel id={`mapping-${contact.id}-label`}>
+                    CSV Column
+                  </InputLabel>
                   <Controller
-                    name={`mapping.${col}`}
+                    name={`mapping.${contact.id}`}
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
                       <Box display="flex" gap={1}>
                         <Select
-                          labelId={`mapping-${col}-label`}
-                          label="Field"
+                          labelId={`mapping-${contact.id}-label`}
+                          label="CSV Column"
                           {...field}
                           value={field.value ?? ""}
                           sx={{ flex: 1 }}
                         >
-                          {integrationSettings.contacts.map((contact: any) => (
-                            <MenuItem key={String(contact.id)} value={contact.id}>
-                              {contact.name}
+                          <MenuItem value="">
+                            <em>None</em>
+                          </MenuItem>
+                          {csvColumns.map((col) => (
+                            <MenuItem key={col} value={col}>
+                              {col}
                             </MenuItem>
                           ))}
                         </Select>
@@ -155,18 +184,11 @@ const CsvImport_step_3 = ({
                     )}
                   />
                 </FormControl>
-                {(errors.mapping as Record<string, any>)?.message && (
+                {(errors.mapping as Record<string, any>)?.[contact.id] && (
                   <Typography color="error" variant="caption" sx={{ mt: 1, ml: 1 }}>
-                    {
-                      (errors.mapping as Record<string, any>)[col].message
-                    }
+                    {(errors.mapping as Record<string, any>)[contact.id]?.message as string}
                   </Typography>
                 )}
-                {/* {errors.mapping?.[col] && (
-                  <Typography color="error" variant="caption" mt={1}>
-                    {errors.mapping[col]?.message as string}
-                  </Typography>
-                )} */}
               </Grid>
             </Grid>
           ))}

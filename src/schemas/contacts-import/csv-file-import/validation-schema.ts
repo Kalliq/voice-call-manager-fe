@@ -11,15 +11,36 @@ export const csvFileImportStep_2_ValidationSchema = z.object({
   duplicateField: z.string().min(1, "Please select a duplicate filter field"),
 });
 
+const REQUIRED_MAPPING_FIELDS = [
+  "first_name",
+  "last_name",
+  "accountWebsite",
+  "phone",
+];
+
 export const csvFileImportStep_3_ValidationSchema = z
   .object({
-    mapping: z.record(
-      z.string().min(1, "Please map every column to a data field")
-    ),
+    mapping: z.record(z.string()),
+    duplicateField: z.string(),
   })
+  .passthrough()
   .refine(
-    (data) => Object.keys(data.mapping).length > 0,
-    { message: "You must map at least one column" }
+    (data) => {
+      const mapping = data.mapping || {};
+      const hasRequired = REQUIRED_MAPPING_FIELDS.every(
+        (fieldId) => mapping[fieldId] && String(mapping[fieldId]).trim().length > 0
+      );
+      const hasDuplicateField = data.duplicateField
+        ? mapping[data.duplicateField] &&
+          String(mapping[data.duplicateField]).trim().length > 0
+        : true;
+      return hasRequired && hasDuplicateField;
+    },
+    {
+      message:
+        "Please map First Name, Last Name, Company Website, Phone, and the Duplicate Filter Field to CSV columns.",
+      path: ["mapping"],
+    }
   );
 
 export const csvFileImportStep_4_ValidationSchema = z.object({
