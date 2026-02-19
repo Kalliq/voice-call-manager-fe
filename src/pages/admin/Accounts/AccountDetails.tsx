@@ -93,8 +93,7 @@ const AccountDetails = () => {
     if (!id) return;
     try {
       setLoadingDeals(true);
-      const res = await api.get(`/deals/account/${id}`, {
-      });
+      const res = await api.get(`/deals/account/${id}`, {});
       setDeals(res.data.data || res.data || []);
     } catch (error) {
       console.error("Failed to load deals", error);
@@ -128,14 +127,16 @@ const AccountDetails = () => {
     return (
       <Box p={3}>
         <Typography variant="h6">Account not found</Typography>
-        <Button onClick={() => navigate("/accounts")} startIcon={<ArrowBackIcon />}>
+        <Button
+          onClick={() => navigate("/accounts")}
+          startIcon={<ArrowBackIcon />}
+        >
           Back to Accounts
         </Button>
       </Box>
     );
   }
 
-  const accountName = account.companyName || "N/A";
   const displayFields = [
     { label: "Account Name", value: account.companyName },
     { label: "Industry", value: account.industry },
@@ -164,7 +165,10 @@ const AccountDetails = () => {
       </Box>
 
       <Paper elevation={1}>
-        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+        <Tabs
+          value={tabValue}
+          onChange={(_, newValue) => setTabValue(newValue)}
+        >
           <Tab label="Details" />
           <Tab label="Deals" />
           <Tab label="Contacts" />
@@ -223,7 +227,6 @@ const AccountDetails = () => {
                       <TableCell>Pipeline</TableCell>
                       <TableCell>Done for contact</TableCell>
                       <TableCell>Done by</TableCell>
-
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -245,7 +248,7 @@ const AccountDetails = () => {
                             "-"
                           )}
                         </TableCell>
-                        
+
                         <TableCell>
                           {deal.pipeline ? (
                             <Chip label={deal.pipeline} size="small" />
@@ -256,7 +259,14 @@ const AccountDetails = () => {
                         <TableCell>
                           {deal.userId ? (
                             deal.userId.first_name && deal.userId.last_name ? (
-                              <Chip label={deal.userId.first_name + " " + deal.userId.last_name} size="small" />
+                              <Chip
+                                label={
+                                  deal.userId.first_name +
+                                  " " +
+                                  deal.userId.last_name
+                                }
+                                size="small"
+                              />
                             ) : (
                               <Chip label={deal.userId.email} size="small" />
                             )
@@ -265,8 +275,18 @@ const AccountDetails = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          {deal && deal.contactId && deal.contactId.first_name && deal.contactId.last_name ? (
-                            <Chip label={deal.contactId.first_name + " " + deal.contactId.last_name} size="small" />
+                          {deal &&
+                          deal.contactId &&
+                          deal.contactId.first_name &&
+                          deal.contactId.last_name ? (
+                            <Chip
+                              label={
+                                deal.contactId.first_name +
+                                " " +
+                                deal.contactId.last_name
+                              }
+                              size="small"
+                            />
                           ) : (
                             "-"
                           )}
@@ -308,7 +328,6 @@ const AccountDetails = () => {
                         <TableCell>{contact.company || "-"}</TableCell>
                         <TableCell>{contact.email || "-"}</TableCell>
                         <TableCell>{contact.phone || "-"}</TableCell>
-                        
                       </TableRow>
                     ))}
                   </TableBody>

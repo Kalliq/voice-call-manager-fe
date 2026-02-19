@@ -119,11 +119,11 @@ const Lists = () => {
           </Typography>
         </Box>
         <Box>
-          <SimpleButton
+          {/* <SimpleButton
             label="Import New Contacts"
             onClick={() => navigate("/import-contacts")}
             color="info"
-          />
+          /> */}
           <SimpleButton
             label="Create New List"
             onClick={() => navigate("/create-new-list")}
@@ -155,26 +155,26 @@ const Lists = () => {
               <TableContainer sx={{ width: "100%", mb: 1 }}>
                 <Table size="medium" sx={{ width: "100%" }}>
                   <TableBody>
-                  {lists &&
-                    lists.map((list) => (
-                      <ListCard
-                        key={list.id}
-                        list={list}
-                        selectedCall={selectedCalls[list.id]}
-                        expanded={expandedListId === list.id}
-                        eligibleContacts={eligibleContacts[list.id]}
-                        onExpand={handleExpand}
-                        onConnectionClick={openMenu}
-                        onConnectionChange={handleConnectionChange}
-                        anchorEl={anchorEl}
-                        menuListId={menuListId}
-                        closeMenu={closeMenu}
-                        onDeleteClick={handleDeleteClick}
-                        onCloneClick={handleClone}
-                        cloningId={cloningId}
-                      />
-                    ))}
-                    </TableBody>
+                    {lists &&
+                      lists.map((list) => (
+                        <ListCard
+                          key={list.id}
+                          list={list}
+                          selectedCall={selectedCalls[list.id]}
+                          expanded={expandedListId === list.id}
+                          eligibleContacts={eligibleContacts[list.id]}
+                          onExpand={handleExpand}
+                          onConnectionClick={openMenu}
+                          onConnectionChange={handleConnectionChange}
+                          anchorEl={anchorEl}
+                          menuListId={menuListId}
+                          closeMenu={closeMenu}
+                          onDeleteClick={handleDeleteClick}
+                          onCloneClick={handleClone}
+                          cloningId={cloningId}
+                        />
+                      ))}
+                  </TableBody>
                 </Table>
               </TableContainer>
             ) : (
@@ -203,7 +203,7 @@ const Lists = () => {
                           >
                             {header}
                           </TableCell>
-                        )
+                        ),
                       )}
                     </TableRow>
                   </TableHead>

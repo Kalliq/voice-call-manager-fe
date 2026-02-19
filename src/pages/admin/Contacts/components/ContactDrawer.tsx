@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Drawer,
   Box,
@@ -6,6 +6,7 @@ import {
   Button,
   Stack,
   TextField,
+  Autocomplete,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,7 @@ import api from "../../../../utils/axiosInstance";
 import { schema as validationSchema } from "../../../../schemas/contsct-create/validation-schema";
 import { useSnackbar } from "../../../../hooks/useSnackbar";
 import { Contact } from "../../../../types/contact";
+import { Account } from "../../../../types/account";
 import SelectField from "../../../../components/UI/SelectField";
 
 type FormData = z.infer<typeof validationSchema>;
@@ -48,11 +50,12 @@ export default function ContactDrawer({
     defaultValues: {
       first_name: "",
       last_name: "",
-      company: "",
+      accountId: "",
       email: "",
       phone: "",
     },
   });
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedListId, setSelectedListId] = useState<string | undefined>(
     undefined,
   );
@@ -61,10 +64,25 @@ export default function ContactDrawer({
   // Watch form values to enable/disable submit button
   const data = watch();
 
+  const loadAccounts = useCallback(async () => {
+    try {
+      const res = await api.get("/accounts/all", {});
+      setAccounts(res.data.accounts);
+    } catch (error) {
+      enqueue("Failed to load accounts", { variant: "error" });
+    }
+  }, [open]);
+
+  useEffect(() => {
+    loadAccounts();
+  }, [loadAccounts]);
+
   useEffect(() => {
     if (contact) {
+      const { account } = contact;
       reset({
         ...contact,
+        accountId: account?.id ?? "",
       });
     } else {
       reset({});
@@ -74,6 +92,12 @@ export default function ContactDrawer({
   }, [contact, reset]);
 
   const onSubmit = async (data: FormData) => {
+    console.log(
+      "Submitting contact with data:",
+      data,
+      "and selectedListId:",
+      selectedListId,
+    );
     try {
       if (contact) {
         await api.patch(`/contacts/basic/${contact.id}`, {
@@ -98,9 +122,9 @@ export default function ContactDrawer({
           contactData.email = data.email.trim();
         }
 
-        // Only include company if it's not empty
-        if (data.company && data.company.trim() !== "") {
-          contactData.company = data.company.trim();
+        // Only include accountId if selected
+        if (data.accountId && data.accountId.trim() !== "") {
+          contactData.accountId = data.accountId.trim();
         }
 
         await api.post("/contacts", contactData);
@@ -120,28 +144,84 @@ export default function ContactDrawer({
         </Typography>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={2}>
-            {[
-              ["First Name", "first_name"],
-              ["Last Name", "last_name"],
-              ["Company", "company"],
-              ["Email", "email"],
-              ["Number", "phone"],
-            ].map(([label, name]) => (
-              <Controller
-                key={name}
-                name={name as any}
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label={label}
-                    error={!!errors[name as keyof FormData]}
-                    helperText={errors[name as keyof FormData]?.message}
-                    fullWidth
-                  />
-                )}
-              />
-            ))}
+            <Controller
+              name="first_name"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="First Name"
+                  error={!!errors.first_name}
+                  helperText={errors.first_name?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="last_name"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Last Name"
+                  error={!!errors.last_name}
+                  helperText={errors.last_name?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="accountId"
+              control={control}
+              render={({ field }) => (
+                <Autocomplete
+                  options={accounts}
+                  getOptionLabel={(option) => option.companyName}
+                  value={accounts.find((a) => a.id === field.value) ?? null}
+                  onChange={(_, newValue) => {
+                    field.onChange(newValue?.id ?? "");
+                  }}
+                  isOptionEqualToValue={(option, value) =>
+                    option.id === value.id
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Company"
+                      error={!!errors.accountId}
+                      helperText={errors.accountId?.message}
+                    />
+                  )}
+                />
+              )}
+            />
+            <Controller
+              name="email"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Email"
+                  type="email"
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Number"
+                  error={!!errors.phone}
+                  helperText={errors.phone?.message}
+                  fullWidth
+                />
+              )}
+            />
             {!contact && (
               <Box>
                 <SelectField

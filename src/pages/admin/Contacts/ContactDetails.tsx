@@ -64,7 +64,9 @@ const ContactDetails = () => {
   const [talkingPoints, setTalkingPoints] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTalkingPoint, setNewTalkingPoint] = useState("");
-  const [addToListAnchor, setAddToListAnchor] = useState<HTMLElement | null>(null);
+  const [addToListAnchor, setAddToListAnchor] = useState<HTMLElement | null>(
+    null,
+  );
   const [isSendEmailModalOpen, setIsSendEmailModalOpen] = useState(false);
   const [lists, setLists] = useState<{ id: string; listName: string }[]>([]);
   const [listSearch, setListSearch] = useState("");
@@ -89,7 +91,9 @@ const ContactDetails = () => {
       const fetchLists = async () => {
         try {
           const { data } = await api.get<List[]>("/lists");
-          setLists(data.map((list) => ({ id: list.id, listName: list.listName })));
+          setLists(
+            data.map((list) => ({ id: list.id, listName: list.listName })),
+          );
         } catch (error) {
           console.error("Failed to fetch lists:", error);
         }
@@ -112,7 +116,9 @@ const ContactDetails = () => {
       const contactData = res.data;
       setContact(contactData);
       setTalkingPoints(
-        Array.isArray(contactData.talkingPoints) ? contactData.talkingPoints : []
+        Array.isArray(contactData.talkingPoints)
+          ? contactData.talkingPoints
+          : [],
       );
     } catch (error) {
       enqueue("Failed to load contact details", { variant: "error" });
@@ -132,7 +138,9 @@ const ContactDetails = () => {
       const sourceListId = contactData.listId;
 
       if (!sourceListId) {
-        enqueue("Contact is not in any list. Cannot move.", { variant: "error" });
+        enqueue("Contact is not in any list. Cannot move.", {
+          variant: "error",
+        });
         return;
       }
 
@@ -282,7 +290,10 @@ const ContactDetails = () => {
     return (
       <Box p={3}>
         <Typography variant="h6">Contact not found</Typography>
-        <Button onClick={() => navigate("/contacts")} startIcon={<ArrowBackIcon />}>
+        <Button
+          onClick={() => navigate("/contacts")}
+          startIcon={<ArrowBackIcon />}
+        >
           Back to Contacts
         </Button>
       </Box>
@@ -322,11 +333,11 @@ const ContactDetails = () => {
                 <Typography variant="h5" fontWeight="bold">
                   {contact.first_name} {contact.last_name}
                 </Typography>
-                {(contact.title || contact.company) && (
+                {(contact.title || contact.account?.companyName) && (
                   <Typography variant="body2" color="text.secondary">
                     {contact.title ?? ""}
                     {contact.title ? " at " : ""}
-                    {contact.company ?? ""}
+                    {contact.account?.companyName ?? ""}
                   </Typography>
                 )}
               </Box>
@@ -377,7 +388,11 @@ const ContactDetails = () => {
                       <>
                         {editingPhone ? (
                           <>
-                            <Stack direction="row" spacing={1} alignItems="center">
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              alignItems="center"
+                            >
                               <TextField
                                 type="tel"
                                 value={newPhone}
@@ -452,7 +467,11 @@ const ContactDetails = () => {
             {activeTab === 0 && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
-                  <ContactOverview key={updateKey} contact={contact} onUpdate={handleFieldUpdate} />
+                  <ContactOverview
+                    key={updateKey}
+                    contact={contact}
+                    onUpdate={handleFieldUpdate}
+                  />
                 </Grid>
               </Grid>
             )}
@@ -488,13 +507,23 @@ const ContactDetails = () => {
                   <Stack spacing={2}>
                     {deals.map((deal) => (
                       <Paper key={deal.id} variant="outlined" sx={{ p: 2 }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                          }}
+                        >
                           <Box sx={{ flex: 1 }}>
                             <Typography variant="h6">
                               {deal.dealname || deal.name}
                             </Typography>
                             {deal.description && (
-                              <Typography variant="body2" color="text.secondary" mt={1}>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                mt={1}
+                              >
                                 {deal.description}
                               </Typography>
                             )}
@@ -503,7 +532,12 @@ const ContactDetails = () => {
                                 Amount: ${deal.amount.toLocaleString()}
                               </Typography>
                             )}
-                            <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              mt={1}
+                              flexWrap="wrap"
+                            >
                               {deal.pipeline && (
                                 <Chip label={deal.pipeline} size="small" />
                               )}
@@ -511,7 +545,11 @@ const ContactDetails = () => {
                                 <Chip label={deal.dealstage} size="small" />
                               )}
                               {deal.hs_is_closed && (
-                                <Chip label="Closed" size="small" color="success" />
+                                <Chip
+                                  label="Closed"
+                                  size="small"
+                                  color="success"
+                                />
                               )}
                             </Stack>
                           </Box>

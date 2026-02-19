@@ -347,7 +347,9 @@ const ContactsPage = () => {
                   <TableCell sx={{ py: 1.5 }}>
                     {c.first_name} {c.last_name}
                   </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>{c.company}</TableCell>
+                  <TableCell sx={{ py: 1.5 }}>
+                    {c.account?.companyName}
+                  </TableCell>
                   <TableCell sx={{ py: 1.5 }}>{c.email}</TableCell>
                   <TableCell sx={{ py: 1.5 }}>{c.phone}</TableCell>
                   <TableCell
