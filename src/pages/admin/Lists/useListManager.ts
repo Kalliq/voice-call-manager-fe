@@ -1,11 +1,14 @@
 import { useState } from "react";
 import api from "../../../utils/axiosInstance";
+import { useSnackbar } from "../../../hooks/useSnackbar";
 import useAppStore from "../../../store/useAppStore";
 import { Contact } from "../../../types/contact";
 import { Step } from "../../../interfaces/list-dialing-step";
 
 const useListManager = () => {
+  const { enqueue } = useSnackbar();
   const deleteList = useAppStore((state) => state.deleteList);
+  const fetchLists = useAppStore((state) => state.fetchLists);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuListId, setMenuListId] = useState<string | null>(null);
@@ -15,6 +18,7 @@ const useListManager = () => {
   const [expandedListId, setExpandedListId] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [listToDelete, setListToDelete] = useState<string | null>(null);
+  const [cloningId, setCloningId] = useState<string | null>(null);
   const [eligibleContacts, setEligibleContacts] = useState<{
     [listId: string]: { [stepIndex: number]: Contact[] };
   }>({});
@@ -71,6 +75,20 @@ const useListManager = () => {
     }
   };
 
+  const handleClone = async (listId: string) => {
+    if (cloningId) return;
+    setCloningId(listId);
+    try {
+      await api.post(`/lists/${listId}/duplicate`);
+      enqueue("List duplicated successfully", { variant: "success" });
+      await fetchLists();
+    } catch {
+      enqueue("Failed to duplicate list", { variant: "error" });
+    } finally {
+      setCloningId(null);
+    }
+  };
+
   return {
     selectedCalls,
     expandedListId,
@@ -85,6 +103,8 @@ const useListManager = () => {
     setOpenDialog,
     handleDeleteClick,
     handleDelete,
+    handleClone,
+    cloningId,
     listToDelete,
   };
 };

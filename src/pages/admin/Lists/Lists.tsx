@@ -65,6 +65,8 @@ const Lists = () => {
     setOpenDialog,
     handleDeleteClick,
     handleDelete,
+    handleClone,
+    cloningId,
     listToDelete,
   } = useListManager();
 
@@ -168,6 +170,8 @@ const Lists = () => {
                         menuListId={menuListId}
                         closeMenu={closeMenu}
                         onDeleteClick={handleDeleteClick}
+                        onCloneClick={handleClone}
+                        cloningId={cloningId}
                       />
                     ))}
                     </TableBody>

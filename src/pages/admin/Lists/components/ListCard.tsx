@@ -18,6 +18,7 @@ import {
   GroupOutlined,
   HelpOutline,
   Call,
+  ContentCopy,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { TelephonyConnection } from "voice-javascript-common";
@@ -37,6 +38,8 @@ interface ListCardProps {
   menuListId: string | null;
   closeMenu: () => void;
   onDeleteClick: (id: string) => void;
+  onCloneClick: (id: string) => void;
+  cloningId: string | null;
 }
 
 const ListCard = ({
@@ -51,6 +54,8 @@ const ListCard = ({
   menuListId,
   closeMenu,
   onDeleteClick,
+  onCloneClick,
+  cloningId,
 }: ListCardProps) => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -143,6 +148,15 @@ const ListCard = ({
           >
             <Edit fontSize="small" />
           </IconButton>
+          <Tooltip title="Clone list">
+            <IconButton
+              size="small"
+              onClick={() => onCloneClick(list.id)}
+              disabled={cloningId === list.id}
+            >
+              <ContentCopy fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <IconButton
             size="small"
             color="error"
