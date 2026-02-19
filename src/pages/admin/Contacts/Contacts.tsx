@@ -60,6 +60,9 @@ const ContactsPage = () => {
 
   const [editing, setEditing] = useState<Contact | null>(null);
   const [deleting, setDeleting] = useState<Contact | null>(null);
+  const [deletingInProgress, setDeletingInProgress] = useState(false);
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [targetListId, setTargetListId] = useState("");
@@ -131,10 +134,33 @@ const ContactsPage = () => {
   }, 300);
 
   const onDelete = async (c: Contact) => {
-    await api.delete(`/contacts/${c.id}`);
-    enqueue("Deleted", { variant: "success" });
-    setDeleting(null);
-    load();
+    if (deletingInProgress) return;
+    setDeletingInProgress(true);
+    try {
+      await api.delete(`/contacts/${c.id}`);
+      enqueue("Deleted", { variant: "success" });
+      setDeleting(null);
+      load();
+    } catch {
+      enqueue("Failed to delete contact", { variant: "error" });
+    } finally {
+      setDeletingInProgress(false);
+    }
+  };
+
+  const onDeleteAll = async () => {
+    if (deletingAll) return;
+    setDeletingAll(true);
+    try {
+      await api.delete("/contacts/all-contacts");
+      enqueue("All contacts deleted", { variant: "success" });
+      setDeleteAllOpen(false);
+      load();
+    } catch {
+      enqueue("Failed to delete all contacts", { variant: "error" });
+    } finally {
+      setDeletingAll(false);
+    }
   };
 
   const onCall = (c: Contact) => {
@@ -165,16 +191,25 @@ const ContactsPage = () => {
           </Typography>
           <Typography color="text.secondary">Manage your contacts</Typography>
         </Box>
-        <Button
-          variant="outlined"
-          onClick={(e) => {
-            e.stopPropagation();
-            setEditing(null);
-            setDrawerOpen(true);
-          }}
-        >
-          Create New Contact
-        </Button>
+        <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => setDeleteAllOpen(true)}
+          >
+            Delete All Contacts
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing(null);
+              setDrawerOpen(true);
+            }}
+          >
+            Create New Contact
+          </Button>
+        </Box>
       </Box>
       <Stack
         direction="row"
@@ -403,6 +438,15 @@ const ContactsPage = () => {
         onConfirm={() => onDelete(deleting!)}
         title="Delete Contact?"
         text={`Are you sure you want to delete ${deleting?.first_name} ${deleting?.last_name}?`}
+        confirmDisabled={deletingInProgress}
+      />
+      <DeleteDialog
+        open={deleteAllOpen}
+        onClose={() => !deletingAll && setDeleteAllOpen(false)}
+        onConfirm={onDeleteAll}
+        title="Delete All Contacts?"
+        text="Are you sure you want to delete all contacts? This action cannot be undone."
+        confirmDisabled={deletingAll}
       />
       <MoveContactsDialog
         open={moveDialogOpen}

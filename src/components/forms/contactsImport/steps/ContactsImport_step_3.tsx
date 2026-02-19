@@ -38,6 +38,15 @@ const CsvImport_step_3 = ({
 
   const hasHeader = watch("hasHeader");
   const selectedFile = watch("file");
+  const duplicateField = watch("duplicateField");
+
+  const REQUIRED_FIELD_IDS = new Set([
+    "first_name",
+    "last_name",
+    "accountWebsite",
+    "phone",
+    ...(duplicateField ? [duplicateField] : []),
+  ]);
 
   // Debug logs
   console.log("[Step 3] selectedFile:", selectedFile);
@@ -99,7 +108,7 @@ const CsvImport_step_3 = ({
       >
         <Typography variant="h6">Map Data Fields to CSV Columns</Typography>
         <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
-          Select which CSV column maps to each field.
+          Required: First Name, Last Name, Company Website, Phone, and the Duplicate Filter Field. Select which CSV column maps to each field.
         </Typography>
         {(errors.mapping as { message?: string })?.message && (
           <Typography color="error" variant="body2" sx={{ mb: 1 }}>
@@ -118,7 +127,14 @@ const CsvImport_step_3 = ({
             >
               {/* Our field name (left) */}
               <Grid item xs={3}>
-                <Typography variant="body1">{contact.name}</Typography>
+                <Typography variant="body1">
+                  {contact.name}
+                  {REQUIRED_FIELD_IDS.has(contact.id) && (
+                    <Box component="span" color="error.main">
+                      *
+                    </Box>
+                  )}
+                </Typography>
               </Grid>
 
               {/* Arrow icon */}
