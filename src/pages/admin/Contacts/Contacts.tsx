@@ -84,16 +84,28 @@ const ContactsPage = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      const isUnassigned = selectedListId === "__unassigned__";
       const res = await api.get("/contacts", {
         params: {
           search,
-          page: page + 1,
-          limit: rowsPerPage,
-          listId: selectedListId || undefined,
+          page: isUnassigned ? 1 : page + 1,
+          limit: isUnassigned ? 10000 : rowsPerPage,
+          listId: isUnassigned ? undefined : selectedListId || undefined,
         },
       });
-      setContacts(res.data.data);
-      setTotal(res.data.total);
+      let data = res.data.data || [];
+      let totalCount = res.data.total || 0;
+
+      if (isUnassigned) {
+        data = data.filter(
+          (c: Contact) => c.listId == null || c.listId === undefined
+        );
+        totalCount = data.length;
+        data = data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+      }
+
+      setContacts(data);
+      setTotal(totalCount);
     } catch {
       enqueue("Failed to load contacts", { variant: "error" });
     } finally {
@@ -254,7 +266,10 @@ const ContactsPage = () => {
             </Button>
           )}
           <SelectField
-            items={lists}
+            items={[
+              { id: "__unassigned__", listName: "Unassigned from list" },
+              ...lists,
+            ]}
             label="Filter by List"
             value={selectedListId}
             onChange={(val) => {
@@ -263,6 +278,7 @@ const ContactsPage = () => {
             }}
             getValue={(l) => l.id}
             getLabel={(l) => l.listName}
+            placeholder="All lists"
           />
         </Box>
       </Stack>
