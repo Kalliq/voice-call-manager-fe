@@ -118,7 +118,10 @@ const AccountContacts = () => {
     try {
       const res = await api.get("/lists");
       setLists(
-        res.data.map((list: List) => ({ id: list.id, listName: list.listName }))
+        res.data.map((list: List) => ({
+          id: list.id,
+          listName: list.listName,
+        })),
       );
     } catch {
       enqueue("Failed to load lists", { variant: "error" });
@@ -131,7 +134,7 @@ const AccountContacts = () => {
         setPage(0);
         setSearch(val);
       }, 300),
-    []
+    [],
   );
   useEffect(() => {
     return () => debouncedSetSearch.cancel();
@@ -176,7 +179,12 @@ const AccountContacts = () => {
 
   return (
     <Box p={3}>
-      <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
+      <Box
+        mb={3}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+      >
         <Box>
           <Box display="flex" alignItems="center" gap={2} mb={1}>
             <Button
@@ -305,7 +313,7 @@ const AccountContacts = () => {
                     >
                       {header}
                     </TableCell>
-                  )
+                  ),
                 )}
               </TableRow>
             </TableHead>
@@ -331,7 +339,7 @@ const AccountContacts = () => {
                             setSelectedContactIds((prev) => [...prev, c.id]);
                           } else {
                             setSelectedContactIds((prev) =>
-                              prev.filter((id) => id !== c.id)
+                              prev.filter((id) => id !== c.id),
                             );
                           }
                         }}

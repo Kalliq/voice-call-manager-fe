@@ -32,24 +32,7 @@ import api from "../../../utils/axiosInstance";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import Loading from "../../../components/UI/Loading";
 import { Contact } from "../../../types/contact";
-
-interface Account {
-  id: string;
-  name?: string;
-  account_name?: string;
-  industry?: string;
-  website?: string;
-  revenue?: string;
-  employees?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  country?: string;
-  [key: string]: any;
-}
+import { Account } from "../../../types/account";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -110,8 +93,7 @@ const AccountDetails = () => {
     if (!id) return;
     try {
       setLoadingDeals(true);
-      const res = await api.get(`/deals/account/${id}`, {
-      });
+      const res = await api.get(`/deals/account/${id}`, {});
       setDeals(res.data.data || res.data || []);
     } catch (error) {
       console.error("Failed to load deals", error);
@@ -145,26 +127,25 @@ const AccountDetails = () => {
     return (
       <Box p={3}>
         <Typography variant="h6">Account not found</Typography>
-        <Button onClick={() => navigate("/accounts")} startIcon={<ArrowBackIcon />}>
+        <Button
+          onClick={() => navigate("/accounts")}
+          startIcon={<ArrowBackIcon />}
+        >
           Back to Accounts
         </Button>
       </Box>
     );
   }
 
-  const accountName = account.name || account.account_name || "N/A";
   const displayFields = [
     { label: "Account Name", value: account.companyName },
     { label: "Industry", value: account.industry },
     { label: "Website", value: account.website },
-    { label: "Revenue", value: account.revenue },
-    { label: "Employees", value: account.employees },
     { label: "Phone", value: account.phone },
-    { label: "Email", value: account.email },
     { label: "Address", value: account.address },
     { label: "City", value: account.city },
     { label: "State", value: account.state },
-    { label: "Zip Code", value: account.zip },
+    { label: "Zip Code", value: account.zipCode },
     { label: "Country", value: account.country },
   ].filter((field) => field.value);
 
@@ -179,12 +160,15 @@ const AccountDetails = () => {
           Back to Accounts
         </Button>
         <Typography variant="h5" fontWeight="bold">
-          {account.companyName || account.name || "Account Details"}
+          {account.companyName || "Account Details"}
         </Typography>
       </Box>
 
       <Paper elevation={1}>
-        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+        <Tabs
+          value={tabValue}
+          onChange={(_, newValue) => setTabValue(newValue)}
+        >
           <Tab label="Details" />
           <Tab label="Deals" />
           <Tab label="Contacts" />
@@ -243,7 +227,6 @@ const AccountDetails = () => {
                       <TableCell>Pipeline</TableCell>
                       <TableCell>Done for contact</TableCell>
                       <TableCell>Done by</TableCell>
-
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -265,7 +248,7 @@ const AccountDetails = () => {
                             "-"
                           )}
                         </TableCell>
-                        
+
                         <TableCell>
                           {deal.pipeline ? (
                             <Chip label={deal.pipeline} size="small" />
@@ -276,7 +259,14 @@ const AccountDetails = () => {
                         <TableCell>
                           {deal.userId ? (
                             deal.userId.first_name && deal.userId.last_name ? (
-                              <Chip label={deal.userId.first_name + " " + deal.userId.last_name} size="small" />
+                              <Chip
+                                label={
+                                  deal.userId.first_name +
+                                  " " +
+                                  deal.userId.last_name
+                                }
+                                size="small"
+                              />
                             ) : (
                               <Chip label={deal.userId.email} size="small" />
                             )
@@ -285,8 +275,18 @@ const AccountDetails = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          {deal && deal.contactId && deal.contactId.first_name && deal.contactId.last_name ? (
-                            <Chip label={deal.contactId.first_name + " " + deal.contactId.last_name} size="small" />
+                          {deal &&
+                          deal.contactId &&
+                          deal.contactId.first_name &&
+                          deal.contactId.last_name ? (
+                            <Chip
+                              label={
+                                deal.contactId.first_name +
+                                " " +
+                                deal.contactId.last_name
+                              }
+                              size="small"
+                            />
                           ) : (
                             "-"
                           )}
@@ -328,7 +328,6 @@ const AccountDetails = () => {
                         <TableCell>{contact.company || "-"}</TableCell>
                         <TableCell>{contact.email || "-"}</TableCell>
                         <TableCell>{contact.phone || "-"}</TableCell>
-                        
                       </TableRow>
                     ))}
                   </TableBody>

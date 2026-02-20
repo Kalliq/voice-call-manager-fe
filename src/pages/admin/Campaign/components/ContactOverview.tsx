@@ -76,8 +76,10 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
   const { settings } = useAppStore((s) => s);
   const callResults: CallResult[] =
     (settings?.["Phone Settings"]?.callResults as CallResult[]) ?? [];
-  
-  const userTimeZone = settings?.["General Settings"]?.timezone as string | undefined;
+
+  const userTimeZone = settings?.["General Settings"]?.timezone as
+    | string
+    | undefined;
   const { enqueue } = useSnackbar();
 
   useEffect(() => {
@@ -140,7 +142,6 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
     }
   };
 
-
   // Update time every minute
   useEffect(() => {
     const interval = setInterval(() => {
@@ -153,13 +154,13 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
   const localTimeDisplay = formatContactLocalTime(
     contact.timezone,
     userTimeZone,
-    now
+    now,
   );
   const showTimezoneSelect = isTimezoneHovered || isTimezoneOpen;
 
   const visibleCallLogs = useMemo(
     () => callLogs.filter((l) => !!l.action?.result?.trim()),
-    [callLogs]
+    [callLogs],
   );
 
   const handleResultChange = (sid: string, result: string) => {
@@ -173,8 +174,8 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                 result,
               },
             }
-          : cl
-      )
+          : cl,
+      ),
     );
   };
 
@@ -227,38 +228,54 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
               <EditableFieldItem
                 icon={<Business color="primary" />}
                 label="Account Name"
-                value={contact.accountName || ""}
-                onSave={onUpdate ? (value) => onUpdate("accountName", value) : undefined}
+                value={contact.account?.companyName || ""}
+                onSave={
+                  onUpdate
+                    ? (value) => onUpdate("accountName", value)
+                    : undefined
+                }
               />
               <EditableFieldItem
                 icon={<Title color="primary" />}
                 label="Title"
                 value={contact.title || contact.capacity || ""}
-                onSave={onUpdate ? (value) => onUpdate("title", value) : undefined}
+                onSave={
+                  onUpdate ? (value) => onUpdate("title", value) : undefined
+                }
               />
               <EditableFieldItem
                 icon={<EmailIcon color="primary" />}
                 label="Email"
                 value={contact.email || ""}
-                onSave={onUpdate ? (value) => onUpdate("email", value) : undefined}
+                onSave={
+                  onUpdate ? (value) => onUpdate("email", value) : undefined
+                }
               />
               <EditableFieldItem
                 icon={<Phone color="primary" />}
                 label="Direct Phone"
                 value={contact.phone || ""}
-                onSave={onUpdate ? (value) => onUpdate("phone", value) : undefined}
+                onSave={
+                  onUpdate ? (value) => onUpdate("phone", value) : undefined
+                }
               />
               <EditableFieldItem
                 icon={<LocationOn color="primary" />}
                 label="City"
                 value={contact.city || ""}
-                onSave={onUpdate ? (value) => onUpdate("city", value) : undefined}
+                onSave={
+                  onUpdate ? (value) => onUpdate("city", value) : undefined
+                }
               />
               <EditableFieldItem
                 icon={<InsertDriveFile color="primary" />}
                 label="Record Type"
                 value={contact.recordType || ""}
-                onSave={onUpdate ? (value) => onUpdate("recordType", value) : undefined}
+                onSave={
+                  onUpdate
+                    ? (value) => onUpdate("recordType", value)
+                    : undefined
+                }
               />
             </Stack>
           </Grid>
@@ -270,27 +287,35 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                 icon={<Person color="primary" />}
                 label="Contact Name"
                 value={`${contact.first_name} ${contact.last_name}`}
-                onSave={onUpdate ? async (value) => {
-                  const parts = value.trim().split(/\s+/);
-                  const firstName = parts[0] || "";
-                  const lastName = parts.slice(1).join(" ") || "";
-                  await onUpdate("first_name", firstName);
-                  if (lastName || !contact.last_name) {
-                    await onUpdate("last_name", lastName);
-                  }
-                } : undefined}
+                onSave={
+                  onUpdate
+                    ? async (value) => {
+                        const parts = value.trim().split(/\s+/);
+                        const firstName = parts[0] || "";
+                        const lastName = parts.slice(1).join(" ") || "";
+                        await onUpdate("first_name", firstName);
+                        if (lastName || !contact.last_name) {
+                          await onUpdate("last_name", lastName);
+                        }
+                      }
+                    : undefined
+                }
               />
               <EditableFieldItem
                 icon={<Phone color="primary" />}
                 label="Phone"
                 value={contact.phone || ""}
-                onSave={onUpdate ? (value) => onUpdate("phone", value) : undefined}
+                onSave={
+                  onUpdate ? (value) => onUpdate("phone", value) : undefined
+                }
               />
               <EditableFieldItem
                 icon={<LinkedIn color="primary" />}
                 label="LinkedIn URL"
                 value={contact.linkedIn || ""}
-                onSave={onUpdate ? (value) => onUpdate("linkedIn", value) : undefined}
+                onSave={
+                  onUpdate ? (value) => onUpdate("linkedIn", value) : undefined
+                }
               />
               <Box
                 display="flex"
@@ -309,7 +334,12 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                   onClick={() => setIsTimezoneOpen(true)}
                 />
                 <Box sx={{ flexGrow: 1 }}>
-                  <Typography fontSize={13} fontWeight={500} color="text.secondary" sx={{ mb: 0.5 }}>
+                  <Typography
+                    fontSize={13}
+                    fontWeight={500}
+                    color="text.secondary"
+                    sx={{ mb: 0.5 }}
+                  >
                     Timezone
                   </Typography>
                   <Box
@@ -346,13 +376,27 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                         <MenuItem value="">
                           <em>None</em>
                         </MenuItem>
-                        <MenuItem value="America/New_York">Eastern (New York)</MenuItem>
-                        <MenuItem value="America/Chicago">Central (Chicago)</MenuItem>
-                        <MenuItem value="America/Denver">Mountain (Denver)</MenuItem>
-                        <MenuItem value="America/Phoenix">Mountain (Phoenix)</MenuItem>
-                        <MenuItem value="America/Los_Angeles">Pacific (Los Angeles)</MenuItem>
-                        <MenuItem value="America/Anchorage">Alaska (Anchorage)</MenuItem>
-                        <MenuItem value="Pacific/Honolulu">Hawaii (Honolulu)</MenuItem>
+                        <MenuItem value="America/New_York">
+                          Eastern (New York)
+                        </MenuItem>
+                        <MenuItem value="America/Chicago">
+                          Central (Chicago)
+                        </MenuItem>
+                        <MenuItem value="America/Denver">
+                          Mountain (Denver)
+                        </MenuItem>
+                        <MenuItem value="America/Phoenix">
+                          Mountain (Phoenix)
+                        </MenuItem>
+                        <MenuItem value="America/Los_Angeles">
+                          Pacific (Los Angeles)
+                        </MenuItem>
+                        <MenuItem value="America/Anchorage">
+                          Alaska (Anchorage)
+                        </MenuItem>
+                        <MenuItem value="Pacific/Honolulu">
+                          Hawaii (Honolulu)
+                        </MenuItem>
                       </Select>
                     </FormControl>
                   </Box>
@@ -362,12 +406,23 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                 icon={<LocationOn color="primary" />}
                 label="State"
                 value={contact.state || ""}
-                onSave={onUpdate ? (value) => onUpdate("state", value) : undefined}
+                onSave={
+                  onUpdate ? (value) => onUpdate("state", value) : undefined
+                }
               />
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ py: 1 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ py: 1 }}
+              >
                 <AccessTime color="primary" sx={{ fontSize: 20 }} />
                 <Box sx={{ flexGrow: 1 }}>
-                  <Typography fontSize={13} fontWeight={500} color="text.secondary">
+                  <Typography
+                    fontSize={13}
+                    fontWeight={500}
+                    color="text.secondary"
+                  >
                     Local Time
                   </Typography>
                   <Typography fontSize={13} sx={{ mt: 0.5 }}>
@@ -438,7 +493,11 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                       borderRadius: 1,
                     }}
                   >
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      sx={{ mb: 1 }}
+                    >
                       <Typography variant="subtitle2" fontWeight={600}>
                         {reply.subject || "(No subject)"}
                       </Typography>
@@ -446,7 +505,11 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                         {new Date(reply.date).toLocaleString()}
                       </Typography>
                     </Stack>
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ mb: 1, display: "block" }}
+                    >
                       From: {reply.from} | To: {reply.to}
                     </Typography>
                     <Typography variant="body2" sx={{ mt: 1 }}>

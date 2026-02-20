@@ -10,29 +10,14 @@ import {
   Alert,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-
-interface Account {
-  id?: string;
-  userId?: string;
-  companyName: string;
-  location?: string;
-  zipCode?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  phone?: string;
-  website: string;
-  industry?: string;
-  tenantId?: string;
-}
+import { AccountFormData } from "../../../types/account";
 
 interface AccountDialogProps {
   open: boolean;
   onClose: () => void;
-  account: Account | null;
+  account: AccountFormData | null;
   users: any[];
-  onSave: (accountData: Account) => Promise<void>;
+  onSave: (accountData: AccountFormData) => Promise<void>;
 }
 
 export default function AccountDialog({
@@ -42,7 +27,7 @@ export default function AccountDialog({
   users,
   onSave,
 }: AccountDialogProps) {
-  const [formData, setFormData] = useState<Account>({
+  const [formData, setFormData] = useState<AccountFormData>({
     companyName: "",
     website: "",
     location: "",
@@ -95,9 +80,23 @@ export default function AccountDialog({
     setError(null);
   }, [account, users, open]);
 
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url.includes("://") ? url : `https://${url}`);
+      return /\.\w{2,}/.test(url);
+    } catch {
+      return false;
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.website || formData.website.trim() === "") {
       setError("Website is required");
+      return;
+    }
+
+    if (!isValidUrl(formData.website.trim())) {
+      setError("Please enter a valid website URL (e.g. example.com)");
       return;
     }
 
@@ -112,7 +111,7 @@ export default function AccountDialog({
     try {
       // Exclude userId from the data sent to API
       const { userId, ...accountDataWithoutUserId } = formData;
-      const accountData: Account = {
+      const accountData: AccountFormData = {
         ...accountDataWithoutUserId,
         website: formData.website.trim(),
         companyName: formData.companyName.trim(),

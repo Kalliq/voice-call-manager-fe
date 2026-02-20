@@ -55,7 +55,7 @@ export default function SuperUserManagement() {
       let filteredUsers = res.data;
       if (selectedAdminEmail) {
         filteredUsers = filteredUsers.filter(
-          (u: any) => u.adminEmail === selectedAdminEmail
+          (u: any) => u.adminEmail === selectedAdminEmail,
         );
       }
       setUsers(filteredUsers);
@@ -100,7 +100,7 @@ export default function SuperUserManagement() {
   };
 
   const filtered = users.filter((u: any) =>
-    u.email.toLowerCase().includes(search.toLowerCase())
+    u.email.toLowerCase().includes(search.toLowerCase()),
   );
 
   useEffect(() => {
@@ -253,12 +253,12 @@ export default function SuperUserManagement() {
             )}
           </Stack>
         </DialogContent>
-        <DialogActions>
+        {/* <DialogActions>
           <Button onClick={() => setOpenCreateDialog(false)}>Cancel</Button>
           <Button variant="contained" onClick={handleCreateUser}>
             Create
           </Button>
-        </DialogActions>
+        </DialogActions> */}
       </Dialog>
     </Box>
   );

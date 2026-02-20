@@ -105,7 +105,10 @@ const ContactsPage = () => {
     try {
       const res = await api.get("/lists");
       setLists(
-        res.data.map((list: List) => ({ id: list.id, listName: list.listName }))
+        res.data.map((list: List) => ({
+          id: list.id,
+          listName: list.listName,
+        })),
       );
     } catch {
       enqueue("Failed to load lists", { variant: "error" });
@@ -116,16 +119,16 @@ const ContactsPage = () => {
     () =>
       _.debounce((val: string) => {
         setPage(0);
-        setSearch(val); 
+        setSearch(val);
       }, 300),
-    []
+    [],
   );
   useEffect(() => {
     return () => debouncedSetSearch.cancel();
   }, [debouncedSetSearch]);
   const onSearchChange = (val: string) => {
-    setSearchInput(val);      
-    debouncedSetSearch(val); 
+    setSearchInput(val);
+    debouncedSetSearch(val);
   };
 
   const onSearch = _.debounce((val: string) => {
@@ -165,10 +168,10 @@ const ContactsPage = () => {
 
   const onCall = (c: Contact) => {
     navigate("/campaign", {
-      state: { 
-        contactId: c.id, 
+      state: {
+        contactId: c.id,
         phone: c.phone,
-        autoStart: false 
+        autoStart: false,
       },
     });
   };
@@ -220,7 +223,7 @@ const ContactsPage = () => {
         <TextField
           size="small"
           placeholder="Search..."
-          value={searchInput}                     
+          value={searchInput}
           onChange={(e) => onSearchChange(e.target.value)}
           autoComplete="off"
           InputProps={{
@@ -310,20 +313,20 @@ const ContactsPage = () => {
                     >
                       {header}
                     </TableCell>
-                  )
+                  ),
                 )}
               </TableRow>
             </TableHead>
 
             <TableBody>
               {contacts.map((c) => (
-                <TableRow 
-                  key={c.id} 
-                  hover 
+                <TableRow
+                  key={c.id}
+                  hover
                   sx={{ cursor: "pointer" }}
                   onClick={() => navigate(`/contacts/${c.id}`)}
                 >
-                  <TableCell 
+                  <TableCell
                     padding="checkbox"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -335,7 +338,7 @@ const ContactsPage = () => {
                           setSelectedContactIds((prev) => [...prev, c.id]);
                         } else {
                           setSelectedContactIds((prev) =>
-                            prev.filter((id) => id !== c.id)
+                            prev.filter((id) => id !== c.id),
                           );
                         }
                       }}
@@ -344,10 +347,12 @@ const ContactsPage = () => {
                   <TableCell sx={{ py: 1.5 }}>
                     {c.first_name} {c.last_name}
                   </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>{c.company}</TableCell>
+                  <TableCell sx={{ py: 1.5 }}>
+                    {c.account?.companyName}
+                  </TableCell>
                   <TableCell sx={{ py: 1.5 }}>{c.email}</TableCell>
                   <TableCell sx={{ py: 1.5 }}>{c.phone}</TableCell>
-                  <TableCell 
+                  <TableCell
                     sx={{ py: 1.5 }}
                     onClick={(e) => e.stopPropagation()}
                   >

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Drawer,
   Box,
@@ -6,6 +6,7 @@ import {
   Button,
   Stack,
   TextField,
+  Autocomplete,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,7 @@ import api from "../../../../utils/axiosInstance";
 import { schema as validationSchema } from "../../../../schemas/contsct-create/validation-schema";
 import { useSnackbar } from "../../../../hooks/useSnackbar";
 import { Contact } from "../../../../types/contact";
+import { Account } from "../../../../types/account";
 import SelectField from "../../../../components/UI/SelectField";
 
 type FormData = z.infer<typeof validationSchema>;
@@ -48,25 +50,60 @@ export default function ContactDrawer({
     defaultValues: {
       first_name: "",
       last_name: "",
-      company: "",
+      accountId: "",
       email: "",
       phone: "",
+      linkedIn: "",
+      state: "",
+      subject: "",
+      city: "",
     },
   });
-  const [selectedListId, setSelectedListId] = useState<string>("");
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedListId, setSelectedListId] = useState<string | undefined>(
+    undefined,
+  );
   const [listIdError, setListIdError] = useState<string>("");
-  
+
   // Watch form values to enable/disable submit button
   const data = watch();
 
+  const loadAccounts = useCallback(async () => {
+    try {
+      const res = await api.get("/accounts/all", {});
+      setAccounts(res.data.accounts);
+    } catch (error) {
+      enqueue("Failed to load accounts", { variant: "error" });
+    }
+  }, [open]);
+
+  useEffect(() => {
+    loadAccounts();
+  }, [loadAccounts]);
+
+  const defaults = {
+    first_name: "",
+    last_name: "",
+    accountId: "",
+    email: "",
+    phone: "",
+    linkedIn: "",
+    state: "",
+    subject: "",
+    city: "",
+  };
+
   useEffect(() => {
     if (contact) {
+      const { account } = contact;
       reset({
+        ...defaults,
         ...contact,
+        accountId: account?.id ?? "",
       });
     } else {
-      reset({});
-      setSelectedListId("");
+      reset(defaults);
+      setSelectedListId(undefined);
       setListIdError("");
     }
   }, [contact, reset]);
@@ -79,31 +116,11 @@ export default function ContactDrawer({
         });
         enqueue("Updated", { variant: "success" });
       } else {
-        // SUBMIT GUARD: Ensure listId is valid before sending
-        const trimmedListId = (selectedListId || "").trim();
-        if (!trimmedListId) {
-          setListIdError("Please select a list");
-          enqueue("Please select a list to create the contact", { variant: "error" });
-          return;
-        }
-
-        // PAYLOAD GUARANTEE: Filter out empty optional fields (email, company)
-        // Backend .optional().isEmail() fails on empty string - must be undefined if not provided
-        const contactData: Record<string, any> = {
-          first_name: data.first_name,
-          last_name: data.last_name,
-          phone: data.phone,
-          listId: trimmedListId,
-        };
-        
-        // Only include email if it's not empty
-        if (data.email && data.email.trim() !== "") {
-          contactData.email = data.email.trim();
-        }
-        
-        // Only include company if it's not empty
-        if (data.company && data.company.trim() !== "") {
-          contactData.company = data.company.trim();
+        const contactData: Record<string, any> = Object.fromEntries(
+          Object.entries(data).filter(([, v]) => v !== undefined && v !== ""),
+        );
+        if (selectedListId && selectedListId.trim() !== "") {
+          contactData.listId = selectedListId.trim();
         }
 
         await api.post("/contacts", contactData);
@@ -111,7 +128,12 @@ export default function ContactDrawer({
       }
       onSaved();
     } catch (e: any) {
-      enqueue(e.message || "Error!", { variant: "error" });
+      const msg =
+        e.response?.data?.errors?.[0]?.message ||
+        e.response?.data?.message ||
+        e.message ||
+        "Error!";
+      enqueue(msg, { variant: "error" });
     }
   };
 
@@ -123,37 +145,144 @@ export default function ContactDrawer({
         </Typography>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={2}>
-            {[
-              ["First Name", "first_name"],
-              ["Last Name", "last_name"],
-              ["Company", "company"],
-              ["Email", "email"],
-              ["Number", "phone"],
-            ].map(([label, name]) => (
-              <Controller
-                key={name}
-                name={name as any}
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label={label}
-                    error={!!errors[name as keyof FormData]}
-                    helperText={errors[name as keyof FormData]?.message}
-                    fullWidth
-                  />
-                )}
-              />
-            ))}
+            <Controller
+              name="first_name"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="First Name"
+                  error={!!errors.first_name}
+                  helperText={errors.first_name?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="last_name"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Last Name"
+                  error={!!errors.last_name}
+                  helperText={errors.last_name?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="accountId"
+              control={control}
+              render={({ field }) => (
+                <Autocomplete
+                  options={accounts}
+                  getOptionLabel={(option) => option.companyName}
+                  value={accounts.find((a) => a.id === field.value) ?? null}
+                  onChange={(_, newValue) => {
+                    field.onChange(newValue?.id ?? "");
+                  }}
+                  isOptionEqualToValue={(option, value) =>
+                    option.id === value.id
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Company"
+                      error={!!errors.accountId}
+                      helperText={errors.accountId?.message}
+                    />
+                  )}
+                />
+              )}
+            />
+            <Controller
+              name="email"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Email"
+                  type="email"
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Number"
+                  error={!!errors.phone}
+                  helperText={errors.phone?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="linkedIn"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="LinkedIn"
+                  error={!!errors.linkedIn}
+                  helperText={errors.linkedIn?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="subject"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Subject"
+                  error={!!errors.subject}
+                  helperText={errors.subject?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="state"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="State"
+                  error={!!errors.state}
+                  helperText={errors.state?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="city"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="City"
+                  error={!!errors.city}
+                  helperText={errors.city?.message}
+                  fullWidth
+                />
+              )}
+            />
             {!contact && (
               <Box>
                 <SelectField
                   items={lists}
                   label="Select List"
-                  value={selectedListId || ""}
+                  value={selectedListId}
                   onChange={(val) => {
-                    const newValue = val || "";
-                    setSelectedListId(newValue);
+                    setSelectedListId(val);
                     setListIdError(""); // Clear error on selection
                   }}
                   getValue={(l) => l.id}
@@ -181,8 +310,7 @@ export default function ContactDrawer({
                 disabled={
                   isSubmitting ||
                   (!contact &&
-                    (selectedListId === "" ||
-                      !data.first_name?.trim() ||
+                    (!data.first_name?.trim() ||
                       !data.last_name?.trim() ||
                       !data.phone?.trim()))
                 }
