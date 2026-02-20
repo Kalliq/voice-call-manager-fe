@@ -129,7 +129,7 @@ const ActiveDialingCard = ({
             <FieldItem
               icon={<Phone color="primary" />}
               label="Phone"
-              value={session.phone ?? ""}
+              value={session.phone?.number ?? ""}
             />
             <Button
               fullWidth
