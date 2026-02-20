@@ -53,6 +53,10 @@ export default function ContactDrawer({
       accountId: "",
       email: "",
       phone: "",
+      linkedIn: "",
+      state: "",
+      subject: "",
+      city: "",
     },
   });
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -77,27 +81,34 @@ export default function ContactDrawer({
     loadAccounts();
   }, [loadAccounts]);
 
+  const defaults = {
+    first_name: "",
+    last_name: "",
+    accountId: "",
+    email: "",
+    phone: "",
+    linkedIn: "",
+    state: "",
+    subject: "",
+    city: "",
+  };
+
   useEffect(() => {
     if (contact) {
       const { account } = contact;
       reset({
+        ...defaults,
         ...contact,
         accountId: account?.id ?? "",
       });
     } else {
-      reset({});
+      reset(defaults);
       setSelectedListId(undefined);
       setListIdError("");
     }
   }, [contact, reset]);
 
   const onSubmit = async (data: FormData) => {
-    console.log(
-      "Submitting contact with data:",
-      data,
-      "and selectedListId:",
-      selectedListId,
-    );
     try {
       if (contact) {
         await api.patch(`/contacts/basic/${contact.id}`, {
@@ -105,26 +116,11 @@ export default function ContactDrawer({
         });
         enqueue("Updated", { variant: "success" });
       } else {
-        // SUBMIT GUARD: Ensure listId is valid before sending
-        // PAYLOAD GUARANTEE: Filter out empty optional fields (email, company)
-        // Backend .optional().isEmail() fails on empty string - must be undefined if not provided
-        const contactData: Record<string, any> = {
-          first_name: data.first_name,
-          last_name: data.last_name,
-          phone: data.phone,
-        };
+        const contactData: Record<string, any> = Object.fromEntries(
+          Object.entries(data).filter(([, v]) => v !== undefined && v !== ""),
+        );
         if (selectedListId && selectedListId.trim() !== "") {
           contactData.listId = selectedListId.trim();
-        }
-
-        // Only include email if it's not empty
-        if (data.email && data.email.trim() !== "") {
-          contactData.email = data.email.trim();
-        }
-
-        // Only include accountId if selected
-        if (data.accountId && data.accountId.trim() !== "") {
-          contactData.accountId = data.accountId.trim();
         }
 
         await api.post("/contacts", contactData);
@@ -132,7 +128,12 @@ export default function ContactDrawer({
       }
       onSaved();
     } catch (e: any) {
-      enqueue(e.message || "Error!", { variant: "error" });
+      const msg =
+        e.response?.data?.errors?.[0]?.message ||
+        e.response?.data?.message ||
+        e.message ||
+        "Error!";
+      enqueue(msg, { variant: "error" });
     }
   };
 
@@ -218,6 +219,58 @@ export default function ContactDrawer({
                   label="Number"
                   error={!!errors.phone}
                   helperText={errors.phone?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="linkedIn"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="LinkedIn"
+                  error={!!errors.linkedIn}
+                  helperText={errors.linkedIn?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="subject"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Subject"
+                  error={!!errors.subject}
+                  helperText={errors.subject?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="state"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="State"
+                  error={!!errors.state}
+                  helperText={errors.state?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="city"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="City"
+                  error={!!errors.city}
+                  helperText={errors.city?.message}
                   fullWidth
                 />
               )}
