@@ -26,7 +26,7 @@ const fetchLists = async () => {
   }
 };
 
-const CsvImport_step_4 = ({ onPrevious, onConfirm }: any) => {
+const CsvImport_step_4 = ({ onPrevious, onConfirm, isSubmitting = false }: any) => {
   const { handleSubmit, watch, control, formState: { errors }, } = useFormContext();
 
   const file = watch("file");
@@ -123,8 +123,8 @@ const CsvImport_step_4 = ({ onPrevious, onConfirm }: any) => {
         </FormControl>
 
         <Box display="flex" gap={2}>
-          <SimpleButton type="submit" label="Submit" />
-          <SimpleButton label="Previous" onClick={onPrevious} />
+          <SimpleButton type="submit" label="Submit" loading={isSubmitting} />
+          <SimpleButton label="Previous" onClick={onPrevious} disabled={isSubmitting} />
         </Box>
       </Box>
     </form>

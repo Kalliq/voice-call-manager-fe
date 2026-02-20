@@ -50,6 +50,7 @@ const MultiStepForm = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const currentSchema = getValidationSchemaForStep(step) as AnyZodObject | undefined;
   const methods = useForm<ImportFormValues>({
     defaultValues: {
@@ -85,6 +86,7 @@ const MultiStepForm = () => {
   };
   const onPreviousStepHandler = () => setStep((prev) => prev - 1);
   const onConfirmHandler = async () => {
+    setIsSubmitting(true);
     const formDataValues = methods.getValues();
     console.log("form values: ", formDataValues);
 
@@ -121,6 +123,8 @@ const MultiStepForm = () => {
         err?.response?.data?.message || "There was an error creating the list."
       );
       setDialogOpen(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -159,6 +163,7 @@ const MultiStepForm = () => {
               <ContactsImport_step_4
                 onPrevious={onPreviousStepHandler}
                 onConfirm={onConfirmHandler}
+                isSubmitting={isSubmitting}
               />
             )}
           </FormProvider>
