@@ -218,7 +218,7 @@ const Lists = () => {
                         </TableCell>
                         <TableCell sx={{ py: 1.5 }}>{c.company}</TableCell>
                         <TableCell sx={{ py: 1.5 }}>{c.email}</TableCell>
-                        <TableCell sx={{ py: 1.5 }}>{c.phone}</TableCell>
+                        <TableCell sx={{ py: 1.5 }}>{c.phone?.number}</TableCell>
                         <TableCell sx={{ py: 1.5 }}>
                           <Stack
                             direction="row"

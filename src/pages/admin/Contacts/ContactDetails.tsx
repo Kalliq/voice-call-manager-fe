@@ -35,12 +35,17 @@ import {
 import api from "../../../utils/axiosInstance";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import Loading from "../../../components/UI/Loading";
-import { Contact } from "../../../types/contact";
+import {
+  Contact,
+  PhoneField,
+  getContactDialNumber,
+} from "../../../types/contact";
 import ContactOverview from "../Campaign/components/ContactOverview";
 import ContactStageChip from "../Campaign/components/ContactStageChip";
 import SendEmailModal from "../../../components/SendEmailModal";
 import AddDealModal from "../Campaign/components/AddDealModal";
 import EditDealModal from "../Campaign/components/EditDealModal";
+import EditPhonesModal from "./components/EditPhonesModal";
 import { DeleteDialog } from "../../../components/DeleteDialog";
 import { List } from "voice-javascript-common";
 
@@ -59,8 +64,7 @@ const ContactDetails = () => {
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
-  const [editingPhone, setEditingPhone] = useState(false);
-  const [newPhone, setNewPhone] = useState("");
+  const [isEditPhonesModalOpen, setIsEditPhonesModalOpen] = useState(false);
   const [talkingPoints, setTalkingPoints] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTalkingPoint, setNewTalkingPoint] = useState("");
@@ -170,26 +174,6 @@ const ContactDetails = () => {
     }
   };
 
-  const onPhoneSubmitHandler = async () => {
-    if (!contact?.id) return;
-    try {
-      await api.patch(`/contacts/basic/${contact.id}`, {
-        phone: newPhone,
-      });
-
-      if (contact) {
-        contact.phone = newPhone;
-        setContact({ ...contact });
-      }
-      setEditingPhone(false);
-      setNewPhone("");
-      enqueue("Phone number updated", { variant: "success" });
-    } catch (err) {
-      console.error("Failed to update phone number", err);
-      enqueue("Failed to update phone number", { variant: "error" });
-    }
-  };
-
   const onStageChangeHandler = async (status: string) => {
     if (!contact?.id) return;
     try {
@@ -208,14 +192,28 @@ const ContactDetails = () => {
     }
   };
 
+  const isPhoneField = (
+    key: string,
+  ): key is "phone" | "mobile" | "other" =>
+    key === "phone" || key === "mobile" || key === "other";
+
   const handleFieldUpdate = async (field: string, value: string) => {
     if (!contact?.id) return;
     try {
+      let patchValue: string | PhoneField = value;
+      if (isPhoneField(field)) {
+        const current = contact[field];
+        patchValue = {
+          number: value,
+          isBad: current?.isBad ?? false,
+          isFavourite: current?.isFavourite ?? false,
+        };
+      }
       await api.patch(`/contacts/basic/${contact.id}`, {
-        [field]: value,
+        [field]: patchValue,
       });
       if (contact) {
-        (contact as any)[field] = value;
+        (contact as Record<string, unknown>)[field] = patchValue;
         setContact({ ...contact });
       }
       setUpdateKey((prev) => prev + 1);
@@ -276,7 +274,7 @@ const ContactDetails = () => {
     navigate("/campaign", {
       state: {
         contactId: contact.id,
-        phone: contact.phone,
+        phone: getContactDialNumber(contact),
         autoStart: false,
       },
     });
@@ -368,89 +366,16 @@ const ContactDetails = () => {
                     flexWrap="wrap"
                   >
                     <Phone fontSize="small" />
-                    {!editingPhone && contact.phone ? (
-                      <>
-                        <Typography fontSize="12px" color="text.secondary">
-                          {contact.phone}
-                        </Typography>
-                        <Button
-                          size="small"
-                          onClick={() => {
-                            setNewPhone(contact.phone || "");
-                            setEditingPhone(true);
-                          }}
-                          sx={{ minWidth: "auto", fontSize: "11px", px: 1 }}
-                        >
-                          Change
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        {editingPhone ? (
-                          <>
-                            <Stack
-                              direction="row"
-                              spacing={1}
-                              alignItems="center"
-                            >
-                              <TextField
-                                type="tel"
-                                value={newPhone}
-                                onChange={(e) => setNewPhone(e.target.value)}
-                                placeholder="Enter phone"
-                                size="small"
-                                autoFocus
-                                sx={{
-                                  "& .MuiInputBase-root": {
-                                    fontSize: "12px",
-                                  },
-                                }}
-                              />
-                              <Button
-                                size="small"
-                                onClick={onPhoneSubmitHandler}
-                                sx={{
-                                  minWidth: "auto",
-                                  fontSize: "11px",
-                                  px: 1,
-                                }}
-                              >
-                                Add
-                              </Button>
-                              <Button
-                                size="small"
-                                onClick={() => setEditingPhone(false)}
-                                sx={{
-                                  minWidth: "auto",
-                                  fontSize: "11px",
-                                  px: 1,
-                                }}
-                                color="inherit"
-                              >
-                                Cancel
-                              </Button>
-                            </Stack>
-                          </>
-                        ) : (
-                          <>
-                            <Typography fontSize="12px" color="text.secondary">
-                              No phone number
-                            </Typography>
-                            <Typography
-                              fontSize="0.9rem"
-                              color="primary"
-                              sx={{ cursor: "pointer", ml: 0.5 }}
-                              onClick={() => {
-                                setNewPhone(contact.phone || "");
-                                setEditingPhone(true);
-                              }}
-                            >
-                              • Add phone
-                            </Typography>
-                          </>
-                        )}
-                      </>
-                    )}
+                    <Typography fontSize="12px" color="text.secondary">
+                      {getContactDialNumber(contact) || "No phone number"}
+                    </Typography>
+                    <Button
+                      size="small"
+                      onClick={() => setIsEditPhonesModalOpen(true)}
+                      sx={{ minWidth: "auto", fontSize: "11px", px: 1 }}
+                    >
+                      {contact.phone?.number ? "Edit" : "Add"}
+                    </Button>
                   </Stack>
                 </Stack>
               </Stack>
@@ -839,6 +764,17 @@ const ContactDetails = () => {
           setDealToDelete(null);
         }}
         onConfirm={handleDeleteDeal}
+      />
+
+      {/* Edit Phones Modal */}
+      <EditPhonesModal
+        open={isEditPhonesModalOpen}
+        contact={contact}
+        onClose={() => setIsEditPhonesModalOpen(false)}
+        onSaved={(updated) => {
+          setContact({ ...contact, ...updated });
+          setUpdateKey((prev) => prev + 1);
+        }}
       />
     </Box>
   );

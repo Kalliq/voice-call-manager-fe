@@ -426,7 +426,7 @@ const ContactsPage = () => {
                     {c.account?.companyName}
                   </TableCell>
                   <TableCell sx={{ py: 1.5 }}>{c.email}</TableCell>
-                  <TableCell sx={{ py: 1.5 }}>{c.phone}</TableCell>
+                  <TableCell sx={{ py: 1.5 }}>{c.phone?.number}</TableCell>
                   <TableCell
                     sx={{ py: 1.5 }}
                     onClick={(e) => e.stopPropagation()}

@@ -17,7 +17,7 @@ import api from "../../../../utils/axiosInstance";
 
 import { schema as validationSchema } from "../../../../schemas/contsct-create/validation-schema";
 import { useSnackbar } from "../../../../hooks/useSnackbar";
-import { Contact } from "../../../../types/contact";
+import { Contact, emptyPhoneField } from "../../../../types/contact";
 import { Account } from "../../../../types/account";
 import SelectField from "../../../../components/UI/SelectField";
 
@@ -53,6 +53,8 @@ export default function ContactDrawer({
       accountId: "",
       email: "",
       phone: "",
+      mobile: "",
+      other: "",
       linkedIn: "",
       state: "",
       subject: "",
@@ -87,6 +89,8 @@ export default function ContactDrawer({
     accountId: "",
     email: "",
     phone: "",
+    mobile: "",
+    other: "",
     linkedIn: "",
     state: "",
     subject: "",
@@ -98,8 +102,17 @@ export default function ContactDrawer({
       const { account } = contact;
       reset({
         ...defaults,
-        ...contact,
+        first_name: (contact.first_name as string) ?? "",
+        last_name: (contact.last_name as string) ?? "",
+        email: (contact.email as string) ?? "",
         accountId: account?.id ?? "",
+        phone: contact.phone?.number ?? "",
+        mobile: contact.mobile?.number ?? "",
+        other: contact.other?.number ?? "",
+        linkedIn: (contact.linkedIn as string) ?? "",
+        state: (contact.state as string) ?? "",
+        subject: (contact.subject as string) ?? "",
+        city: (contact.city as string) ?? "",
       });
     } else {
       reset(defaults);
@@ -108,17 +121,30 @@ export default function ContactDrawer({
     }
   }, [contact, reset]);
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (formData: FormData) => {
     try {
+      const { phone, mobile, other, ...rest } = formData;
+
+      const phoneFields = {
+        phone: { ...emptyPhoneField(), ...(contact?.phone ?? {}), number: phone },
+        mobile: { ...emptyPhoneField(), ...(contact?.mobile ?? {}), number: mobile || "" },
+        other: { ...emptyPhoneField(), ...(contact?.other ?? {}), number: other || "" },
+      };
+
       if (contact) {
         await api.patch(`/contacts/basic/${contact.id}`, {
-          ...data,
+          ...rest,
+          ...phoneFields,
         });
         enqueue("Updated", { variant: "success" });
       } else {
         const contactData: Record<string, any> = Object.fromEntries(
-          Object.entries(data).filter(([, v]) => v !== undefined && v !== ""),
+          Object.entries(rest).filter(([, v]) => v !== undefined && v !== ""),
         );
+        contactData.phone = phoneFields.phone;
+        contactData.mobile = phoneFields.mobile;
+        contactData.other = phoneFields.other;
+
         if (selectedListId && selectedListId.trim() !== "") {
           contactData.listId = selectedListId.trim();
         }
@@ -216,9 +242,31 @@ export default function ContactDrawer({
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Number"
+                  label="Phone"
                   error={!!errors.phone}
                   helperText={errors.phone?.message}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="mobile"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Mobile"
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="other"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Other Phone"
                   fullWidth
                 />
               )}

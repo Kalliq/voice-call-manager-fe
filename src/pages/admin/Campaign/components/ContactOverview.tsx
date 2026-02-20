@@ -254,7 +254,7 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
               <EditableFieldItem
                 icon={<Phone color="primary" />}
                 label="Direct Phone"
-                value={contact.phone || ""}
+                value={contact.phone?.number || ""}
                 onSave={
                   onUpdate ? (value) => onUpdate("phone", value) : undefined
                 }
@@ -304,7 +304,7 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
               <EditableFieldItem
                 icon={<Phone color="primary" />}
                 label="Phone"
-                value={contact.phone || ""}
+                value={contact.phone?.number || ""}
                 onSave={
                   onUpdate ? (value) => onUpdate("phone", value) : undefined
                 }
