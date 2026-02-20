@@ -7,22 +7,37 @@ import {
   Tooltip,
   useTheme,
 } from "@mui/material";
-import { Delete, Visibility } from "@mui/icons-material";
+import { Delete, PersonRemove, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
 import { Contact } from "../types/contact";
 
 interface ContactCardProps {
   contact: Contact;
-  onDeleteClick: (contactId: string) => void;
+  onDeleteClick?: (contactId: string) => void;
+  onRemoveFromListClick?: (contactId: string) => void;
+  removeLabel?: string;
+  disabled?: boolean;
 }
 
-const ContactCard = ({ contact, onDeleteClick }: ContactCardProps) => {
+const ContactCard = ({
+  contact,
+  onDeleteClick,
+  onRemoveFromListClick,
+  removeLabel = "Remove from list",
+  disabled,
+}: ContactCardProps) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const handleRemove = onRemoveFromListClick ?? onDeleteClick;
 
   return (
-    <Box>
+    <Box
+      sx={{
+        opacity: disabled ? 0.5 : 1,
+        pointerEvents: disabled ? "none" : "auto",
+      }}
+    >
       <Card
         elevation={1}
         sx={{
@@ -106,15 +121,25 @@ const ContactCard = ({ contact, onDeleteClick }: ContactCardProps) => {
                 </IconButton>
               </Tooltip>
 
-              <Tooltip title="Delete Contact">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => onDeleteClick(contact.id)}
+              {handleRemove && (
+                <Tooltip
+                  title={
+                    onRemoveFromListClick ? removeLabel : "Delete Contact"
+                  }
                 >
-                  <Delete fontSize="small" />
-                </IconButton>
-              </Tooltip>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => handleRemove(contact.id)}
+                  >
+                    {onRemoveFromListClick ? (
+                      <PersonRemove fontSize="small" />
+                    ) : (
+                      <Delete fontSize="small" />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              )}
             </Box>
           </Box>
         </CardContent>

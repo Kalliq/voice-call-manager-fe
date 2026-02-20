@@ -89,6 +89,16 @@ const useListManager = () => {
     }
   };
 
+  const handleRefreshContactsForList = async (
+    listId: string,
+    steps?: Step[]
+  ) => {
+    if (steps?.length) {
+      await fetchEligibleContacts(listId, steps);
+    }
+    await fetchLists();
+  };
+
   return {
     selectedCalls,
     expandedListId,
@@ -105,6 +115,7 @@ const useListManager = () => {
     handleDelete,
     handleClone,
     cloningId,
+    handleRefreshContactsForList,
     listToDelete,
   };
 };

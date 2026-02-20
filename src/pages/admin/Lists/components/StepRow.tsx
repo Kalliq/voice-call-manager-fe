@@ -27,6 +27,7 @@ interface StepRowProps {
   selectedCallType: string;
   list: { id: string; steps?: Step[] };
   onConnectionClick: (e: React.MouseEvent<HTMLElement>, id: string) => void;
+  onContactRemoved?: () => void;
 }
 
 const StepRow = ({
@@ -35,6 +36,7 @@ const StepRow = ({
   selectedCallType,
   list,
   onConnectionClick,
+  onContactRemoved,
 }: StepRowProps) => {
   const navigate = useNavigate();
   const [openContactsDialog, setOpenContactsDialog] = useState(false);
@@ -126,7 +128,9 @@ const StepRow = ({
       <ContactDialog
         open={openContactsDialog}
         contacts={contacts}
+        listId={list.id}
         onClose={() => setOpenContactsDialog(false)}
+        onContactRemoved={onContactRemoved}
       />
     </>
   );

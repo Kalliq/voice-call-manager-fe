@@ -40,6 +40,7 @@ interface ListCardProps {
   onDeleteClick: (id: string) => void;
   onCloneClick: (id: string) => void;
   cloningId: string | null;
+  onContactRemoved?: (listId: string, steps?: Step[]) => void;
 }
 
 const ListCard = ({
@@ -56,6 +57,7 @@ const ListCard = ({
   onDeleteClick,
   onCloneClick,
   cloningId,
+  onContactRemoved,
 }: ListCardProps) => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -189,6 +191,9 @@ const ListCard = ({
                       selectedCallType={selectedCall}
                       list={list}
                       onConnectionClick={onConnectionClick}
+                      onContactRemoved={() =>
+                        onContactRemoved?.(list.id, list.steps)
+                      }
                     />
                   ))}
                 </TableBody>

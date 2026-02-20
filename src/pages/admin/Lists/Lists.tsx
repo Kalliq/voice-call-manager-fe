@@ -67,6 +67,7 @@ const Lists = () => {
     handleDelete,
     handleClone,
     cloningId,
+    handleRefreshContactsForList,
     listToDelete,
   } = useListManager();
 
@@ -172,6 +173,7 @@ const Lists = () => {
                           onDeleteClick={handleDeleteClick}
                           onCloneClick={handleClone}
                           cloningId={cloningId}
+                          onContactRemoved={handleRefreshContactsForList}
                         />
                       ))}
                   </TableBody>
