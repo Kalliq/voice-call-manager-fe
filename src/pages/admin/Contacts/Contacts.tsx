@@ -37,6 +37,7 @@ import { DeleteDialog } from "../../../components/DeleteDialog";
 import SelectField from "../../../components/UI/SelectField";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import { MoveContactsDialog } from "../../../components/MoveContactsDialog";
+import { AssignUnassignedDialog } from "../../../components/AssignUnassignedDialog";
 import { useMoveContacts } from "../../../hooks/useMoveContacts";
 import Loading from "../../../components/UI/Loading";
 import CheckboxField from "../../../components/UI/CheckboxField";
@@ -66,6 +67,11 @@ const ContactsPage = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [targetListId, setTargetListId] = useState("");
+  const [assignUnassignedOpen, setAssignUnassignedOpen] = useState(false);
+  const [assignUnassignedTargetListId, setAssignUnassignedTargetListId] =
+    useState("");
+  const [assigningUnassigned, setAssigningUnassigned] = useState(false);
+  const [unassignedCount, setUnassignedCount] = useState(0);
 
   const { moveContacts } = useMoveContacts({
     onMoved: (moved: number, skipped: number) => {
@@ -79,6 +85,25 @@ const ContactsPage = () => {
 
   const onMoveConfirmHandler = async () => {
     await moveContacts(selectedListId, targetListId, selectedContactIds);
+  };
+
+  const onAssignUnassignedConfirm = async () => {
+    if (assigningUnassigned || !assignUnassignedTargetListId) return;
+    setAssigningUnassigned(true);
+    try {
+      await api.post("/contacts/assign-unassigned", {
+        listId: assignUnassignedTargetListId,
+      });
+      enqueue("Unassigned contacts assigned to list", { variant: "success" });
+      setAssignUnassignedOpen(false);
+      setAssignUnassignedTargetListId("");
+      await load();
+      loadUnassignedCount();
+    } catch {
+      enqueue("Failed to assign unassigned contacts", { variant: "error" });
+    } finally {
+      setAssigningUnassigned(false);
+    }
   };
 
   const load = useCallback(async () => {
@@ -126,6 +151,25 @@ const ContactsPage = () => {
       enqueue("Failed to load lists", { variant: "error" });
     }
   };
+
+  const loadUnassignedCount = useCallback(async () => {
+    if (selectedListId === "__unassigned__") {
+      setUnassignedCount(total);
+      return;
+    }
+    try {
+      const res = await api.get("/contacts", {
+        params: { limit: 10000, page: 1 },
+      });
+      const data = res.data.data || [];
+      const count = data.filter(
+        (c: Contact) => c.listId == null || c.listId === undefined
+      ).length;
+      setUnassignedCount(count);
+    } catch {
+      setUnassignedCount(0);
+    }
+  }, [selectedListId, total]);
 
   const debouncedSetSearch = useMemo(
     () =>
@@ -197,6 +241,10 @@ const ContactsPage = () => {
     loadLists();
   }, []);
 
+  useEffect(() => {
+    loadUnassignedCount();
+  }, [loadUnassignedCount]);
+
   return (
     <Box p={3}>
       <Box mb={3} display="flex" justifyContent="space-between">
@@ -207,6 +255,17 @@ const ContactsPage = () => {
           <Typography color="text.secondary">Manage your contacts</Typography>
         </Box>
         <Box display="flex" gap={2}>
+          {unassignedCount > 0 && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setAssignUnassignedTargetListId("");
+                setAssignUnassignedOpen(true);
+              }}
+            >
+              Assign Unassigned to List
+            </Button>
+          )}
           <Button
             variant="outlined"
             color="error"
@@ -477,6 +536,15 @@ const ContactsPage = () => {
         selectedListId={selectedListId}
         targetListId={targetListId}
         setTargetListId={setTargetListId}
+      />
+      <AssignUnassignedDialog
+        open={assignUnassignedOpen}
+        onClose={() => !assigningUnassigned && setAssignUnassignedOpen(false)}
+        onConfirm={onAssignUnassignedConfirm}
+        lists={lists}
+        targetListId={assignUnassignedTargetListId}
+        setTargetListId={setAssignUnassignedTargetListId}
+        loading={assigningUnassigned}
       />
     </Box>
   );
