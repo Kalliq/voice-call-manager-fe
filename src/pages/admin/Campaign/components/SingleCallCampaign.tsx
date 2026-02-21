@@ -35,7 +35,6 @@ import {
 
 import ContactOverview from "./ContactOverview";
 import ContactStageChip from "./ContactStageChip";
-import { CallBar } from "./molecules/CallBar";
 import SendEmailModal from "../../../../components/SendEmailModal";
 import AddDealModal from "./AddDealModal";
 import EditDealModal from "./EditDealModal";
@@ -77,8 +76,6 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   callStarted,
   handleNumpadClick,
 }) => {
-  const [callStartTime, setCallStartTime] = useState<Date | null>(new Date());
-  const [elapsedTime, setElapsedTime] = useState("00:00");
   const [activeTab, setActiveTab] = useState(0);
   const [editingPhone, setEditingPhone] = useState(false);
   const [newPhone, setNewPhone] = useState("");
@@ -99,28 +96,6 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   const [selectedDeal, setSelectedDeal] = useState<any | null>(null);
   const [isDeleteDealDialogOpen, setIsDeleteDealDialogOpen] = useState(false);
   const [dealToDelete, setDealToDelete] = useState<any | null>(null);
-
-  useEffect(() => {
-    let int: NodeJS.Timeout;
-    if (answeredSession) {
-      if (!callStartTime) return;
-      int = setInterval(() => {
-        const diff = Math.floor((Date.now() - callStartTime.getTime()) / 1000);
-        const mm = String(Math.floor(diff / 60)).padStart(2, "0");
-        const ss = String(diff % 60).padStart(2, "0");
-        setElapsedTime(`${mm}:${ss}`);
-      }, 1_000);
-    } else {
-      setElapsedTime(`00:00`);
-    }
-    return () => clearInterval(int);
-  }, [callStartTime, answeredSession]);
-
-  useEffect(() => {
-    if (answeredSession) {
-      setCallStartTime(new Date());
-    }
-  }, [session.id, answeredSession]);
 
   useEffect(() => {
     if (autoStart) {
@@ -273,23 +248,8 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
     }
   };
 
-  // CallBar visibility: Show immediately when dialing starts, before connection
-  // The bar is a control surface, not a connection indicator
-  // It must appear as soon as callStarted === true to allow early hangup
-  const shouldShowCallBar = callStarted;
-
   return (
     <>
-      {shouldShowCallBar && (
-        <CallBar
-          session={session}
-          callStartTime={callStartTime}
-          elapsedTime={elapsedTime}
-          hasAnsweredSession={!!answeredSession}
-          onEndCall={onEndCall}
-          handleNumpadClick={handleNumpadClick}
-        />
-      )}
       <Paper
         variant="outlined"
         sx={{
@@ -589,16 +549,6 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
               <Button variant="outlined" startIcon={<Animation />}>
                 Add to sequence
               </Button>
-              {manual && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<Phone />}
-                  onClick={onStartCall}
-                >
-                  Call
-                </Button>
-              )}
             </Paper>
             <Grid
               item

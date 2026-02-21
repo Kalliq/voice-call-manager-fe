@@ -91,9 +91,12 @@ const ActiveDialingCard = ({
   return (
     <Box>
       <CallBar
+        mode="active"
+        displayLabel={session.phone || session.first_name || "No number"}
         session={session}
         callStartTime={callStartTime}
         elapsedTime={elapsedTime}
+        hasAnsweredSession
         onEndCall={hangUp}
         handleNumpadClick={handleNumpadClick}
       />

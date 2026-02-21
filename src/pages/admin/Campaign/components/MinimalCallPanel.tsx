@@ -1,70 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Grid, Typography, Button, Avatar, Paper } from "@mui/material";
-import { Phone, Person } from "@mui/icons-material";
-
-import { CallBar } from "./molecules/CallBar";
+import React from "react";
+import { Grid, Typography, Avatar, Paper } from "@mui/material";
+import { Person } from "@mui/icons-material";
 
 interface MinimalCallPanelProps {
-  answeredSession: boolean;
   phone: string;
-  onStartCall: (phone: string) => void;
-  onEndCall: () => void;
-  callStarted: boolean;
-  handleNumpadClick: (char: string) => void;
 }
 
-const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
-  answeredSession,
-  phone,
-  onStartCall,
-  onEndCall,
-  callStarted,
-  handleNumpadClick,
-}) => {
-  const [callStartTime, setCallStartTime] = useState<Date | null>(null);
-  const [elapsedTime, setElapsedTime] = useState("00:00");
-
-  useEffect(() => {
-    if (callStarted) {
-      const now = new Date();
-      setCallStartTime(now);
-    }
-  }, [callStarted]);
-
-  useEffect(() => {
-    let int: NodeJS.Timeout;
-    if (answeredSession) {
-      if (!callStartTime) return;
-      int = setInterval(() => {
-        const diff = Math.floor((Date.now() - callStartTime.getTime()) / 1000);
-        const mm = String(Math.floor(diff / 60)).padStart(2, "0");
-        const ss = String(diff % 60).padStart(2, "0");
-        setElapsedTime(`${mm}:${ss}`);
-      }, 1000);
-    } else {
-      setElapsedTime(`00:00`);
-    }
-    return () => clearInterval(int);
-  }, [callStartTime]);
-
-  // CallBar visibility: Show immediately when dialing starts, before connection
-  // The bar is a control surface, not a connection indicator
-  // It must appear as soon as callStarted === true to allow early hangup
-  const shouldShowCallBar = callStarted;
-
-  return (
-    <>
-      {shouldShowCallBar && (
-        <CallBar
-          phone={phone}
-          callStartTime={callStartTime}
-          elapsedTime={elapsedTime}
-          hasAnsweredSession={!!answeredSession}
-          onEndCall={onEndCall}
-          handleNumpadClick={handleNumpadClick}
-        />
-      )}
-      <Paper
+/** Contact/phone info card for one-off calls. Call controls live in the persistent CallBar. */
+const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({ phone }) => (
+  <Paper
         variant="outlined"
         sx={{
           display: "flex",
@@ -93,19 +37,7 @@ const MinimalCallPanel: React.FC<MinimalCallPanelProps> = ({
             {phone || "no number"}
           </Typography>
         </Grid>
-        <Grid item>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Phone />}
-            onClick={() => onStartCall(phone)}
-          >
-            Call
-          </Button>
-        </Grid>
       </Paper>
-    </>
-  );
-};
+);
 
 export default MinimalCallPanel;

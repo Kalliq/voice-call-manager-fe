@@ -15,31 +15,55 @@ import {
   VolumeOff,
   Pause,
   Dialpad,
+  Phone,
 } from "@mui/icons-material";
 import { useState } from "react";
 
 import { Contact } from "../../../../../types/contact";
 
+export type CallBarMode = "idle" | "active";
+
 interface CallBarProps {
+  /** Display mode: idle (ready to call) or active (dialing/in-call) */
+  mode: CallBarMode;
+  /** Primary label: phone number or "Name – phone" */
+  displayLabel: string;
+  /** Contact session (for active mode, optional) */
   session?: Contact;
+  /** Raw phone (for active mode, when no session) */
   phone?: string;
-  callStartTime: Date | null;
-  elapsedTime: string;
-  hasAnsweredSession: boolean;
+  /** Start call - shown when idle and callable */
+  onStartCall?: () => void;
+  /** End/hang up call - shown when active */
   onEndCall: () => void;
-  handleNumpadClick: (char: string) => void;
+  /** Call start time (active mode) */
+  callStartTime?: Date | null;
+  /** Elapsed time string (active mode) */
+  elapsedTime?: string;
+  /** Whether call was answered (active mode) */
+  hasAnsweredSession?: boolean;
+  /** Numpad digit handler (active mode) */
+  handleNumpadClick?: (char: string) => void;
+  /** Whether start call is disabled (e.g. socket not ready) */
+  isStartCallDisabled?: boolean;
 }
 
 export const CallBar = ({
+  mode,
+  displayLabel,
   session,
   phone,
-  callStartTime,
-  elapsedTime,
-  hasAnsweredSession,
+  onStartCall,
   onEndCall,
-  handleNumpadClick,
+  callStartTime = null,
+  elapsedTime = "00:00",
+  hasAnsweredSession = false,
+  handleNumpadClick = () => {},
+  isStartCallDisabled = false,
 }: CallBarProps) => {
   const [showNumpad, setShowNumpad] = useState(false);
+
+  const isActive = mode === "active";
 
   return (
     <>
@@ -68,23 +92,18 @@ export const CallBar = ({
               <IconButton sx={{ color: "#fff" }}>
                 <ArrowBack />
               </IconButton>
-              {phone && (
-                <Typography fontWeight={600} sx={{ ml: 2, fontSize: "16px" }}>
-                  {phone || "no number"}
-                </Typography>
-              )}
-              {session && (
-                <Typography fontWeight={600} sx={{ ml: 2, fontSize: "16px" }}>
-                  {session.phone || "no number"}
-                </Typography>
-              )}
-              <Typography variant="body2" sx={{ ml: 2, fontSize: "14px" }}>
-                Call started at{" "}
-                {callStartTime?.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+              <Typography fontWeight={600} sx={{ ml: 2, fontSize: "16px" }}>
+                {displayLabel || "No number"}
               </Typography>
+              {isActive && callStartTime && (
+                <Typography variant="body2" sx={{ ml: 2, fontSize: "14px" }}>
+                  Call started at{" "}
+                  {callStartTime.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </Typography>
+              )}
             </Grid>
 
             <Grid
@@ -97,34 +116,62 @@ export const CallBar = ({
               gap={1.5}
               flexWrap="wrap"
             >
-              {hasAnsweredSession && (
-                <Box
-                  sx={{
-                    bgcolor: "rgba(255,255,255,.15)",
-                    px: 1.5,
-                    py: 0.5,
-                    borderRadius: 4,
-                    fontWeight: 600,
-                  }}
-                >
-                  {elapsedTime}
-                </Box>
+              {isActive ? (
+                <>
+                  {hasAnsweredSession && (
+                    <Box
+                      sx={{
+                        bgcolor: "rgba(255,255,255,.15)",
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: 4,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {elapsedTime}
+                    </Box>
+                  )}
+                  <IconButton
+                    sx={{ color: "#fff" }}
+                    onClick={() => setShowNumpad(true)}
+                  >
+                    <Dialpad />
+                  </IconButton>
+                  <IconButton sx={{ color: "#fff" }}>
+                    <VolumeOff />
+                  </IconButton>
+                  <IconButton sx={{ color: "#fff" }}>
+                    <Pause />
+                  </IconButton>
+                  <IconButton sx={{ color: "#fff" }} onClick={onEndCall}>
+                    <CallEnd color="error" />
+                  </IconButton>
+                </>
+              ) : (
+                <>
+                  {onStartCall && (
+                    <Button
+                      variant="contained"
+                      color="success"
+                      startIcon={<Phone />}
+                      onClick={onStartCall}
+                      disabled={isStartCallDisabled}
+                      sx={{
+                        bgcolor: "rgba(255,255,255,0.95)",
+                        color: "primary.main",
+                        "&:hover": { bgcolor: "#fff" },
+                      }}
+                    >
+                      Call
+                    </Button>
+                  )}
+                  {!onStartCall && (
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      Ready to call
+                    </Typography>
+                  )}
+                </>
               )}
-              <IconButton
-                sx={{ color: "#fff" }}
-                onClick={() => setShowNumpad(true)}
-              >
-                <Dialpad />
-              </IconButton>
-              <IconButton sx={{ color: "#fff" }}>
-                <VolumeOff />
-              </IconButton>
-              <IconButton sx={{ color: "#fff" }}>
-                <Pause />
-              </IconButton>
-              <IconButton sx={{ color: "#fff" }} onClick={onEndCall}>
-                <CallEnd color="error" />
-              </IconButton>
             </Grid>
           </Grid>
         </Box>
@@ -133,7 +180,6 @@ export const CallBar = ({
       <Dialog open={showNumpad} onClose={() => setShowNumpad(false)}>
         <DialogTitle>Numpad</DialogTitle>
         <DialogContent>
-          {/* Replace this placeholder with your actual Numpad component */}
           <Box
             display="grid"
             gridTemplateColumns="repeat(3, 1fr)"
@@ -144,7 +190,9 @@ export const CallBar = ({
               <Button
                 key={char}
                 variant="outlined"
-                onClick={() => handleNumpadClick(char)}
+                onClick={() => {
+                  handleNumpadClick(char);
+                }}
               >
                 {char}
               </Button>

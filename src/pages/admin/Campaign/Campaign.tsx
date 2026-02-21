@@ -22,6 +22,7 @@ import { useRingingTone } from "./useRingingTone";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import MinimalCallPanel from "./components/MinimalCallPanel";
+import { CallBar } from "./components/molecules/CallBar";
 
 interface LocationState {
   contacts: any[];
@@ -61,6 +62,8 @@ const Campaign = () => {
 
   const [manualSession, setManualSession] = useState<CallSession | null>(null);
   const [callStarted, setCallStarted] = useState(false);
+  const [callStartTime, setCallStartTime] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState("00:00");
   const [error, setError] = useState<string | null>(null);
   const [isStartingNextCall, setIsStartingNextCall] = useState(false);
   const hasAutoStartedRef = useRef(false);
@@ -117,6 +120,34 @@ const Campaign = () => {
 
   useRingingTone({ ringingSessions, answeredSession });
 
+  // Call timer for CallBar (active state)
+  useEffect(() => {
+    if (callStarted) {
+      setCallStartTime(new Date());
+    }
+  }, [callStarted]);
+
+  useEffect(() => {
+    let int: NodeJS.Timeout;
+    if (answeredSession && callStartTime) {
+      int = setInterval(() => {
+        const diff = Math.floor((Date.now() - callStartTime.getTime()) / 1000);
+        const mm = String(Math.floor(diff / 60)).padStart(2, "0");
+        const ss = String(diff % 60).padStart(2, "0");
+        setElapsedTime(`${mm}:${ss}`);
+      }, 1000);
+    } else {
+      setElapsedTime("00:00");
+    }
+    return () => clearInterval(int!);
+  }, [callStartTime, answeredSession]);
+
+  useEffect(() => {
+    if (answeredSession) {
+      setCallStartTime((prev) => prev || new Date());
+    }
+  }, [answeredSession]);
+
   // MODE DETECTION - Determine if this is one-off call vs batch/power dialer
   // One-off: phone present, no manualSession, no contacts array, no mode
   // Batch: contacts array present OR isCampaignRunning with mode
@@ -144,12 +175,6 @@ const Campaign = () => {
     return "IDLE" as const;
   }, [isStartingNextCall, isBatchDial, answeredSession, callStarted, ringingSessions.length]);
 
-
-  // STABLE CALL BAR VISIBILITY - Prevents flicker
-  // CallBar stays visible during transitions and active calls
-  const shouldShowCallBar = useMemo(() => {
-    return dialerState === "DIALING" || dialerState === "IN_CALL" || dialerState === "TRANSITIONING";
-  }, [dialerState]);
 
   // Reset "seen activity" only when a NEW call starts (transition false→true)
   const prevCallStartedRef = useRef(false);
@@ -228,6 +253,26 @@ const Campaign = () => {
   }[resolvedMode];
 
   const singleSession = getSingleDialingSessionWithStatus(currentBatch);
+
+  // Persistent CallBar: always visible, compute display and actions from context
+  const callBarMode = dialerState === "IDLE" ? "idle" : "active";
+
+  const callBarDisplayLabel = useMemo(() => {
+    if (phone && !manualSession) return phone;
+    if (manualSession)
+      return `${manualSession.first_name || ""} ${manualSession.last_name || ""} – ${manualSession.phone || "no number"}`.trim();
+    if (singleSession)
+      return `${singleSession.first_name || ""} ${singleSession.last_name || ""} – ${singleSession.phone || "no number"}`.trim();
+    if (currentBatch.length > 0) {
+      const c = currentBatch[0];
+      return `${c.first_name || ""} ${c.last_name || ""} – ${c.phone || "no number"}`.trim();
+    }
+    if (contacts && contacts.length > 0) {
+      const name = `${contacts[0].first_name || ""} ${contacts[0].last_name || ""}`.trim();
+      return name ? `Campaign – ${name} (${contacts.length})` : `Campaign (${contacts.length} contacts)`;
+    }
+    return "No active call";
+  }, [phone, manualSession, singleSession, currentBatch, contacts]);
 
   const makeCallNotKnown = async (phone: string) => {
     if (guardNoSocket()) return;
@@ -320,6 +365,14 @@ const Campaign = () => {
     makeCallBatch();
   };
 
+  const callBarOnStartCall = useMemo(() => {
+    if (dialerState !== "IDLE") return undefined;
+    if (phone && !manualSession) return () => makeCallNotKnown(phone);
+    if (manualSession) return handleStartCampaign;
+    if (contacts && !isCampaignRunning) return handleStartCampaign;
+    return undefined;
+  }, [dialerState, phone, manualSession, contacts, isCampaignRunning]);
+
   const handleContinue = () => {
     setShowContinueDialog(false);
     // Only set transition state for batch dialer, not one-off calls
@@ -369,6 +422,8 @@ const Campaign = () => {
     setCallStarted(false);
   };
 
+  const callBarOnEndCall = phone && !manualSession ? hangUpNotKnown : hangUp;
+
   // TO DO -- in the campaign mode answeredSession is passed to two props
   // fix that redundancy in the whole component
 
@@ -380,6 +435,20 @@ const Campaign = () => {
           it’s ready.
         </Alert>
       )}
+      {/* Persistent CallBar: always visible, can start call (idle) or hang up (active) */}
+      <CallBar
+        mode={callBarMode}
+        displayLabel={callBarDisplayLabel}
+        session={(singleSession || manualSession) as Contact | undefined}
+        phone={phone}
+        onStartCall={callBarOnStartCall}
+        onEndCall={callBarOnEndCall}
+        callStartTime={callBarMode === "active" ? callStartTime : null}
+        elapsedTime={elapsedTime}
+        hasAnsweredSession={!!answeredSession}
+        handleNumpadClick={handleNumpadClick}
+        isStartCallDisabled={!isSocketReady}
+      />
       <Stack spacing={3}>
       {!contactId && !phone && (
           <Stack direction="row" spacing={1} justifyContent="center">
@@ -407,16 +476,7 @@ const Campaign = () => {
           </Alert>
         )}
 
-        {phone && !manualSession && (
-          <MinimalCallPanel
-            answeredSession={answeredSession as boolean}
-            phone={phone}
-            onStartCall={makeCallNotKnown}
-            onEndCall={hangUpNotKnown}
-            callStarted={callStarted}
-            handleNumpadClick={handleNumpadClick}
-          />
-        )}
+        {phone && !manualSession && <MinimalCallPanel phone={phone} />}
 
         {!autoStart && manualSession && (
           <SingleCallCampaignPanel
