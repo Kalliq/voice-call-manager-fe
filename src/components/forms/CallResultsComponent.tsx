@@ -7,7 +7,13 @@ import {
   Typography,
   Stack,
 } from "@mui/material";
-import { Delete, Add } from "@mui/icons-material";
+import { Delete, Add, DragIndicator } from "@mui/icons-material";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
 
 import { SimpleButton, CustomTextField } from "../UI";
 import useAppStore from "../../store/useAppStore";
@@ -86,6 +92,19 @@ export default function CallResultsManager() {
     );
   };
 
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const from = result.source.index;
+    const to = result.destination.index;
+    if (from === to) return;
+    setCallResults((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(from, 1);
+      updated.splice(to, 0, moved);
+      return updated;
+    });
+  };
+
   const onSubmit = async () => {
     if (saveState === "loading") return; // block double-clicks
     try {
@@ -130,44 +149,79 @@ export default function CallResultsManager() {
         width="70%"
         gap={1}
       >
-        {callResults.map((item) => (
-          <Stack
-            key={item.id}
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            mb={1}
-          >
-            <Checkbox
-              checked={item.checked}
-              onChange={() => toggleCheckbox(item.id)}
-              color="info"
-              disabled={isReadOnly || saveState === "loading"}
-            />
-            <TextField
-              size="small"
-              variant="outlined"
-              value={item.label}
-              onChange={(e) => handleEdit(item.id, e.target.value)}
-              sx={{ flexGrow: 1 }}
-              disabled={isReadOnly || saveState === "loading"}
-            />
-            <Typography variant="body2">Consider connection</Typography>
-            <Checkbox
-              checked={item.considerPositive || false}
-              onChange={() => togglePositive(item.id)}
-              color="success"
-              disabled={isReadOnly || saveState === "loading"}
-            />
-            <IconButton
-              color="error"
-              onClick={() => handleDelete(item.id)}
-              disabled={isReadOnly || saveState === "loading"}
-            >
-              <Delete />
-            </IconButton>
-          </Stack>
-        ))}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="call-results">
+            {(provided) => (
+              <Box ref={provided.innerRef} {...provided.droppableProps}>
+                {callResults.map((item, index) => (
+                  <Draggable
+                    key={item.id}
+                    draggableId={item.id}
+                    index={index}
+                    isDragDisabled={isReadOnly || saveState === "loading"}
+                  >
+                    {(provided, snapshot) => (
+                      <Stack
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        mb={1}
+                        sx={{
+                          bgcolor: snapshot.isDragging
+                            ? "action.hover"
+                            : "transparent",
+                          borderRadius: 1,
+                        }}
+                      >
+                        <IconButton
+                          {...provided.dragHandleProps}
+                          size="small"
+                          sx={{ cursor: "grab" }}
+                          disabled={isReadOnly || saveState === "loading"}
+                        >
+                          <DragIndicator fontSize="small" />
+                        </IconButton>
+                        <Checkbox
+                          checked={item.checked}
+                          onChange={() => toggleCheckbox(item.id)}
+                          color="info"
+                          disabled={isReadOnly || saveState === "loading"}
+                        />
+                        <TextField
+                          size="small"
+                          variant="outlined"
+                          value={item.label}
+                          onChange={(e) => handleEdit(item.id, e.target.value)}
+                          sx={{ flexGrow: 1 }}
+                          disabled={isReadOnly || saveState === "loading"}
+                        />
+                        <Typography variant="body2">
+                          Consider connection
+                        </Typography>
+                        <Checkbox
+                          checked={item.considerPositive || false}
+                          onChange={() => togglePositive(item.id)}
+                          color="success"
+                          disabled={isReadOnly || saveState === "loading"}
+                        />
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDelete(item.id)}
+                          disabled={isReadOnly || saveState === "loading"}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Stack>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </Box>
+            )}
+          </Droppable>
+        </DragDropContext>
 
         <Stack direction="row" spacing={1} mt={3}>
           <CustomTextField
