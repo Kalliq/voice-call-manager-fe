@@ -12,6 +12,11 @@ import {
   DialogContent,
   DialogActions,
   Link,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Link,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +30,7 @@ import { useSnackbar } from "../../../../hooks/useSnackbar";
 import { Contact, emptyPhoneField } from "../../../../types/contact";
 import { Account } from "../../../../types/account";
 import SelectField from "../../../../components/UI/SelectField";
+import useAppStore from "../../../../store/useAppStore";
 import useAppStore from "../../../../store/useAppStore";
 
 type FormData = z.infer<typeof validationSchema>;
@@ -48,11 +54,13 @@ export default function ContactDrawer({
 }: ContactDrawerProps) {
   const { enqueue } = useSnackbar();
   const { user } = useAppStore();
+  const { user } = useAppStore();
   const {
     control,
     handleSubmit,
     reset,
     watch,
+    setValue,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
@@ -63,8 +71,6 @@ export default function ContactDrawer({
       accountId: "",
       email: "",
       phone: "",
-      mobile: "",
-      other: "",
       linkedIn: "",
       state: "",
       city: "",
@@ -75,6 +81,11 @@ export default function ContactDrawer({
     undefined,
   );
   const [listIdError, setListIdError] = useState<string>("");
+  const [createAccountOpen, setCreateAccountOpen] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState("");
+  const [newWebsite, setNewWebsite] = useState("");
+  const [savingAccount, setSavingAccount] = useState(false);
+  const [websiteError, setWebsiteError] = useState("");
   const [createAccountOpen, setCreateAccountOpen] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [newWebsite, setNewWebsite] = useState("");
@@ -141,14 +152,52 @@ export default function ContactDrawer({
     }
   };
 
+  const validateWebsite = (url: string) => {
+    if (!url.trim()) return "";
+    try {
+      new URL(url);
+      return "";
+    } catch {
+      return "Must be a valid URL";
+    }
+  };
+
+  const handleCreateAccount = async () => {
+    const error = validateWebsite(newWebsite);
+    if (error) {
+      setWebsiteError(error);
+      return;
+    }
+    try {
+      setSavingAccount(true);
+      const payload = {
+        companyName: newCompanyName,
+        website: newWebsite,
+        tenantId: user?.tenantId,
+      };
+      const res = await api.post("/accounts/tenant/create", payload);
+      await loadAccounts();
+      setValue("accountId", res.data.id);
+      setCreateAccountOpen(false);
+      setNewCompanyName("");
+      setNewWebsite("");
+      setWebsiteError("");
+      enqueue("Account created", { variant: "success" });
+    } catch (e: any) {
+      const msg =
+        e.response?.data?.message || e.message || "Failed to create account";
+      enqueue(msg, { variant: "error" });
+    } finally {
+      setSavingAccount(false);
+    }
+  };
+
   const defaults = {
     first_name: "",
     last_name: "",
     accountId: "",
     email: "",
     phone: "",
-    mobile: "",
-    other: "",
     linkedIn: "",
     state: "",
     city: "",
@@ -159,17 +208,14 @@ export default function ContactDrawer({
       const { account } = contact;
       reset({
         ...defaults,
-        first_name: (contact.first_name as string) ?? "",
-        last_name: (contact.last_name as string) ?? "",
-        email: (contact.email as string) ?? "",
+        first_name: contact.first_name ?? "",
+        last_name: contact.last_name ?? "",
+        email: contact.email ?? "",
         accountId: account?.id ?? "",
         phone: contact.phone?.number ?? "",
-        mobile: contact.mobile?.number ?? "",
-        other: contact.other?.number ?? "",
-        linkedIn: (contact.linkedIn as string) ?? "",
-        state: (contact.state as string) ?? "",
-        subject: (contact.subject as string) ?? "",
-        city: (contact.city as string) ?? "",
+        linkedIn: contact.linkedIn ?? "",
+        state: contact.state ?? "",
+        city: contact.city ?? "",
       });
     } else {
       reset({
@@ -183,12 +229,14 @@ export default function ContactDrawer({
 
   const onSubmit = async (formData: FormData) => {
     try {
-      const { phone, mobile, other, ...rest } = formData;
+      const { phone, ...rest } = formData;
 
       const phoneFields = {
-        phone: { ...emptyPhoneField(), ...(contact?.phone ?? {}), number: phone },
-        mobile: { ...emptyPhoneField(), ...(contact?.mobile ?? {}), number: mobile || "" },
-        other: { ...emptyPhoneField(), ...(contact?.other ?? {}), number: other || "" },
+        phone: {
+          ...emptyPhoneField(),
+          ...(contact?.phone ?? {}),
+          number: phone,
+        },
       };
 
       if (contact) {
@@ -202,8 +250,6 @@ export default function ContactDrawer({
           Object.entries(rest).filter(([, v]) => v !== undefined && v !== ""),
         );
         contactData.phone = phoneFields.phone;
-        contactData.mobile = phoneFields.mobile;
-        contactData.other = phoneFields.other;
 
         if (selectedListId && selectedListId.trim() !== "") {
           contactData.listId = selectedListId.trim();
@@ -281,12 +327,12 @@ export default function ContactDrawer({
                       />
                     )}
                   />
-                  {!field.value && (
+                  {!field.value && accounts.length === 0 && (
                     <Typography
                       variant="caption"
                       sx={{ mt: 0.5, display: "block" }}
                     >
-                      Account not found?.{" "}
+                      No account selected.{" "}
                       <Link
                         component="button"
                         type="button"
@@ -323,28 +369,6 @@ export default function ContactDrawer({
                   label="Phone"
                   error={!!errors.phone}
                   helperText={errors.phone?.message}
-                  fullWidth
-                />
-              )}
-            />
-            <Controller
-              name="mobile"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Mobile"
-                  fullWidth
-                />
-              )}
-            />
-            <Controller
-              name="other"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Other Phone"
                   fullWidth
                 />
               )}
@@ -434,6 +458,46 @@ export default function ContactDrawer({
           </Stack>
         </form>
       </Box>
+
+      <Dialog
+        open={createAccountOpen}
+        onClose={() => setCreateAccountOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Create Account</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Company Name"
+              value={newCompanyName}
+              onChange={(e) => setNewCompanyName(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Website"
+              value={newWebsite}
+              onChange={(e) => {
+                setNewWebsite(e.target.value);
+                setWebsiteError("");
+              }}
+              error={!!websiteError}
+              helperText={websiteError}
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateAccountOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleCreateAccount}
+            disabled={savingAccount || !newCompanyName.trim()}
+          >
+            {savingAccount ? "Saving..." : "Save"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={createAccountOpen}
