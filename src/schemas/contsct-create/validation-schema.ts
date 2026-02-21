@@ -6,11 +6,8 @@ export const schema = z.object({
   accountId: z.string().optional(),
   email: z.string().email("Must be a valid email"),
   phone: z.string().min(10),
-  mobile: z.string().optional(),
-  other: z.string().optional(),
   tags: z.string().optional(),
   linkedIn: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   state: z.string().optional(),
-  subject: z.string().optional(),
   city: z.string().optional(),
 });
