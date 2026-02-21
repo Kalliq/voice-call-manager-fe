@@ -14,15 +14,27 @@ const Settings: React.FC = () => {
   const navigate = useNavigate();
 
   // Get original key for data lookup
-  const originalParentKey = selected ? (keyMap?.[selected.parent] || selected.parent) : null;
+  const originalParentKey = selected
+    ? keyMap?.[selected.parent] || selected.parent
+    : null;
 
   useEffect(() => {
-    if (!settings || !selected || !originalParentKey || !settings[originalParentKey]) {
+    if (
+      !settings ||
+      !selected ||
+      !originalParentKey ||
+      !settings[originalParentKey]
+    ) {
       navigate("/dashboard", { replace: true, state: { from: "settings" } });
     }
   }, [settings, selected, navigate, originalParentKey]);
 
-  if (!settings || !selected || !originalParentKey || !settings[originalParentKey]) {
+  if (
+    !settings ||
+    !selected ||
+    !originalParentKey ||
+    !settings[originalParentKey]
+  ) {
     return null;
   }
 
