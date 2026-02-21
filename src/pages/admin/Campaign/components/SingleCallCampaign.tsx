@@ -41,7 +41,7 @@ import EditDealModal from "./EditDealModal";
 import { DeleteDialog } from "../../../../components/DeleteDialog";
 
 import api from "../../../../utils/axiosInstance";
-import { CallSession, Contact } from "../../../../types/contact";
+import { CallSession, Contact, getContactDialNumber } from "../../../../types/contact";
 import { useSnackbar } from "../../../../hooks/useSnackbar";
 import { List } from "voice-javascript-common";
 
@@ -80,11 +80,13 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
   const [editingPhone, setEditingPhone] = useState(false);
   const [newPhone, setNewPhone] = useState("");
   const [talkingPoints, setTalkingPoints] = useState<string[]>(
-    Array.isArray(session.talkingPoints) ? session.talkingPoints : []
+    Array.isArray(session.talkingPoints) ? session.talkingPoints : [],
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTalkingPoint, setNewTalkingPoint] = useState("");
-  const [addToListAnchor, setAddToListAnchor] = useState<HTMLElement | null>(null);
+  const [addToListAnchor, setAddToListAnchor] = useState<HTMLElement | null>(
+    null,
+  );
   const [isSendEmailModalOpen, setIsSendEmailModalOpen] = useState(false);
   const [lists, setLists] = useState<{ id: string; listName: string }[]>([]);
   const [listSearch, setListSearch] = useState("");
@@ -109,7 +111,9 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
       const fetchLists = async () => {
         try {
           const { data } = await api.get<List[]>("/lists");
-          setLists(data.map((list) => ({ id: list.id, listName: list.listName })));
+          setLists(
+            data.map((list) => ({ id: list.id, listName: list.listName })),
+          );
         } catch (error) {
           console.error("Failed to fetch lists:", error);
         }
@@ -137,7 +141,9 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
       const sourceListId = contact.listId;
 
       if (!sourceListId) {
-        enqueue("Contact is not in any list. Cannot move.", { variant: "error" });
+        enqueue("Contact is not in any list. Cannot move.", {
+          variant: "error",
+        });
         return;
       }
 
@@ -169,11 +175,16 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
 
   const onPhoneSubmitHandler = async () => {
     try {
+      const updatedPhone = {
+        number: newPhone,
+        isBad: session.phone?.isBad ?? false,
+        isFavourite: session.phone?.isFavourite ?? false,
+      };
       await api.patch(`/contacts/basic/${session.id}`, {
-        phone: newPhone,
+        phone: updatedPhone,
       });
 
-      session.phone = newPhone;
+      session.phone = updatedPhone;
       setEditingPhone(false);
       setNewPhone("");
     } catch (err) {
@@ -194,12 +205,22 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
     }
   };
 
+  const isPhoneField = (
+    key: string,
+  ): key is "phone" | "mobile" | "other" =>
+    key === "phone" || key === "mobile" || key === "other";
+
   const handleFieldUpdate = async (field: string, value: string) => {
     try {
+      let patchValue: string | { number: string; isBad: boolean; isFavourite: boolean } = value;
+      if (isPhoneField(field)) {
+        const current = session[field];
+        patchValue = { number: value, isBad: current?.isBad ?? false, isFavourite: current?.isFavourite ?? false };
+      }
       await api.patch(`/contacts/basic/${session.id}`, {
-        [field]: value,
+        [field]: patchValue,
       });
-      (session as any)[field] = value;
+      (session as Record<string, unknown>)[field] = patchValue;
       setUpdateKey((prev) => prev + 1);
     } catch (err) {
       console.error(`Failed to update ${field}:`, err);
@@ -311,15 +332,15 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                     flexWrap="wrap"
                   >
                     <Phone fontSize="small" />
-                    {!editingPhone && session.phone ? (
+                    {!editingPhone && session.phone?.number ? (
                       <>
                         <Typography fontSize="12px" color="text.secondary">
-                          {session.phone}
+                          {getContactDialNumber(session)}
                         </Typography>
                         <Button
                           size="small"
                           onClick={() => {
-                            setNewPhone(session.phone || "");
+                            setNewPhone(session.phone?.number || "");
                             setEditingPhone(true);
                           }}
                           sx={{ minWidth: "auto", fontSize: "11px", px: 1 }}
@@ -331,7 +352,11 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                       <>
                         {editingPhone ? (
                           <>
-                            <Stack direction="row" spacing={1} alignItems="center">
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              alignItems="center"
+                            >
                               <TextField
                                 type="tel"
                                 value={newPhone}
@@ -380,7 +405,7 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                               color="primary"
                               sx={{ cursor: "pointer", ml: 0.5 }}
                               onClick={() => {
-                                setNewPhone(session.phone || "");
+                                setNewPhone(session.phone?.number || "");
                                 setEditingPhone(true);
                               }}
                             >
@@ -406,7 +431,11 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
             {activeTab === 0 && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
-                  <ContactOverview key={updateKey} contact={session} onUpdate={handleFieldUpdate} />
+                  <ContactOverview
+                    key={updateKey}
+                    contact={session}
+                    onUpdate={handleFieldUpdate}
+                  />
                 </Grid>
               </Grid>
             )}
@@ -442,13 +471,23 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                   <Stack spacing={2}>
                     {deals.map((deal) => (
                       <Paper key={deal.id} variant="outlined" sx={{ p: 2 }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                          }}
+                        >
                           <Box sx={{ flex: 1 }}>
                             <Typography variant="h6">
                               {deal.dealname || deal.name}
                             </Typography>
                             {deal.description && (
-                              <Typography variant="body2" color="text.secondary" mt={1}>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                mt={1}
+                              >
                                 {deal.description}
                               </Typography>
                             )}
@@ -457,7 +496,12 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                                 Amount: ${deal.amount.toLocaleString()}
                               </Typography>
                             )}
-                            <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              mt={1}
+                              flexWrap="wrap"
+                            >
                               {deal.pipeline && (
                                 <Chip label={deal.pipeline} size="small" />
                               )}
@@ -465,7 +509,11 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
                                 <Chip label={deal.dealstage} size="small" />
                               )}
                               {deal.hs_is_closed && (
-                                <Chip label="Closed" size="small" color="success" />
+                                <Chip
+                                  label="Closed"
+                                  size="small"
+                                  color="success"
+                                />
                               )}
                             </Stack>
                           </Box>

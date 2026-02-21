@@ -334,7 +334,7 @@ const Campaign = () => {
       const extendedBatchContactsWithSid = batchContacts.map(
         (batchContact: Contact) => {
           const call = activeCalls.data.find((activeCall: any) => {
-            return batchContact.phone === activeCall.phoneNumber;
+            return batchContact.phone?.number === activeCall.phoneNumber;
           });
 
           return { ...batchContact, callSid: call.callSid };

@@ -167,7 +167,11 @@ export default function AccountDialog({
                 }}
                 required
                 error={error !== null && !formData.website}
-                helperText={error !== null && !formData.website ? "Website is required" : ""}
+                helperText={
+                  error !== null && !formData.website
+                    ? "Website is required"
+                    : ""
+                }
               />
             </Grid>
             {account && (
