@@ -65,6 +65,7 @@ const Campaign = () => {
   const [isStartingNextCall, setIsStartingNextCall] = useState(false);
   const hasAutoStartedRef = useRef(false);
   const preDialAudioRef = useRef<HTMLAudioElement | null>(null);
+  const hasSeenCallActivityRef = useRef(false);
 
   useEffect(() => {
     if (contactId && !contacts && !mode) {
@@ -150,24 +151,41 @@ const Campaign = () => {
     return dialerState === "DIALING" || dialerState === "IN_CALL" || dialerState === "TRANSITIONING";
   }, [dialerState]);
 
-  // Guaranteed cleanup: reset callStarted when call ends (remote hangup, terminal status, etc.)
-  // FIX: For one-off calls, ringingSessions is always empty, so don't use it as a condition
-  // One-off cleanup relies on socket terminal status events, not ringingSessions check
+  // Reset "seen activity" only when a NEW call starts (transition false→true)
+  const prevCallStartedRef = useRef(false);
   useEffect(() => {
-    // Skip cleanup for one-off calls during initial start phase
-    // One-off calls never populate ringingSessions, so this check would always be true
+    if (callStarted && !prevCallStartedRef.current) {
+      hasSeenCallActivityRef.current = false;
+    }
+    prevCallStartedRef.current = callStarted;
+  }, [callStarted]);
+
+  // Track when we've seen call activity (ringing or answered) - prevents premature cleanup
+  useEffect(() => {
+    if (ringingSessions.length > 0 || answeredSession !== null) {
+      hasSeenCallActivityRef.current = true;
+    }
+  }, [ringingSessions.length, answeredSession]);
+
+  // Guaranteed cleanup: reset callStarted when call ends (remote hangup, terminal status, etc.)
+  // FIX: Only cleanup AFTER we've seen call activity - prevents resetting during initial dialing
+  // delay before "ringing" arrives (which hides CallBar for single calls)
+  useEffect(() => {
+    // Skip cleanup for one-off calls - they never populate ringingSessions
     if (isOneOff) {
       return;
     }
 
-    // For batch/power dialer: If callStarted is true but there's no active call (answeredSession is null)
-    // and no ringing calls, then the call has ended → reset to idle
+    // Only reset when we've seen activity and it's now cleared (call truly ended)
+    // Without hasSeenCallActivityRef, we'd reset during the delay before "ringing" arrives
     if (
       callStarted &&
       answeredSession === null &&
-      ringingSessions.length === 0
+      ringingSessions.length === 0 &&
+      hasSeenCallActivityRef.current
     ) {
       setCallStarted(false);
+      hasSeenCallActivityRef.current = false;
     }
   }, [callStarted, answeredSession, ringingSessions, isOneOff]);
 
