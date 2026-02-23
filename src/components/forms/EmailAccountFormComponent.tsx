@@ -19,43 +19,38 @@ import {
   Stack,
 } from "@mui/material";
 import { CheckCircle, Cancel } from "@mui/icons-material";
-import api from "../../utils/axiosInstance";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import cfg from "../../config";
-
-interface GmailStatus {
-  connected: boolean;
-  emailAddress?: string;
-}
+import { useGetGmailStatus } from "../../queries/email";
+import { useDisconnectGmail } from "../../mutations/email";
+import { GET_GMAIL_STATUS_KEY } from "../../queries/constants";
 
 const EmailAccountFormComponent = () => {
-  const [gmailStatus, setGmailStatus] = useState<GmailStatus | null>(null);
-  const [loadingStatus, setLoadingStatus] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
   const [emailProvider, setEmailProvider] = useState("gmail");
 
   const { enqueue } = useSnackbar();
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data: gmailStatus, isLoading: loadingStatus } = useGetGmailStatus();
+  const { mutateAsync: disconnectGmailMutation, isPending: disconnecting } = useDisconnectGmail();
 
   // Track if we've already shown OAuth success message
   const oauthSuccessShownRef = useRef(false);
-
-  // Fetch Gmail status on mount
-  useEffect(() => {
-    fetchGmailStatus();
-  }, []);
+  const prevConnectedRef = useRef<boolean | undefined>(undefined);
 
   // Refetch status when window regains focus (handles OAuth return)
   useEffect(() => {
     const handleFocus = () => {
-      fetchGmailStatus();
+      queryClient.invalidateQueries({ queryKey: GET_GMAIL_STATUS_KEY });
     };
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, []);
+  }, [queryClient]);
 
   // Handle OAuth return URL parameters
   useEffect(() => {
@@ -65,7 +60,7 @@ const EmailAccountFormComponent = () => {
 
     if (gmailSuccess === "true") {
       // Refetch status to get updated connection state
-      fetchGmailStatus();
+      queryClient.invalidateQueries({ queryKey: GET_GMAIL_STATUS_KEY });
       // Clean URL
       navigate(location.pathname, { replace: true });
     } else if (gmailError) {
@@ -85,49 +80,36 @@ const EmailAccountFormComponent = () => {
       }
       enqueue(errorMessage, { variant: "error" });
       // Refetch status to ensure UI reflects backend state
-      fetchGmailStatus();
+      queryClient.invalidateQueries({ queryKey: GET_GMAIL_STATUS_KEY });
       // Clean URL
       navigate(location.pathname, { replace: true });
     }
-  }, [location.search, navigate, location.pathname, enqueue]);
+  }, [location.search, navigate, location.pathname, enqueue, queryClient]);
 
-  const fetchGmailStatus = async () => {
-    setLoadingStatus(true);
-    try {
-      const response = await api.get<GmailStatus>("/email/gmail/status");
-      const wasConnected = gmailStatus?.connected;
-      const isNowConnected = response.data.connected;
+  // Show success message if Gmail was just connected (OAuth return)
+  useEffect(() => {
+    if (!gmailStatus) return;
 
-      setGmailStatus(response.data);
+    const wasConnected = prevConnectedRef.current;
+    const isNowConnected = gmailStatus.connected;
 
-      // Show success message if Gmail was just connected (OAuth return)
-      // Only show if not already shown and not triggered by URL param (URL param handler shows its own message)
-      if (
-        !wasConnected &&
-        isNowConnected &&
-        !oauthSuccessShownRef.current &&
-        !new URLSearchParams(location.search).get("gmail_success")
-      ) {
-        enqueue("Gmail connected successfully", { variant: "success" });
-        oauthSuccessShownRef.current = true;
-      }
-
-      // Reset success message ref if disconnected (allows showing message again on reconnect)
-      if (!isNowConnected) {
-        oauthSuccessShownRef.current = false;
-      }
-    } catch (error: any) {
-      console.error("Failed to fetch Gmail status:", error);
-      setGmailStatus({ connected: false });
-
-      // Show error if it's not a 409 (which is expected when not connected)
-      if (error.response?.status !== 409) {
-        enqueue("Failed to check Gmail connection status", { variant: "error" });
-      }
-    } finally {
-      setLoadingStatus(false);
+    if (
+      wasConnected === false &&
+      isNowConnected &&
+      !oauthSuccessShownRef.current &&
+      !new URLSearchParams(location.search).get("gmail_success")
+    ) {
+      enqueue("Gmail connected successfully", { variant: "success" });
+      oauthSuccessShownRef.current = true;
     }
-  };
+
+    // Reset success message ref if disconnected
+    if (!isNowConnected) {
+      oauthSuccessShownRef.current = false;
+    }
+
+    prevConnectedRef.current = isNowConnected;
+  }, [gmailStatus, enqueue, location.search]);
 
   const handleConnectGmail = () => {
     // Use full-page redirect (not popup) to avoid popup blockers
@@ -143,22 +125,16 @@ const EmailAccountFormComponent = () => {
   };
 
   const handleDisconnectGmail = async () => {
-    setDisconnecting(true);
     try {
-      await api.delete("/email/gmail/disconnect");
+      await disconnectGmailMutation();
       enqueue("Gmail disconnected successfully", { variant: "success" });
       setDisconnectDialogOpen(false);
-
-      // Refresh status to reflect disconnected state
-      await fetchGmailStatus();
     } catch (error: any) {
       console.error("Failed to disconnect Gmail:", error);
       enqueue(
         error.response?.data?.message || "Failed to disconnect Gmail",
         { variant: "error" }
       );
-    } finally {
-      setDisconnecting(false);
     }
   };
 

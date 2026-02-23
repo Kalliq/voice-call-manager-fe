@@ -4,8 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import FormRenderer from "../FormRenderer";
 import { recordingsManagementSchema } from "../../schemas/phone-settings/call-recordings/schema";
 import { recordingsManagementValidationSchema } from "../../schemas/phone-settings/call-recordings/validation-schema";
-import api from "../../utils/axiosInstance";
-import useAppStore from "../../store/useAppStore";
+import { useGetSettings } from "../../queries/settings";
+import { useUpdateSettings } from "../../mutations/settings";
 
 const CallManagementFormComponent = (data: any) => {
   const {
@@ -16,9 +16,8 @@ const CallManagementFormComponent = (data: any) => {
     excludePhonesStartingWith,
     includeOnlyPhonesStartingWith,
   } = data;
-  const user = useAppStore((state) => state.user);
-  const settings = useAppStore((state) => state.settings);
-  const setSettings = useAppStore((state) => state.setSettings);
+  const { data: settings } = useGetSettings();
+  const { mutateAsync: updateSettings } = useUpdateSettings();
 
   // Convert arrays to multi-line strings for textarea display
   // Handle backward compatibility: if old string fields exist, convert them
@@ -65,7 +64,7 @@ const CallManagementFormComponent = (data: any) => {
         throw new Error("Missing settings!");
       }
       const existingPhoneSettings = { ...settings["Phone Settings"] };
-      
+
       // Validation schema already transforms strings to arrays
       // But ensure we send arrays to backend
       const submitData = {
@@ -84,13 +83,12 @@ const CallManagementFormComponent = (data: any) => {
               .filter((line: string) => line.length > 0),
       };
 
-      const { data } = await api.patch(`/settings`, {
+      await updateSettings({
         "Phone Settings": {
           ...existingPhoneSettings,
           recordingsManagement: submitData,
         },
       });
-      setSettings(data);
     } catch (err) {
       console.error(err);
     }

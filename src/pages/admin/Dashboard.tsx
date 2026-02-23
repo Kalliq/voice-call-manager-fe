@@ -18,6 +18,7 @@ import { Task } from "voice-javascript-common";
 
 import api from "../../utils/axiosInstance";
 import useAppStore from "../../store/useAppStore";
+import { useGetSettings } from "../../queries/settings";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 // import { useGoogleCalendar } from "../../contexts/GoogleCalendarContext";
@@ -57,23 +58,15 @@ const cardStyle = {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, callStats, fetchCallStats, settings, setSettings } =
+  const { user, callStats, fetchCallStats } =
     useAppStore();
+  const { data: settings } = useGetSettings();
   const [tasks, setTasks] = useState<any>([]);
   const [groupedTasks, setGroupedTasks] = useState<any>({
     "To Do": [] as Task[],
     "In Progress": [] as Task[],
     Completed: [] as Task[],
   });
-  // const { isLoading, events, signIn, signOut } = useGoogleCalendar();
-
-  useEffect(() => {
-    if (!user) return;
-    api
-      .get(`/settings`)
-      .then(({ data }) => setSettings(data))
-      .catch((err) => console.error("[dashboard] settings:", err));
-  }, [user, setSettings]);
 
   useEffect(() => {
     if (fetchCallStats) {

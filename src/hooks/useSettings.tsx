@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import useAppStore from "../store/useAppStore";
+import { useGetSettings } from "../queries/settings";
 import { translateToTitleCase } from "../utils/translateToTitle";
 
 export const useSettings = () => {
@@ -11,10 +11,9 @@ export const useSettings = () => {
     child: string;
   } | null;
 
-  const settings = useAppStore((state) => state.settings) as Record<
-    string,
-    Record<string, any>
-  > | null;
+  const { data: settings } = useGetSettings() as {
+    data: Record<string, Record<string, any>> | undefined;
+  };
 
   // Map original keys to display keys for lookup
   const keyMap = settings
@@ -64,7 +63,7 @@ export const useSettings = () => {
   return {
     selected,
     settingsKeys,
-    settings,
+    settings: settings ?? null,
     handleChildClick,
     keyMap, // Map display keys back to original keys
   };

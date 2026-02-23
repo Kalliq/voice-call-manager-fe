@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import {
   Box,
   Paper,
@@ -23,22 +22,13 @@ import {
   DialogActions,
 } from "@mui/material";
 import { Add, Search, Edit, Delete } from "@mui/icons-material";
-import api from "../../utils/axiosInstance";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import EmailTemplateEditorComponent from "./EmailTemplateEditorComponent";
-
-interface EmailTemplate {
-  id: string;
-  name: string;
-  type: "Personal" | "Organization";
-  subject?: string;
-  bodyHtml: string;
-  updatedAt: string;
-}
+import { useGetEmailTemplates } from "../../queries/email";
+import { useDeleteEmailTemplate } from "../../mutations/email";
+import type { EmailTemplate } from "../../api/email";
 
 const EmailTemplatesListComponent = () => {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
@@ -46,22 +36,8 @@ const EmailTemplatesListComponent = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { enqueue } = useSnackbar();
 
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  const fetchTemplates = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get<EmailTemplate[]>("/email/templates");
-      setTemplates(response.data);
-    } catch (error: any) {
-      console.error("Failed to fetch templates:", error);
-      enqueue("Failed to load templates", { variant: "error" });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: templates = [], isLoading: loading } = useGetEmailTemplates();
+  const { mutateAsync: deleteTemplate } = useDeleteEmailTemplate();
 
   const handleCreate = () => {
     setEditingTemplate(null);
@@ -76,11 +52,10 @@ const EmailTemplatesListComponent = () => {
   const handleDelete = async () => {
     if (!deletingId) return;
     try {
-      await api.delete(`/email/templates/${deletingId}`);
+      await deleteTemplate(deletingId);
       enqueue("Template deleted successfully", { variant: "success" });
       setDeleteDialogOpen(false);
       setDeletingId(null);
-      fetchTemplates();
     } catch (error: any) {
       console.error("Failed to delete template:", error);
       enqueue(
@@ -90,7 +65,7 @@ const EmailTemplatesListComponent = () => {
     }
   };
 
-  const filteredTemplates = templates.filter((template) =>
+  const filteredTemplates = templates.filter((template: EmailTemplate) =>
     template.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -148,7 +123,7 @@ const EmailTemplatesListComponent = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredTemplates.map((template) => (
+                {filteredTemplates.map((template: EmailTemplate) => (
                   <TableRow key={template.id}>
                     <TableCell>{template.name}</TableCell>
                     <TableCell>
@@ -202,10 +177,9 @@ const EmailTemplatesListComponent = () => {
         }}
         template={editingTemplate}
         onSave={() => {
-          console.log("[EmailTemplatesList] onSave callback fired, refetching templates");
           setEditorOpen(false);
           setEditingTemplate(null);
-          fetchTemplates(); // Refetch templates after save
+          // No manual refetch needed — TanStack Query invalidation handles it
         }}
       />
 

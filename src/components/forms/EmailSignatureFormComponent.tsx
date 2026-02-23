@@ -1,57 +1,35 @@
 import { useState, useEffect } from "react";
 import { Box, Paper, Typography, Button, CircularProgress, Stack } from "@mui/material";
 import { Save } from "@mui/icons-material";
-import api from "../../utils/axiosInstance";
 import { useSnackbar } from "../../hooks/useSnackbar";
-import useAppStore from "../../store/useAppStore";
 import RichTextEditor from "../RichTextEditor";
+import { useGetEmailSignature } from "../../queries/email";
+import { useUpdateEmailSignature } from "../../mutations/email";
 
 const EmailSignatureFormComponent = () => {
   const [signature, setSignature] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const { enqueue } = useSnackbar();
-  const setSettings = useAppStore((state) => state.setSettings);
 
+  const { data: signatureData, isLoading: loading } = useGetEmailSignature();
+  const { mutateAsync: updateSignature, isPending: saving } = useUpdateEmailSignature();
+
+  // Sync local state when query data arrives
   useEffect(() => {
-    fetchSignature();
-  }, []);
-
-  const fetchSignature = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get<{ html: string }>("/email/signature");
-      setSignature(response.data.html || "");
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        // No signature yet - that's OK
-        setSignature("");
-      } else {
-        console.error("Failed to fetch signature:", error);
-        enqueue("Failed to load signature", { variant: "error" });
-      }
-    } finally {
-      setLoading(false);
+    if (signatureData) {
+      setSignature(signatureData.html || "");
     }
-  };
+  }, [signatureData]);
 
   const handleSave = async () => {
-    setSaving(true);
     try {
-      await api.put("/email/signature", { html: signature });
+      await updateSignature(signature);
       enqueue("Signature saved successfully", { variant: "success" });
-      
-      // Refresh settings to keep store in sync
-      const { data } = await api.get("/settings");
-      setSettings(data);
     } catch (error: any) {
       console.error("Failed to save signature:", error);
       enqueue(
         error.response?.data?.message || "Failed to save signature",
         { variant: "error" }
       );
-    } finally {
-      setSaving(false);
     }
   };
 

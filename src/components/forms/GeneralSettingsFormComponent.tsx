@@ -9,9 +9,9 @@ import {
   Button,
   CircularProgress,
 } from "@mui/material";
-import useAppStore from "../../store/useAppStore";
-import api from "../../utils/axiosInstance";
 import { formatContactLocalTime } from "../../utils/formatContactLocalTime";
+import { useGetSettings } from "../../queries/settings";
+import { useUpdateSettings } from "../../mutations/settings";
 
 // US-only IANA timezones
 const US_TIMEZONES = [
@@ -31,8 +31,8 @@ interface GeneralSettingsFormComponentProps {
 const GeneralSettingsFormComponent = ({
   timezone: initialTimezone = "UTC",
 }: GeneralSettingsFormComponentProps) => {
-  const settings = useAppStore((s) => s.settings);
-  const setSettings = useAppStore((s) => s.setSettings);
+  const { data: settings } = useGetSettings();
+  const { mutateAsync: updateSettings } = useUpdateSettings();
   const [timezone, setTimezone] = useState(initialTimezone);
   const [saveState, setSaveState] = useState<"idle" | "loading" | "success">("idle");
   const [now, setNow] = useState(new Date());
@@ -60,13 +60,12 @@ const GeneralSettingsFormComponent = ({
     try {
       setSaveState("loading");
       const existingGeneralSettings = { ...(settings["General Settings"] || {}) };
-      const { data } = await api.patch(`/settings`, {
+      await updateSettings({
         "General Settings": {
           ...existingGeneralSettings,
           timezone,
         },
       });
-      setSettings(data);
       setSaveState("success");
       setTimeout(() => setSaveState("idle"), 3000);
     } catch (err) {

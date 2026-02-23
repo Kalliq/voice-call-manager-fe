@@ -12,8 +12,8 @@ import {
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import Papa from "papaparse";
 
-import useAppStore from "../../../../store/useAppStore";
 import { SimpleButton } from "../../../UI";
+import { useGetSettings } from "../../../../queries/settings";
 
 const CsvImport_step_3 = ({
   onNext,
@@ -25,7 +25,7 @@ const CsvImport_step_3 = ({
   const { control, handleSubmit, watch,formState: { errors },} = useFormContext();
   const [csvColumns, setCsvColumns] = useState<string[]>([]);
 
-  const settings = useAppStore((state) => state.settings);
+  const { data: settings } = useGetSettings();
   const integrationSettings = settings && settings["Phone Settings"] && settings["Phone Settings"].integrationSettings;
 
   if (!settings || !integrationSettings || !integrationSettings.contacts) {

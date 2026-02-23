@@ -11,8 +11,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import useAppStore from "../../../../store/useAppStore";
 import { SimpleButton } from "../../../UI/SimpleButton";
+import { useGetSettings } from "../../../../queries/settings";
 
 import api from "../../../../utils/axiosInstance";
 
@@ -36,7 +36,7 @@ const CsvImport_step_4 = ({ onPrevious, onConfirm, isSubmitting = false }: any) 
   const [lists, setLists] = useState<any[]>([]);
   const [loadingLists, setLoadingLists] = useState<boolean>(false);
 
-  const settings = useAppStore((state) => state.settings);
+  const { data: settings } = useGetSettings();
   const { integrationSettings } = settings!["Phone Settings"];
 
   const getFieldNameById = (id: string) => {

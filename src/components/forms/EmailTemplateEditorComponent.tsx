@@ -19,18 +19,10 @@ import {
   Typography,
 } from "@mui/material";
 import { ArrowDropDown } from "@mui/icons-material";
-import api from "../../utils/axiosInstance";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import RichTextEditor from "../RichTextEditor";
-
-interface EmailTemplate {
-  id: string;
-  name: string;
-  type: "Personal" | "Organization";
-  subject?: string;
-  bodyHtml: string;
-  updatedAt: string;
-}
+import { useCreateEmailTemplate, useUpdateEmailTemplate } from "../../mutations/email";
+import type { EmailTemplate } from "../../api/email";
 
 interface EmailTemplateEditorComponentProps {
   open: boolean;
@@ -57,10 +49,13 @@ const EmailTemplateEditorComponent = ({
   const [type, setType] = useState<"Personal" | "Organization">("Personal");
   const [subject, setSubject] = useState("");
   const [bodyHtml, setBodyHtml] = useState("");
-  const [saving, setSaving] = useState(false);
   const [variableMenuAnchor, setVariableMenuAnchor] = useState<null | HTMLElement>(null);
   const [editorRef, setEditorRef] = useState<any>(null);
   const { enqueue } = useSnackbar();
+
+  const { mutateAsync: createTemplate, isPending: creating } = useCreateEmailTemplate();
+  const { mutateAsync: updateTemplate, isPending: updating } = useUpdateEmailTemplate();
+  const saving = creating || updating;
 
   useEffect(() => {
     if (open) {
@@ -84,7 +79,6 @@ const EmailTemplateEditorComponent = ({
       return;
     }
 
-    setSaving(true);
     try {
       const payload = {
         name: name.trim(),
@@ -93,21 +87,15 @@ const EmailTemplateEditorComponent = ({
         bodyHtml,
       };
 
-      let savedTemplate;
       if (template) {
-        const response = await api.put(`/email/templates/${template.id}`, payload);
-        savedTemplate = response.data;
-        console.log("[EmailTemplateEditor] Template updated, response:", savedTemplate);
+        await updateTemplate({ id: template.id, ...payload });
         enqueue("Template updated successfully", { variant: "success" });
       } else {
-        const response = await api.post("/email/templates", payload);
-        savedTemplate = response.data;
-        console.log("[EmailTemplateEditor] Template created, response:", savedTemplate);
-        console.log("[EmailTemplateEditor] Template ID:", savedTemplate?.id);
+        await createTemplate(payload);
         enqueue("Template created successfully", { variant: "success" });
       }
 
-      onSave(); // This should trigger a refetch in the list component
+      onSave();
       onClose();
     } catch (error: any) {
       console.error("Failed to save template:", error);
@@ -115,8 +103,6 @@ const EmailTemplateEditorComponent = ({
         error.response?.data?.message || "Failed to save template",
         { variant: "error" }
       );
-    } finally {
-      setSaving(false);
     }
   };
 

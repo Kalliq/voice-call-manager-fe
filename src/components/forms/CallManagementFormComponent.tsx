@@ -6,9 +6,10 @@ import { adminOnlySettings } from "voice-javascript-common";
 import FormRenderer from "../FormRenderer";
 import { callManagementSchema } from "../../schemas/phone-settings/call-management/schema";
 import { callManagementValidationSchema } from "../../schemas/phone-settings/call-management/validation-schema";
-import api from "../../utils/axiosInstance";
 import useAppStore from "../../store/useAppStore";
 import { injectAdminOnly } from "../../utils/injectAdminOnly";
+import { useGetSettings } from "../../queries/settings";
+import { useUpdateSettings } from "../../mutations/settings";
 
 console.log("callManagementSchema: ", callManagementSchema);
 console.log("adminOnlySettings: ", adminOnlySettings);
@@ -20,8 +21,8 @@ console.log("enrichedSchema: ", enrichedSchema);
 const CallManagementFormComponent = (data: any) => {
   const { connectionDefinition, preventMultiple } = data;
   const user = useAppStore((state) => state.user);
-  const settings = useAppStore((state) => state.settings);
-  const setSettings = useAppStore((state) => state.setSettings);
+  const { data: settings } = useGetSettings();
+  const { mutateAsync: updateSettings } = useUpdateSettings();
 
   const methods = useForm({
     defaultValues: {
@@ -37,13 +38,12 @@ const CallManagementFormComponent = (data: any) => {
         throw new Error("Missing settings!");
       }
       const existingPhoneSettings = { ...settings["Phone Settings"] };
-      const { data } = await api.patch(`/settings`, {
+      await updateSettings({
         "Phone Settings": {
           ...existingPhoneSettings,
           callManagement: { ...formData },
         },
       });
-      setSettings(data);
     } catch (err) {
       console.error(err);
     }

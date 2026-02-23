@@ -1,8 +1,7 @@
 import FormRenderer from "../../../FormRenderer";
 import { getListExitStrategySchema } from "../../../../schemas/create-list/schema_step_3";
-import useAppStore from "../../../../store/useAppStore";
-
 import { transformToSnakeCase } from "../../../../utils/transformCase";
+import { useGetSettings } from "../../../../queries/settings";
 import { CircularProgress, Box } from "@mui/material";
 
 const CreateList_step_3 = ({
@@ -12,7 +11,7 @@ const CreateList_step_3 = ({
   onPrevious: () => void;
   onConfirm: (data: any) => void;
 }) => {
-  const settings = useAppStore((state) => state.settings);
+  const { data: settings } = useGetSettings();
   const callResults = settings?.["Phone Settings"]?.callResults ?? [];
 
   if (!settings) {

@@ -4,14 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import FormRenderer from "../FormRenderer";
 import { powerDialerManagementSchema } from "../../schemas/phone-settings/power-dialer-management/schema";
 import { powerDialerManagementValidationSchema } from "../../schemas/phone-settings/power-dialer-management/validation-schema";
-import api from "../../utils/axiosInstance";
-import useAppStore from "../../store/useAppStore";
+import { useGetSettings } from "../../queries/settings";
+import { useUpdateSettings } from "../../mutations/settings";
 
 const PowerDialerManagementFormComponent = (data: any) => {
   const { telephonyConnection, powerDialer } = data;
-  const user = useAppStore((state) => state.user);
-  const settings = useAppStore((state) => state.settings);
-  const setSettings = useAppStore((state) => state.setSettings);
+  const { data: settings } = useGetSettings();
+  const { mutateAsync: updateSettings } = useUpdateSettings();
 
   const methods = useForm({
     defaultValues: {
@@ -27,13 +26,12 @@ const PowerDialerManagementFormComponent = (data: any) => {
         throw new Error("Missing settings!");
       }
       const existingPhoneSettings = { ...settings["Phone Settings"] };
-      const { data } = await api.patch(`/settings`, {
+      await updateSettings({
         "Phone Settings": {
           ...existingPhoneSettings,
           powerDialerManagement: { ...formData },
         },
       });
-      setSettings(data);
     } catch (err) {
       console.error(err);
     }

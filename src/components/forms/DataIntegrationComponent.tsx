@@ -4,9 +4,9 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import { Contact } from "voice-javascript-common";
 
-import useAppStore from "../../store/useAppStore";
 import { SimpleButton } from "../UI/SimpleButton";
-import api from "../../utils/axiosInstance";
+import { useGetSettings } from "../../queries/settings";
+import { useUpdateSettings } from "../../mutations/settings";
 
 type ContactField = keyof Contact;
 type AppField = { id: string; name: string };
@@ -57,8 +57,8 @@ const fieldOptions: FieldOptionsMap = {
 };
 
 export default function FieldMapper() {
-  const settings = useAppStore((s) => s.settings);
-  const setSettings = useAppStore((s) => s.setSettings);
+  const { data: settings } = useGetSettings();
+  const { mutateAsync: updateSettings } = useUpdateSettings();
 
   const { integrationSettings } = settings!["Phone Settings"];
 
@@ -110,14 +110,13 @@ export default function FieldMapper() {
       setSaveState("loading");
 
       const existingPhoneSettings = { ...settings["Phone Settings"] };
-      const { data } = await api.patch(`/settings`, {
+      await updateSettings({
         "Phone Settings": {
           ...existingPhoneSettings,
           integrationSettings: mappedFields,
         },
       });
 
-      setSettings(data);
       setSaveState("success"); // shows green for ~3s, then fades back
     } catch (err) {
       console.error(err);

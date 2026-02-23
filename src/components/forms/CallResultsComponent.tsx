@@ -18,8 +18,9 @@ import {
 import { SimpleButton, CustomTextField } from "../UI";
 import useAppStore from "../../store/useAppStore";
 import { CallResult } from "../../types/call-results";
-import api from "../../utils/axiosInstance";
 import { UserRole } from "voice-javascript-common";
+import { useGetSettings } from "../../queries/settings";
+import { useUpdateSettings } from "../../mutations/settings";
 
 const generateId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
@@ -30,8 +31,8 @@ type SaveState = "idle" | "loading" | "success";
 
 export default function CallResultsManager() {
   const user = useAppStore((s) => s.user);
-  const settings = useAppStore((s) => s.settings);
-  const setSettings = useAppStore((s) => s.setSettings);
+  const { data: settings } = useGetSettings();
+  const { mutateAsync: updateSettings } = useUpdateSettings();
 
   const isReadOnly = user?.role !== UserRole.ADMIN;
 
@@ -113,11 +114,9 @@ export default function CallResultsManager() {
       setSaveState("loading");
 
       const existingPhoneSettings = { ...settings["Phone Settings"] };
-      const { data } = await api.patch(`/settings`, {
+      await updateSettings({
         "Phone Settings": { ...existingPhoneSettings, callResults },
       });
-
-      setSettings(data);
 
       // success flash (green) for 3s, then fade back
       setSaveState("success");

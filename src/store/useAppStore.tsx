@@ -22,13 +22,11 @@ export interface CallStat {
 interface AppState {
   // TO-DO more intuitive is 'me' instead of 'user'
   user: { id: string; name: string; role?: string; tenantId?: string } | null;
-  settings: Record<string, any> | null;
   lists: Record<string, any>[] | null;
   callStats: CallStat | null;
 
   // Actions
   setUser: (user: AppState["user"]) => void;
-  setSettings: (settings: AppState["settings"]) => void;
   setLists: (lists: AppState["lists"]) => void;
   getListById: (id: string) => Record<string, any>;
   fetchLists: () => void;
@@ -43,13 +41,11 @@ interface AppState {
 
 const useAppStore = create<AppState>((set) => ({
   user: null,
-  settings: null,
   lists: null,
   callStats: null,
 
   // Actions
   setUser: (user) => set({ user }),
-  setSettings: (settings) => set({ settings }),
   setLists: (lists) => set({ lists }),
   getListById: async (id: string) => {
     try {
@@ -105,7 +101,7 @@ const useAppStore = create<AppState>((set) => ({
     }
   },
 
-  resetStore: () => set({ user: null, settings: null, lists: null }),
+  resetStore: () => set({ user: null, lists: null }),
 }));
 
 export default useAppStore;

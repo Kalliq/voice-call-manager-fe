@@ -19,10 +19,10 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { WeekDay } from "voice-javascript-common";
 
-import useAppStore from "../../store/useAppStore";
-import api from "../../utils/axiosInstance";
 import { SimpleButton } from "../UI/SimpleButton";
 import { formatContactLocalTime } from "../../utils/formatContactLocalTime";
+import { useGetSettings } from "../../queries/settings";
+import { useUpdateSettings } from "../../mutations/settings";
 
 interface TimeSlot {
   from: string;
@@ -80,8 +80,8 @@ const US_TIMEZONES = [
 ];
 
 const ScheduleComponent = () => {
-  const settings = useAppStore((s) => s.settings);
-  const setSettings = useAppStore((s) => s.setSettings);
+  const { data: settings } = useGetSettings();
+  const { mutateAsync: updateSettings } = useUpdateSettings();
 
   const schedulesManagement =
     settings?.["Phone Settings"]?.schedulesManagement ?? {};
@@ -94,14 +94,14 @@ const ScheduleComponent = () => {
   const storedTimezone =
     (settings?.["General Settings"] as { timezone?: string })?.timezone ?? null;
   const isTimezoneLocked = Boolean(storedTimezone);
-  
+
   // Validate timezone is in allowed list, fallback to empty string if invalid
   const getValidTimezone = (tz: string | null): string => {
     if (!tz) return "";
     const isValid = US_TIMEZONES.some((t) => t.iana === tz);
     return isValid ? tz : "";
   };
-  
+
   const [timezone, setTimezone] = useState<string>(getValidTimezone(storedTimezone));
   const [now, setNow] = useState(new Date());
 
@@ -182,7 +182,7 @@ const ScheduleComponent = () => {
 
       const existingPhoneSettings = { ...settings["Phone Settings"] };
       const existingGeneralSettings = { ...(settings["General Settings"] || {}) };
-      
+
       const patchData: any = {
         "Phone Settings": {
           ...existingPhoneSettings,
@@ -201,9 +201,8 @@ const ScheduleComponent = () => {
           };
         }
       }
-      
-      const { data } = await api.patch(`/settings`, patchData);
-      setSettings(data);
+
+      await updateSettings(patchData);
 
       setSaveState("success"); // flash success for 3s (effect above resets to idle)
     } catch (err) {
