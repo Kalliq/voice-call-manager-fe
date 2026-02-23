@@ -435,20 +435,22 @@ const Campaign = () => {
           it’s ready.
         </Alert>
       )}
-      {/* Persistent CallBar: always visible, can start call (idle) or hang up (active) */}
-      <CallBar
-        mode={callBarMode}
-        displayLabel={callBarDisplayLabel}
-        session={(singleSession || manualSession) as Contact | undefined}
-        phone={phone}
-        onStartCall={callBarOnStartCall}
-        onEndCall={callBarOnEndCall}
-        callStartTime={callBarMode === "active" ? callStartTime : null}
-        elapsedTime={elapsedTime}
-        hasAnsweredSession={!!answeredSession}
-        handleNumpadClick={handleNumpadClick}
-        isStartCallDisabled={!isSocketReady}
-      />
+      {/* CallBar: hidden only when Start campaign is the active state (batch mode, campaign not started) */}
+      {(contactId || phone || isCampaignRunning) && (
+        <CallBar
+          mode={callBarMode}
+          displayLabel={callBarDisplayLabel}
+          session={(singleSession || manualSession) as Contact | undefined}
+          phone={phone}
+          onStartCall={callBarOnStartCall}
+          onEndCall={callBarOnEndCall}
+          callStartTime={callBarMode === "active" ? callStartTime : null}
+          elapsedTime={elapsedTime}
+          hasAnsweredSession={!!answeredSession}
+          handleNumpadClick={handleNumpadClick}
+          isStartCallDisabled={!isSocketReady}
+        />
+      )}
       <Stack spacing={3}>
       {!contactId && !phone && (
           <Stack direction="row" spacing={1} justifyContent="center">

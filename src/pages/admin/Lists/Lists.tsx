@@ -120,11 +120,11 @@ const Lists = () => {
           </Typography>
         </Box>
         <Box>
-          {/* <SimpleButton
+          <SimpleButton
             label="Import New Contacts"
             onClick={() => navigate("/import-contacts")}
             color="info"
-          /> */}
+          />
           <SimpleButton
             label="Create New List"
             onClick={() => navigate("/create-new-list")}
