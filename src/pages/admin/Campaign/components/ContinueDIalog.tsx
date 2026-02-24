@@ -1,3 +1,4 @@
+import { useRef, useState, useCallback, useEffect } from "react";
 import {
   Button,
   Chip,
@@ -9,8 +10,9 @@ import {
   Card,
   CardContent,
   Typography,
-  Select,
-  MenuItem,
+  Box,
+  Paper,
+  type PaperProps,
 } from "@mui/material";
 import { TelephonyConnection } from "voice-javascript-common";
 
@@ -46,6 +48,62 @@ interface ContinueDialogInterface {
   mode: string;
   defaultDisposition: string;
   setIsStartingNextCall: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const DRAGGABLE_HANDLE_ID = "draggable-dialog-title";
+
+function DraggablePaper(props: PaperProps) {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest(`#${DRAGGABLE_HANDLE_ID}`)) {
+      isDragging.current = true;
+      dragStart.current = {
+        x: e.clientX,
+        y: e.clientY,
+        posX: position.x,
+        posY: position.y,
+      };
+    }
+  }, [position]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      const newX = dragStart.current.posX + e.clientX - dragStart.current.x;
+      const newY = dragStart.current.posY + e.clientY - dragStart.current.y;
+      setPosition({ x: newX, y: newY });
+      dragStart.current = {
+        x: e.clientX,
+        y: e.clientY,
+        posX: newX,
+        posY: newY,
+      };
+    };
+    const handleMouseUp = () => {
+      isDragging.current = false;
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
+  return (
+    <Paper
+      {...props}
+      onMouseDown={handleMouseDown}
+      style={{
+        ...props.style,
+        transform: `translate(${position.x}px, ${position.y}px)`,
+      }}
+    />
+  );
 }
 
 const ContinueDialog = ({
@@ -96,8 +154,15 @@ const ContinueDialog = ({
         }
         handleDialogClose();
       }}
+      PaperComponent={DraggablePaper}
+      aria-labelledby={DRAGGABLE_HANDLE_ID}
     >
-      <DialogTitle>Save Dispositions</DialogTitle>
+      <DialogTitle
+        id={DRAGGABLE_HANDLE_ID}
+        sx={{ cursor: "move" }}
+      >
+        Save Dispositions
+      </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
           {currentBatch.map((contact) => {
@@ -107,9 +172,9 @@ const ContinueDialog = ({
             const defaultDispositionFormatted = callResults.find(
               (cr) => transformToSnakeCase(cr.label) === defaultDisposition
             );
-            const valueForSelect = isAnswered
-              ? selectedResults[contact.id] || ""
-              : defaultDispositionFormatted?.label;
+            const valueForSelect =
+              selectedResults[contact.id] ??
+              (isAnswered ? "" : defaultDispositionFormatted?.label ?? "");
 
             return (
               <Card key={contact.id} variant="outlined" sx={{ my: 1 }}>
@@ -119,27 +184,59 @@ const ContinueDialog = ({
                   </Typography>
                   <Typography variant="body2">{contact.phone}</Typography>
 
-                  <Select
-                    value={valueForSelect}
-                    onChange={(e) =>
-                      setSelectedResults((prev) => ({
-                        ...prev,
-                        [contact.id]: e.target.value as string,
-                      }))
-                    }
-                    displayEmpty
-                    fullWidth
-                    sx={{ mt: 1 }}
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                    Select result
+                  </Typography>
+                  <Box
+                    sx={{
+                      mt: 0.5,
+                      display: "grid",
+                      gridTemplateColumns: `repeat(${Math.max(1, Math.ceil(callResults.length / 2))}, 1fr)`,
+                      gap: 1,
+                    }}
                   >
-                    <MenuItem value="" disabled>
-                      Select result
-                    </MenuItem>
-                    {callResults.map((callResult) => (
-                      <MenuItem key={callResult.label} value={callResult.label}>
-                        {callResult.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                    {callResults.map((callResult) => {
+                      const isSelected = valueForSelect === callResult.label;
+                      return (
+                        <Box
+                          key={callResult.label}
+                          onClick={() =>
+                            setSelectedResults((prev) => ({
+                              ...prev,
+                              [contact.id]: callResult.label,
+                            }))
+                          }
+                          sx={{
+                            cursor: "pointer",
+                            px: 2,
+                            py: 1.25,
+                            borderRadius: 1,
+                            border: "2px solid",
+                            borderColor: isSelected
+                              ? "primary.main"
+                              : "divider",
+                            bgcolor: isSelected
+                              ? "primary.main"
+                              : "action.hover",
+                            color: isSelected
+                              ? "primary.contrastText"
+                              : "text.primary",
+                            fontWeight: isSelected ? 600 : 400,
+                            "&:hover": {
+                              borderColor: "primary.main",
+                              bgcolor: isSelected
+                                ? "primary.dark"
+                                : "action.selected",
+                            },
+                          }}
+                        >
+                          <Typography variant="body2">
+                            {callResult.label}
+                          </Typography>
+                        </Box>
+                      );
+                    })}
+                  </Box>
                   {!isAnswered && !isPower && (
                     <Chip
                       label="auto-dropped"

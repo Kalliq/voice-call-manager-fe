@@ -17,7 +17,7 @@ export const useRingingTone = ({
     if (hasRinging && noAnswer) {
       if (!ringtoneAudioRef.current) {
         ringtoneAudioRef.current = new Audio(
-          `${import.meta.env.BASE_URL}ringtone.mp3`
+          `${import.meta.env.BASE_URL}pre-dial.wav`
         );
         ringtoneAudioRef.current.loop = true;
       }
