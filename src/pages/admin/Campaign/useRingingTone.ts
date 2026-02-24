@@ -20,6 +20,7 @@ export const useRingingTone = ({
           `${import.meta.env.BASE_URL}pre-dial.wav`
         );
         ringtoneAudioRef.current.loop = true;
+        ringtoneAudioRef.current.volume = 0.5;
       }
 
       ringtoneAudioRef.current.play().catch(() => {
