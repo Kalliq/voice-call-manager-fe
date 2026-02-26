@@ -158,31 +158,6 @@ export default function AdminLayout() {
     setPhoneAnchorEl(e.currentTarget);
   const closePhoneDialer = () => setPhoneAnchorEl(null);
 
-  const onCall = async (phone: string) => {
-    let contactId: string | null = null;
-    try {
-      const { data } = await api.get(
-        `/contacts/lookup-by-phone?phone=${phone}`
-      );
-      contactId = data.id;
-    } catch (err: any) {
-      if (err.response?.status !== 404) {
-        // Handle or rethrow unexpected errors
-        console.error("Unexpected error:", err);
-        return;
-      }
-    }
-    setPhoneAnchorEl(null);
-
-    navigate("/campaign", {
-      state: {
-        contactId: contactId,
-        phone: phone,
-        autoStart: false,
-      },
-    });
-  };
-
   // Fetch notifications on mount
   useEffect(() => {
     if (!user?.id) return;
@@ -613,7 +588,6 @@ export default function AdminLayout() {
       <PhoneDialerPopover
         anchorEl={phoneAnchorEl}
         onClose={closePhoneDialer}
-        onCall={onCall}
       />
     </Box>
   );

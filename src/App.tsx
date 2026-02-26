@@ -33,6 +33,7 @@ import Integrations from "./pages/admin/Integrations/Integrations";
 import Accounts from "./pages/admin/Accounts/Accounts";
 import AccountDetails from "./pages/admin/Accounts/AccountDetails";
 import AccountContacts from "./pages/admin/Accounts/AccountContacts";
+import DialerPopoverCall from "./pages/admin/Dialer/DialerPopoverCall";
 
 // Superadmin pages
 import SuperDashboard from "./pages/superadmin/SuperDashboard";
@@ -111,6 +112,7 @@ function App() {
             <Route path="/integrations" element={<IntegrationsGrid />} />
             <Route path="/integrations/webhook" element={<Integrations />} />
             <Route path="/auth/me" element={<MyProfile />} />
+            <Route path="/dialer-call/:phoneNumber" element={<DialerPopoverCall />} />
           </Route>
         </Route>
         <Route element={<SuperadminRoute />}>

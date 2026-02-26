@@ -29,6 +29,7 @@ interface ContactDrawerProps {
   lists: List[];
   onClose: () => void;
   onSaved: () => void;
+  defaultPhone?: string;
 }
 
 export default function ContactDrawer({
@@ -37,6 +38,7 @@ export default function ContactDrawer({
   lists,
   onClose,
   onSaved,
+  defaultPhone,
 }: ContactDrawerProps) {
   const { enqueue } = useSnackbar();
   const {
@@ -102,11 +104,14 @@ export default function ContactDrawer({
         accountId: account?.id ?? "",
       });
     } else {
-      reset(defaults);
+      reset({
+        ...defaults,
+        phone: defaultPhone ?? "",
+      });
       setSelectedListId(undefined);
       setListIdError("");
     }
-  }, [contact, reset]);
+  }, [contact, defaultPhone, reset]);
 
   const onSubmit = async (data: FormData) => {
     try {
