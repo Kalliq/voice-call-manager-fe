@@ -182,7 +182,7 @@ const ContinueDialog = ({
                   <Typography variant="h6">
                     {contact.first_name} {contact.last_name}
                   </Typography>
-                  <Typography variant="body2">{contact.phone}</Typography>
+                  <Typography variant="body2">{contact.phone?.number}</Typography>
 
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
                     Select result

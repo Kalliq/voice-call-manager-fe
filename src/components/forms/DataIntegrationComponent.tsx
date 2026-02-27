@@ -39,8 +39,9 @@ const fieldOptions: FieldOptionsMap = {
     { id: "last_name", name: "Last Name" },
     { id: "company", name: "Company" },
     { id: "email", name: "Email" },
-    { id: "personal_phone", name: "Personal Phone" },
-    { id: "corporate_phone", name: "Corporate Phone" },
+    { id: "phone", name: "Phone" },
+    { id: "mobile", name: "Mobile" },
+    { id: "other", name: "Other Phone" },
   ],
   accounts: [
     { id: "account_name", name: "Account Name" },
