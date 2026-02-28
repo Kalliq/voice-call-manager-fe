@@ -30,7 +30,7 @@ import {
 
 import { useAuth } from "../contexts/AuthContext";
 import useAppStore from "../store/useAppStore";
-import Logo from "../assets/kalliq_grey.png";
+import Logo from "../assets/whiteKALLIQ.png";
 import cfg from "../config";
 import api from "../utils/axiosInstance";
 import { initSocket } from "../utils/initSocket";

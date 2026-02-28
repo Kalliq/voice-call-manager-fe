@@ -17,7 +17,7 @@ import { UserRole } from "voice-javascript-common";
 
 import useAppStore from "../store/useAppStore";
 import { useAuth } from "../contexts/AuthContext";
-import Logo from "../assets/kalliq_grey.png";
+import Logo from "../assets/whiteKALLIQ.png";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email").min(1, "Email is required"),

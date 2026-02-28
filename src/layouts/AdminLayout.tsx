@@ -46,7 +46,7 @@ import {
   AccountBalance,
   KeyboardArrowDown,
 } from "@mui/icons-material";
-import Logo from "../assets/kalliq_grey.png";
+import Logo from "../assets/whiteKALLIQ.png";
 import { useAuth } from "../contexts/AuthContext";
 import { useSettingsContext } from "../contexts/SettingsContext";
 import { translateToTitleCase } from "../utils/translateToTitle";
