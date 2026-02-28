@@ -20,6 +20,15 @@ export const useAdminPhone = (userId: string | undefined) => {
 
   const socketRef = useRef<Socket | null>(null);
   const twilioDeviceRef = useRef<Device | null>(null);
+  const inboundFallbackRef = useRef<((call: any) => void) | null>(null);
+
+  const setInboundFallback = useCallback((handler: ((call: any) => void) | null) => {
+    inboundFallbackRef.current = handler;
+  }, []);
+
+  const triggerInboundCall = useCallback((call: any) => {
+    inboundFallbackRef.current?.(call);
+  }, []);
 
   const getDevices = useCallback(async () => {
     if (twilioDeviceRef.current) {
@@ -34,21 +43,25 @@ export const useAdminPhone = (userId: string | undefined) => {
   };
   const hangUpHandler = () => {};
 
+  const incomingHandlerRef = useRef(incomingHandler);
+  incomingHandlerRef.current = incomingHandler;
+
   useEffect(() => {
     const device = twilioDevice;
-    console.log("twilioDeviceRef.current: ", twilioDevice);
     if (!device) return;
 
     const onIncoming = (call: any) => {
-      if (incomingHandler) {
-        incomingHandler(call);
+      const handler = incomingHandlerRef.current ?? inboundFallbackRef.current;
+      if (handler) {
+        handler(call);
       } else {
         console.warn("No incoming handler set");
       }
     };
 
     device.on("incoming", onIncoming);
-  }, [incomingHandler]);
+    return () => device.off("incoming", onIncoming);
+  }, [twilioDevice]);
 
   useEffect(() => {
     if (twilioDevice && userId) {
@@ -92,5 +105,7 @@ export const useAdminPhone = (userId: string | undefined) => {
     socket,
     devices,
     setIncomingHandler,
+    setInboundFallback,
+    triggerInboundCall,
   };
 };
