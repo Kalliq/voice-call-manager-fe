@@ -254,6 +254,19 @@ const Campaign = () => {
 
   const singleSession = getSingleDialingSessionWithStatus(currentBatch);
 
+  // When "Save and stop" is clicked, keep the current contact in view
+  const sessionToShow = useMemo(() => {
+    if (currentBatch.length === 0) return null;
+    if (isCampaignFinished) {
+      if (lastAnsweredId) {
+        const answered = currentBatch.find((c) => c.id === lastAnsweredId);
+        if (answered) return { ...answered, status: "Active" };
+      }
+      return getSingleDialingSessionWithStatus(currentBatch);
+    }
+    return isCampaignRunning ? singleSession : null;
+  }, [isCampaignFinished, isCampaignRunning, currentBatch, lastAnsweredId, singleSession]);
+
   // Persistent CallBar: always visible, compute display and actions from context
   const callBarMode = dialerState === "IDLE" ? "idle" : "active";
 
@@ -261,6 +274,8 @@ const Campaign = () => {
     if (phone && !manualSession) return phone;
     if (manualSession)
       return `${manualSession.first_name || ""} ${manualSession.last_name || ""} – ${manualSession.phone || "no number"}`.trim();
+    if (sessionToShow)
+      return `${sessionToShow.first_name || ""} ${sessionToShow.last_name || ""} – ${sessionToShow.phone || "no number"}`.trim();
     if (singleSession)
       return `${singleSession.first_name || ""} ${singleSession.last_name || ""} – ${singleSession.phone || "no number"}`.trim();
     if (currentBatch.length > 0) {
@@ -272,7 +287,7 @@ const Campaign = () => {
       return name ? `Campaign – ${name} (${contacts.length})` : `Campaign (${contacts.length} contacts)`;
     }
     return "No active call";
-  }, [phone, manualSession, singleSession, currentBatch, contacts]);
+  }, [phone, manualSession, sessionToShow, singleSession, currentBatch, contacts]);
 
   const makeCallNotKnown = async (phone: string) => {
     if (guardNoSocket()) return;
@@ -436,11 +451,11 @@ const Campaign = () => {
         </Alert>
       )}
       {/* CallBar: hidden only when Start campaign is the active state (batch mode, campaign not started) */}
-      {(contactId || phone || isCampaignRunning) && (
+      {(contactId || phone || isCampaignRunning || sessionToShow) && (
         <CallBar
           mode={callBarMode}
           displayLabel={callBarDisplayLabel}
-          session={(singleSession || manualSession) as Contact | undefined}
+          session={(sessionToShow || singleSession || manualSession) as Contact | undefined}
           phone={phone}
           onStartCall={callBarOnStartCall}
           onEndCall={callBarOnEndCall}
@@ -496,13 +511,14 @@ const Campaign = () => {
         {!phone && !manualSession && !autoStart && (
           <>
             {/* STABLE DIALER CONTAINER - Always mounted to prevent layout jumps */}
-            {!isCampaignFinished && isCampaignRunning && mode === TelephonyConnection.SOFT_CALL && singleSession && (
+            {/* Show contact panel when running OR when stopped (keep current contact in view) */}
+            {sessionToShow && mode === TelephonyConnection.SOFT_CALL && (
               <SingleCallCampaignPanel
-                session={singleSession}
+                session={sessionToShow}
                 answeredSession={dialerState === "IN_CALL" ? (answeredSession as Contact) : null}
                 onEndCall={hangUp}
                 manual={false}
-                callStarted={dialerState === "DIALING" || dialerState === "IN_CALL"}
+                callStarted={!isCampaignFinished && (dialerState === "DIALING" || dialerState === "IN_CALL")}
                 handleNumpadClick={handleNumpadClick}
               />
             )}
@@ -538,6 +554,7 @@ const Campaign = () => {
         setPendingResultContacts={setPendingResultContacts}
         setShowContinueDialog={setShowContinueDialog}
         setIsCampaignFinished={setIsCampaignFinished}
+        setIsCampaignRunning={setIsCampaignRunning}
         setContactNotes={setContactNotes}
         maybeProceedWithNextBatch={maybeProceedWithNextBatch}
         handleStopAndSkip={handleStopCampaign}

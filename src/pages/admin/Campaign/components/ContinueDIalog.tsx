@@ -34,6 +34,7 @@ interface ContinueDialogInterface {
   setPendingResultContacts: React.Dispatch<React.SetStateAction<CallSession[]>>;
   setShowContinueDialog: React.Dispatch<React.SetStateAction<boolean>>;
   setIsCampaignFinished: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsCampaignRunning?: React.Dispatch<React.SetStateAction<boolean>>;
   setContactNotes: React.Dispatch<
     React.SetStateAction<{ [key: string]: string }>
   >;
@@ -119,6 +120,7 @@ const ContinueDialog = ({
   setPendingResultContacts,
   setIsCampaignFinished,
   setShowContinueDialog,
+  setIsCampaignRunning,
   setContactNotes,
   maybeProceedWithNextBatch,
   handleResult,
@@ -142,6 +144,7 @@ const ContinueDialog = ({
 
     if (stopAfter) {
       setIsCampaignFinished(true);
+      setIsCampaignRunning?.(false);
     }
   };
 
@@ -156,6 +159,15 @@ const ContinueDialog = ({
       }}
       PaperComponent={DraggablePaper}
       aria-labelledby={DRAGGABLE_HANDLE_ID}
+      hideBackdrop
+      disableScrollLock
+      disableEnforceFocus
+      slotProps={{
+        root: { sx: { pointerEvents: "none" } },
+      }}
+      PaperProps={{
+        sx: { pointerEvents: "auto" },
+      }}
     >
       <DialogTitle
         id={DRAGGABLE_HANDLE_ID}
@@ -191,7 +203,7 @@ const ContinueDialog = ({
                     sx={{
                       mt: 0.5,
                       display: "grid",
-                      gridTemplateColumns: `repeat(${Math.max(1, Math.ceil(callResults.length / 2))}, 1fr)`,
+                      gridTemplateColumns: "repeat(2, 1fr)",
                       gap: 1,
                     }}
                   >
