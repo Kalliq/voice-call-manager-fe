@@ -39,7 +39,7 @@ export const useCampaign = ({
   const [lastAnsweredId, setLastAnsweredId] = useState<string | null>(null);
 
   const { phoneState } = useAuth();
-  const { twilioDevice, setIncomingHandler } = phoneState;
+  const { twilioDevice, setIncomingHandler, triggerInboundCall } = phoneState;
 
   // Refs
   const answeredSessionRef = useRef<Contact | boolean | null>(null);
@@ -164,8 +164,12 @@ export const useCampaign = ({
 
   // Effects
   useEffect(() => {
-    if (!enabled) return;
     if (!twilioDevice || !setIncomingHandler) return;
+
+    if (!enabled) {
+      setIncomingHandler(null);
+      return;
+    }
 
     const onIncomingHandler = (call: Call) => {
       const params = new URLSearchParams(call.parameters?.Params || "");
@@ -173,7 +177,10 @@ export const useCampaign = ({
       const isOutbound = params.get("outbound") === "true";
       const callSid = params.get("callSid");
 
-      if (!isOutbound) return;
+      if (!isOutbound) {
+        triggerInboundCall?.(call);
+        return;
+      }
 
       if (contactId) {
         const contact = currentBatchRef.current.find(
@@ -205,7 +212,7 @@ export const useCampaign = ({
     return () => {
       setIncomingHandler(null);
     };
-  }, [twilioDevice, enabled]);
+  }, [twilioDevice, enabled, triggerInboundCall]);
 
   useEffect(() => {
     answeredSessionRef.current = answeredSession;
