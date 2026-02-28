@@ -402,13 +402,19 @@ export default function AdminLayout() {
                       sx={{
                         boxShadow: "none",
                         borderRadius: 0,
+                        backgroundColor: "transparent",
+                        color: "#d1d5db",
                         "&:before": { display: "none" },
                         "&.Mui-expanded": {
                           margin: 0,
                         },
                       }}
                     >
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <AccordionSummary
+                        expandIcon={
+                          <ExpandMoreIcon sx={{ color: "#d1d5db" }} />
+                        }
+                      >
                         <Typography variant="subtitle1" fontWeight="bold">
                           {category}
                         </Typography>
@@ -417,7 +423,6 @@ export default function AdminLayout() {
                         <List disablePadding>
                           {Object.keys(settings[originalKey] ?? {})
                             .filter((subKey) => {
-                              // Only show sub-items that have registered components
                               return (
                                 settingsComponentRegistry[category]?.[subKey] !=
                                 null
@@ -434,9 +439,17 @@ export default function AdminLayout() {
                                   handleChildClick(category, subKey)
                                 }
                                 sx={{
-                                  borderBottom: `1px solid ${theme.palette.divider}`,
+                                  color: "#d1d5db",
+                                  borderBottom: `1px solid rgba(255, 255, 255, 0.1)`,
                                   pl: 3,
                                   pr: 2,
+                                  "&.Mui-selected": {
+                                    backgroundColor: "rgba(232, 69, 60, 0.10)",
+                                    color: "#e8453c",
+                                  },
+                                  "&:hover": {
+                                    backgroundColor: "rgba(255, 255, 255, 0.06)",
+                                  },
                                 }}
                               >
                                 <ListItemText
