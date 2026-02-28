@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 export const useInboundCall = () => {
   const { phoneState } = useAuth();
-  const { twilioDevice, setIncomingHandler } = phoneState;
+  const { twilioDevice, setInboundFallback } = phoneState;
 
   const [inboundCall, setInboundCall] = useState<Call | null>(null);
   const [isInboundCallDialogOpen, setIsDialogOpen] = useState(false);
@@ -19,7 +19,6 @@ export const useInboundCall = () => {
     if (!inboundCall) return;
 
     const onDisconnect = () => {
-      console.log("Inbound call ended by remote");
       stagedClose();
     };
 
@@ -31,26 +30,22 @@ export const useInboundCall = () => {
   }, [inboundCall]);
 
   useEffect(() => {
-    if (!twilioDevice || !setIncomingHandler) return;
+    if (!setInboundFallback) return;
 
     const onIncomingHandler = (call: Call) => {
-      console.log("useInboundCall");
       const params = new URLSearchParams(call.parameters?.Params || "");
       const isOutbound = params.get("outbound") === "true";
 
-      if (isOutbound) {
-        console.log("Outbound call received in useInboundCall — skipping.");
-        return;
-      }
+      if (isOutbound) return;
 
-      console.log("Inbound call received", call);
       activeCallRef.current = call;
       setInboundCall(call);
       setIsDialogOpen(true);
     };
 
-    setIncomingHandler(() => onIncomingHandler);
-  }, [twilioDevice]);
+    setInboundFallback(onIncomingHandler);
+    return () => setInboundFallback(null);
+  }, [setInboundFallback]);
 
   const stagedClose = () => {
     if (hangupTimer.current) clearTimeout(hangupTimer.current);

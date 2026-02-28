@@ -85,18 +85,8 @@ const navItems = [
   { label: "Accounts", path: "/accounts", icon: <AccountBalance /> },
   { label: "Tasks", path: "/tasks", icon: <TasksIcon /> },
   { label: "My Numbers", path: "/my-numbers", icon: <MyNumbersIcon /> },
-  {
-    label: "Coaching",
-    path: "/coaching",
-    icon: <CoachingIcon />,
-    adminOnly: true,
-  },
-  {
-    label: "Reports",
-    path: "/reports",
-    icon: <ReportsIcon />,
-    adminOnly: true,
-  },
+  { label: "Coaching", path: "/coaching", icon: <CoachingIcon /> },
+  { label: "Reports", path: "/reports", icon: <ReportsIcon /> },
   {
     label: "Integrations",
     path: "/integrations",
