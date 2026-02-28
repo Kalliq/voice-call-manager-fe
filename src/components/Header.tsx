@@ -17,13 +17,10 @@ import {
   Toolbar,
   Typography,
   useTheme,
-  TextField,
-  InputAdornment,
   Badge,
 } from "@mui/material";
 import {
   Notifications as NotificationsIcon,
-  Settings,
   Menu as MenuIcon,
   Add,
   Phone,
@@ -70,7 +67,7 @@ const Header = () => {
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(
-    null
+    null,
   );
   const [notificationsAnchorEl, setNotificationsAnchorEl] =
     useState<null | HTMLElement>(null);
@@ -126,7 +123,9 @@ const Header = () => {
     const fetchNotifications = async () => {
       setLoadingNotifications(true);
       try {
-        const response = await api.get<Notification[]>("/notifications?limit=50");
+        const response = await api.get<Notification[]>(
+          "/notifications?limit=50",
+        );
         setNotifications(response.data || []);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -148,7 +147,7 @@ const Header = () => {
             n.id === newNotification.id ||
             (n.meta?.messageId &&
               newNotification.meta?.messageId &&
-              n.meta.messageId === newNotification.meta.messageId)
+              n.meta.messageId === newNotification.meta.messageId),
         );
         if (exists) return prev;
         // Prepend new notification
@@ -175,7 +174,8 @@ const Header = () => {
 
     if (diffMins < 1) return "just now";
     if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
     return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
   };
 
@@ -190,8 +190,8 @@ const Header = () => {
       await api.patch(`/notifications/${notification.id}/read`);
       setNotifications((prev) =>
         prev.map((n) =>
-          n.id === notification.id ? { ...n, isRead: true } : n
-        )
+          n.id === notification.id ? { ...n, isRead: true } : n,
+        ),
       );
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
