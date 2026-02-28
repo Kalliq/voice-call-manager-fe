@@ -704,9 +704,10 @@ export default function AdminLayout() {
                 sx={{ display: "flex", flexDirection: "column", lineHeight: 1 }}
               >
                 <Typography variant="body2" fontWeight={600} noWrap>
+                  
                   {user?.firstName
                     ? `${user.firstName} ${user.lastName ? user.lastName.charAt(0) + "." : ""}`
-                    : user?.name || "User"}
+                    : user?.name || user?.email}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap>
                   {user?.role
@@ -745,7 +746,6 @@ export default function AdminLayout() {
       <PhoneDialerPopover
         anchorEl={phoneAnchorEl}
         onClose={closePhoneDialer}
-        onCall={onCall}
       />
     </Box>
   );

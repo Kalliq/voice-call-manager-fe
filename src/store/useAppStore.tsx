@@ -21,7 +21,7 @@ export interface CallStat {
 
 interface AppState {
   // TO-DO more intuitive is 'me' instead of 'user'
-  user: { id: string; name: string; firstName?: string; lastName?: string; role?: string; tenantId?: string } | null;
+  user: { id: string; name: string; firstName?: string; lastName?: string; role?: string; tenantId?: string, email?: string } | null;
   settings: Record<string, any> | null;
   lists: Record<string, any>[] | null;
   callStats: CallStat | null;
