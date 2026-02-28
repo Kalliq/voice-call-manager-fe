@@ -63,7 +63,6 @@ const DialerPopoverCall = () => {
     setLoading(true);
     setContact(null);
     setContactNotFound(false);
-    debugger;
     // remove special ca numbers from phone number
     const normalizedPhoneNumber = phoneNumber.replace(/[^0-9]/g, '');
     try {
