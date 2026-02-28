@@ -6,6 +6,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Autocomplete,
+  Button,
   ListItemButton,
   Avatar,
   Badge,
@@ -28,21 +29,22 @@ import {
 } from "@mui/material";
 import {
   Search,
-  List as ListsIcon,
-  Contacts as ContactsIcon,
-  BarChart as DashboardIcon,
-  Task as TasksIcon,
-  MenuBook as CoachingIcon,
-  Phone,
-  Notifications as NotificationsIcon,
-  Settings as SettingsIcon,
+  GridView as DashboardIcon,
+  FormatListBulleted as ListsIcon,
+  PeopleOutline as ContactsIcon,
+  TaskAlt as TasksIcon,
+  AutoStories as CoachingIcon,
+  Tag as MyNumbersIcon,
+  CallOutlined as Phone,
+  NotificationsNone as NotificationsIcon,
+  SettingsSuggestOutlined as SettingsIcon,
   ExpandMore as ExpandMoreIcon,
-  ContactPhone as ContactPhoneIcon,
   Summarize as ReportsIcon,
   Extension as IntegrationsIcon,
   ChevronLeft,
   ChevronRight,
   AccountBalance,
+  KeyboardArrowDown,
 } from "@mui/icons-material";
 import Logo from "../assets/kalliq_grey.png";
 import { useAuth } from "../contexts/AuthContext";
@@ -82,7 +84,7 @@ const navItems = [
   { label: "Contacts", path: "/contacts", icon: <ContactsIcon /> },
   { label: "Accounts", path: "/accounts", icon: <AccountBalance /> },
   { label: "Tasks", path: "/tasks", icon: <TasksIcon /> },
-  { label: "My Numbers", path: "/my-numbers", icon: <ContactPhoneIcon /> },
+  { label: "My Numbers", path: "/my-numbers", icon: <MyNumbersIcon /> },
   { label: "Coaching", path: "/coaching", icon: <CoachingIcon /> },
   { label: "Reports", path: "/reports", icon: <ReportsIcon /> },
   {
@@ -162,7 +164,7 @@ export default function AdminLayout() {
     let contactId: string | null = null;
     try {
       const { data } = await api.get(
-        `/contacts/lookup-by-phone?phone=${phone}`
+        `/contacts/lookup-by-phone?phone=${phone}`,
       );
       contactId = data.id;
     } catch (err: any) {
@@ -190,7 +192,9 @@ export default function AdminLayout() {
     const fetchNotifications = async () => {
       setLoadingNotifications(true);
       try {
-        const response = await api.get<Notification[]>("/notifications?limit=50");
+        const response = await api.get<Notification[]>(
+          "/notifications?limit=50",
+        );
         setNotifications(response.data || []);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -212,7 +216,7 @@ export default function AdminLayout() {
             n.id === newNotification.id ||
             (n.meta?.messageId &&
               newNotification.meta?.messageId &&
-              n.meta.messageId === newNotification.meta.messageId)
+              n.meta.messageId === newNotification.meta.messageId),
         );
         if (exists) return prev;
         // Prepend new notification
@@ -239,7 +243,8 @@ export default function AdminLayout() {
 
     if (diffMins < 1) return "just now";
     if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
     return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
   };
 
@@ -254,8 +259,8 @@ export default function AdminLayout() {
       await api.patch(`/notifications/${notification.id}/read`);
       setNotifications((prev) =>
         prev.map((n) =>
-          n.id === notification.id ? { ...n, isRead: true } : n
-        )
+          n.id === notification.id ? { ...n, isRead: true } : n,
+        ),
       );
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
@@ -277,8 +282,8 @@ export default function AdminLayout() {
           "& .MuiDrawer-paper": {
             width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
             boxSizing: "border-box",
-            backgroundColor: "#fff",
-            borderRight: `1px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.sidebar.background,
+            borderRight: "none",
             overflowX: "hidden",
             transition: theme.transitions.create("width", {
               easing: theme.transitions.easing.easeInOut,
@@ -311,13 +316,26 @@ export default function AdminLayout() {
                     component={NavLink}
                     to={item.path}
                     sx={{
-                      color: theme.palette.text.primary,
+                      color: "#d1d5db",
+                      position: "relative",
+                      borderRadius: 2,
+                      mx: 1,
                       "&.active": {
-                        backgroundColor: theme.palette.action.selected,
-                        fontWeight: "bold",
+                        backgroundColor: "rgba(232, 69, 60, 0.10)",
+                        color: "#e8453c",
+                        "&::before": {
+                          content: '""',
+                          position: "absolute",
+                          left: 2,
+                          height: "100%",
+                          width: 4,
+                          borderRadius: "0 4px 4px 0",
+                          backgroundColor: "#e8453c",
+                        },
                       },
                       "&:hover": {
-                        backgroundColor: theme.palette.action.hover,
+                        backgroundColor: "rgba(255, 255, 255, 0.06)",
+                        color: "#F25F4C",
                       },
                       justifyContent: collapsed ? "center" : "flex-start",
                       px: collapsed ? 2 : 3,
@@ -338,7 +356,7 @@ export default function AdminLayout() {
                       {item.icon}
                     </ListItemIcon>
                     {!collapsed && (
-                      <ListItemText 
+                      <ListItemText
                         primary={item.label}
                         sx={{
                           transition: theme.transitions.create("opacity", {
@@ -374,13 +392,19 @@ export default function AdminLayout() {
                       sx={{
                         boxShadow: "none",
                         borderRadius: 0,
+                        backgroundColor: "transparent",
+                        color: "#d1d5db",
                         "&:before": { display: "none" },
                         "&.Mui-expanded": {
                           margin: 0,
                         },
                       }}
                     >
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <AccordionSummary
+                        expandIcon={
+                          <ExpandMoreIcon sx={{ color: "#d1d5db" }} />
+                        }
+                      >
                         <Typography variant="subtitle1" fontWeight="bold">
                           {category}
                         </Typography>
@@ -389,8 +413,10 @@ export default function AdminLayout() {
                         <List disablePadding>
                           {Object.keys(settings[originalKey] ?? {})
                             .filter((subKey) => {
-                              // Only show sub-items that have registered components
-                              return settingsComponentRegistry[category]?.[subKey] != null;
+                              return (
+                                settingsComponentRegistry[category]?.[subKey] !=
+                                null
+                              );
                             })
                             .map((subKey) => (
                               <ListItemButton
@@ -399,11 +425,21 @@ export default function AdminLayout() {
                                   selected?.parent === category &&
                                   selected?.child === subKey
                                 }
-                                onClick={() => handleChildClick(category, subKey)}
+                                onClick={() =>
+                                  handleChildClick(category, subKey)
+                                }
                                 sx={{
-                                  borderBottom: `1px solid ${theme.palette.divider}`,
+                                  color: "#d1d5db",
+                                  borderBottom: `1px solid rgba(255, 255, 255, 0.1)`,
                                   pl: 3,
                                   pr: 2,
+                                  "&.Mui-selected": {
+                                    backgroundColor: "rgba(232, 69, 60, 0.10)",
+                                    color: "#e8453c",
+                                  },
+                                  "&:hover": {
+                                    backgroundColor: "rgba(255, 255, 255, 0.06)",
+                                  },
                                 }}
                               >
                                 <ListItemText
@@ -425,7 +461,7 @@ export default function AdminLayout() {
             justifyContent: "center",
             alignItems: "center",
             py: 2,
-            borderTop: `1px solid ${theme.palette.divider}`,
+            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
           <IconButton
@@ -436,11 +472,14 @@ export default function AdminLayout() {
             }}
             disabled={isSettingsPage}
             sx={{
-              color: theme.palette.text.secondary,
-              transition: theme.transitions.create(["background-color", "transform"], {
-                easing: theme.transitions.easing.easeInOut,
-                duration: theme.transitions.duration.shorter,
-              }),
+              color: "#d1d5db",
+              transition: theme.transitions.create(
+                ["background-color", "transform"],
+                {
+                  easing: theme.transitions.easing.easeInOut,
+                  duration: theme.transitions.duration.shorter,
+                },
+              ),
               "&:hover": {
                 backgroundColor: theme.palette.action.hover,
                 transform: "scale(1.1)",
@@ -455,7 +494,7 @@ export default function AdminLayout() {
             }}
           >
             {collapsed ? (
-              <ChevronRight 
+              <ChevronRight
                 sx={{
                   transition: theme.transitions.create("transform", {
                     easing: theme.transitions.easing.easeInOut,
@@ -464,7 +503,7 @@ export default function AdminLayout() {
                 }}
               />
             ) : (
-              <ChevronLeft 
+              <ChevronLeft
                 sx={{
                   transition: theme.transitions.create("transform", {
                     easing: theme.transitions.easing.easeInOut,
@@ -484,15 +523,16 @@ export default function AdminLayout() {
           sx={{
             width: `calc(100% - ${drawerWidth}px)`,
             ml: `${drawerWidth}px`,
-            backgroundColor: "#fff",
+            backgroundColor: theme.palette.navbar.background,
             color: theme.palette.text.primary,
             borderBottom: `1px solid ${theme.palette.divider}`,
           }}
         >
           <Toolbar>
-            <Box sx={{ width: 300 }}>
+            <Box sx={{ width: 420 }}>
               <Autocomplete<SearchResult, false, false, false>
                 freeSolo={false}
+                popupIcon={null}
                 size="small"
                 options={options}
                 getOptionLabel={(opt) =>
@@ -506,12 +546,12 @@ export default function AdminLayout() {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    placeholder="Search contacts…"
+                    placeholder="Search leads, companies, or tasks..."
                     InputProps={{
                       ...params.InputProps,
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Search />
+                          <Search sx={{ color: "text.secondary" }} />
                         </InputAdornment>
                       ),
                       endAdornment: (
@@ -520,17 +560,72 @@ export default function AdminLayout() {
                             <CircularProgress size={16} />
                           ) : null}
                           {params.InputProps.endAdornment}
+                          <InputAdornment position="end" sx={{ mr: "4px" }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.3,
+                                px: 0.8,
+                                py: 0.2,
+                                borderRadius: 1,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                backgroundColor: "#f5f5f5",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  fontSize: "0.7rem",
+                                  color: "text.secondary",
+                                  fontWeight: 500,
+                                  lineHeight: 1,
+                                }}
+                              >
+                                ⌘K
+                              </Typography>
+                            </Box>
+                          </InputAdornment>
                         </>
                       ),
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                        backgroundColor: "#f8fafc",
+                        paddingRight: "4px !important",
+                      },
                     }}
                   />
                 )}
               />
             </Box>
             <Box sx={{ flexGrow: 1 }} />
-            <IconButton onClick={openPhoneDialer}>
-              <Phone />
-            </IconButton>
+            <Button
+              variant="contained"
+              startIcon={<Phone />}
+              onClick={openPhoneDialer}
+              sx={{
+                backgroundColor: "secondary.main",
+                color: "#fff",
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+                px: 2,
+                boxShadow: "none",
+                "&:hover": {
+                  backgroundColor: "secondary.dark",
+                  boxShadow: "none",
+                },
+              }}
+            >
+              Open Dialer
+            </Button>
+            <Divider
+              orientation="vertical"
+              sx={{ mx: 1, height: 32, alignSelf: "center" }}
+            />
             <IconButton onClick={openNotifMenu}>
               <Badge badgeContent={unreadCount} color="error">
                 <NotificationsIcon />
@@ -590,17 +685,54 @@ export default function AdminLayout() {
             <IconButton onClick={() => navigate("/settings")}>
               <SettingsIcon />
             </IconButton>
-            <IconButton onClick={openAvatarMenu}>
-              <Avatar />
-            </IconButton>
+            <Box
+              onClick={openAvatarMenu}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                cursor: "pointer",
+                ml: 1,
+                px: 1,
+                py: 0.5,
+                borderRadius: 2,
+                "&:hover": { backgroundColor: "action.hover" },
+              }}
+            >
+              <Avatar sx={{ width: 32, height: 32 }} />
+              <Box
+                sx={{ display: "flex", flexDirection: "column", lineHeight: 1 }}
+              >
+                <Typography variant="body2" fontWeight={600} noWrap>
+                  {user?.firstName
+                    ? `${user.firstName} ${user.lastName ? user.lastName.charAt(0) + "." : ""}`
+                    : user?.name || "User"}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {user?.role
+                    ? user.role
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (c) => c.toUpperCase())
+                    : "Agent"}
+                </Typography>
+              </Box>
+              <KeyboardArrowDown
+                sx={{ fontSize: 18, color: "text.secondary" }}
+              />
+            </Box>
             <Menu
               anchorEl={avatarAnchor}
               open={!!avatarAnchor}
               onClose={closeAvatarMenu}
             >
-              <MenuItem onClick={() => {closeAvatarMenu(); 
-                                        navigate("/auth/me"); 
-                                      }}>Profile</MenuItem>
+              <MenuItem
+                onClick={() => {
+                  closeAvatarMenu();
+                  navigate("/auth/me");
+                }}
+              >
+                Profile
+              </MenuItem>
               <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
             </Menu>
           </Toolbar>

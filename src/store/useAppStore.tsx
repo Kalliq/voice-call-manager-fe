@@ -21,7 +21,7 @@ export interface CallStat {
 
 interface AppState {
   // TO-DO more intuitive is 'me' instead of 'user'
-  user: { id: string; name: string; role?: string; tenantId?: string } | null;
+  user: { id: string; name: string; firstName?: string; lastName?: string; role?: string; tenantId?: string } | null;
   settings: Record<string, any> | null;
   lists: Record<string, any>[] | null;
   callStats: CallStat | null;
@@ -35,7 +35,7 @@ interface AppState {
   updateList: (id: string, updatedData: Partial<any>) => Promise<any>;
   deleteList: (id: string) => void;
   setCallStats: (cs: CallStat | null) => void;
-  fetchCallStats: (period?: CallStat["period"]) => Promise<void>;
+  fetchCallStats: (period?: string) => Promise<void>;
 
   // Reset
   resetStore: () => void;
