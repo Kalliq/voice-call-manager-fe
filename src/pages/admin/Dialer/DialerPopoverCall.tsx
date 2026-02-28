@@ -19,12 +19,13 @@ import {
 import api from "../../../utils/axiosInstance";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import Loading from "../../../components/UI/Loading";
-import { Contact } from "../../../types/contact";
+import { Contact, CallSession } from "../../../types/contact";
 import ContactDrawer from "../Contacts/components/ContactDrawer";
 import ContactStageChip from "../Campaign/components/ContactStageChip";
 import { CallBar } from "../Campaign/components/molecules/CallBar";
 import { useDialerCall } from "./useDialerCall";
-import { List, normalizePhone } from "voice-javascript-common";
+import { useRingingTone } from "../Campaign/useRingingTone";
+import { List } from "voice-javascript-common";
 
 
 const DialerPopoverCall = () => {
@@ -50,6 +51,12 @@ const DialerPopoverCall = () => {
     isSocketReady,
     handleNumpadClick,
   } = useDialerCall(phoneNumber);
+
+  // Play ringing tone while call is dialing/ringing (same as Campaign)
+  useRingingTone({
+    ringingSessions: (callStarted && !answered ? [{ id: "ringing", phone: phoneNumber, status: "ringing" }] : []) as CallSession[],
+    answeredSession: answered ? true : null,
+  });
 
   useEffect(() => {
     if (!phoneNumber) {

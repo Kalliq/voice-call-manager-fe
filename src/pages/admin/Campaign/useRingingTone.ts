@@ -20,7 +20,7 @@ export const useRingingTone = ({
           `${import.meta.env.BASE_URL}ringtone.mp3`
         );
         ringtoneAudioRef.current.loop = true;
-        ringtoneAudioRef.current.volume = 0.5;
+        ringtoneAudioRef.current.volume = 0.12;
       }
 
       ringtoneAudioRef.current.play().catch(() => {
