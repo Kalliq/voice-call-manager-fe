@@ -18,7 +18,6 @@ import {
 } from "@mui/icons-material";
 import api from "../../../utils/axiosInstance";
 import { useSnackbar } from "../../../hooks/useSnackbar";
-import Loading from "../../../components/UI/Loading";
 import { Contact, CallSession } from "../../../types/contact";
 import ContactDrawer from "../Contacts/components/ContactDrawer";
 import ContactStageChip from "../Campaign/components/ContactStageChip";
@@ -34,7 +33,6 @@ const DialerPopoverCall = () => {
   const navigate = useNavigate();
   const { enqueue } = useSnackbar();
 
-  const [loading, setLoading] = useState(true);
   const [contact, setContact] = useState<Contact | null>(null);
   const [contactNotFound, setContactNotFound] = useState(false);
   const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
@@ -42,7 +40,6 @@ const DialerPopoverCall = () => {
 
   const {
     startCall,
-    startCallWithContact,
     hangUp,
     callStarted,
     callStartTime,
@@ -67,31 +64,22 @@ const DialerPopoverCall = () => {
   }, [phoneNumber]);
 
   const checkContact = async () => {
-    setLoading(true);
+    if (!phoneNumber.trim()) return;
     setContact(null);
     setContactNotFound(false);
-    // remove special ca numbers from phone number
-    const normalizedPhoneNumber = phoneNumber.replace(/[^0-9]/g, '');
     try {
-      const { data } = await api.get(
-        `/contacts/lookup-by-phone?phone=${encodeURIComponent(phoneNumber)}`
-      );
-      const contactId = data?.id ?? data?.contactId;
-      if (contactId) {
-        const res = await api.get(`/contacts/${contactId}`);
+      const { data } = await api.get("/contacts/lookup-by-phone", {
+        params: { phone: phoneNumber },
+      });
+      if (data?.id) {
+        const res = await api.get(`/contacts/${data.id}`);
         setContact(res.data);
+        setContactNotFound(false);
       } else {
         setContactNotFound(true);
       }
-    } catch (err: any) {
-      if (err.response?.status === 404) {
-        setContactNotFound(true);
-      } else {
-        enqueue("Failed to lookup contact", { variant: "error" });
-        navigate("/dashboard");
-      }
-    } finally {
-      setLoading(false);
+    } catch {
+      setContactNotFound(true);
     }
   };
   const loadLists = async () => {
@@ -103,13 +91,15 @@ const DialerPopoverCall = () => {
     }
   };
 
-  const handleStartCall = async () => {
+  const handleStartCall = () => {
     if (!contact) return;
-    try {
-      await startCallWithContact(contact);
-    } catch (err: any) {
-      enqueue(err?.message || "Failed to start call", { variant: "error" });
-    }
+    navigate("/campaign", {
+      state: {
+        contactId: contact.id,
+        phone: contact.phone || phoneNumber,
+        autoStart: true,
+      },
+    });
   };
 
   const handleCallAnyway = async () => {
@@ -122,7 +112,7 @@ const DialerPopoverCall = () => {
 
   const handleCreateContactSaved = () => {
     setCreateDrawerOpen(false);
-    checkContact();
+    checkContact(); // Re-lookup to show contact details
   };
 
   const handleStageChange = async (status: string) => {
@@ -136,9 +126,6 @@ const DialerPopoverCall = () => {
     }
   };
 
-  if (loading) {
-    return <Loading />;
-  }
 
   if (!phoneNumber) {
     return null;

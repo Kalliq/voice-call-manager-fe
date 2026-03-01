@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { Backspace, Phone } from "@mui/icons-material";
 import { phoneDials } from "../utils/dials";
+import api from "../utils/axiosInstance";
 
 interface PhoneDialerPopoverProps {
   anchorEl: HTMLElement | null;
@@ -31,11 +32,20 @@ const PhoneDialerPopover = ({
     setPhoneNumber((prev) => prev.slice(0, -1));
   };
 
-  const handleCall = () => {
+  const handleCall = async () => {
+    // before redirect detect if we have the number in contacts and if yes then go to /cotnacts/contactId otherwise go to the dial step
     const trimmed = phoneNumber.trim();
     if (!trimmed) return;
+    const { data } = await api.get(`/contacts/lookup-by-phone?phone=${encodeURIComponent(trimmed)}`);
+    // clear value for the input 
+    setPhoneNumber("");
+
+    if (data.id) {
+      navigate(`/contacts/${data.id}`);
+    } else {
+      navigate(`/dialer-call/${encodeURIComponent(trimmed)}`);
+    }
     onClose();
-    navigate(`/dialer-call/${encodeURIComponent(trimmed)}`);
   };
 
   return (

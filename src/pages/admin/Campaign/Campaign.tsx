@@ -42,9 +42,19 @@ const Campaign = () => {
   const { socket, volumeHandler, hangUpHandler } = phoneState;
   const { enqueue } = useSnackbar();
 
-  const { user, settings } = useAppStore((state) => state);
+  const { user, settings, setSettings } = useAppStore((state) => state);
 
-  const shouldRedirect = !socket || !user || !settings;
+  // Load settings (dispositions) when not yet in store - required for ContinueDialog
+  useEffect(() => {
+    if (!user) return;
+    if (settings) return;
+    api
+      .get("/settings")
+      .then(({ data }) => setSettings(data))
+      .catch((err) => console.error("[Campaign] Failed to load settings:", err));
+  }, [user, settings, setSettings]);
+
+  const shouldRedirect = !socket || !user;
 
   useEffect(() => {
     if (shouldRedirect) {
@@ -380,6 +390,20 @@ const Campaign = () => {
     makeCallBatch();
   };
 
+  // Auto-start dialing when autoStart is true (wait for settings so dispositions are ready when call ends)
+  useEffect(() => {
+    if (!autoStart || !isSocketReady || !settings || hasAutoStartedRef.current) return;
+    if (guardNoSocket()) return;
+
+    if ((manualSession || (contacts && contacts.length > 0)) && !isCampaignRunning) {
+      hasAutoStartedRef.current = true;
+      // start campaign for a single call
+      handleStartCampaign();
+    
+      return;
+    }
+  }, [autoStart, isSocketReady, settings, phone, manualSession, contacts, callResults, isCampaignRunning]);
+
   const callBarOnStartCall = useMemo(() => {
     if (dialerState !== "IDLE") return undefined;
     if (phone && !manualSession) return () => makeCallNotKnown(phone);
@@ -495,7 +519,7 @@ const Campaign = () => {
 
         {phone && !manualSession && <MinimalCallPanel phone={phone} />}
 
-        {!autoStart && manualSession && (
+        {manualSession && (
           <SingleCallCampaignPanel
             session={manualSession}
             answeredSession={answeredSession as Contact}
@@ -508,7 +532,7 @@ const Campaign = () => {
           />
         )}
 
-        {!phone && !manualSession && !autoStart && (
+        {!phone && !manualSession && (
           <>
             {/* STABLE DIALER CONTAINER - Always mounted to prevent layout jumps */}
             {/* Show contact panel when running OR when stopped (keep current contact in view) */}

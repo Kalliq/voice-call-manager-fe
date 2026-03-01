@@ -277,7 +277,7 @@ const ContactDetails = () => {
       state: {
         contactId: contact.id,
         phone: contact.phone,
-        autoStart: false,
+        autoStart: true,
       },
     });
   };

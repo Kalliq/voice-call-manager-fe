@@ -84,7 +84,11 @@ export default function ContactDrawer({
 
   const loadAccounts = useCallback(async () => {
     try {
-      const res = await api.get("/accounts/all", {});
+      const res = await api.get("/accounts/all", {
+        params: {
+          limit: 10000,
+        },
+      });
       setAccounts(res.data.accounts);
     } catch (error) {
       enqueue("Failed to load accounts", { variant: "error" });
@@ -251,12 +255,12 @@ export default function ContactDrawer({
                       />
                     )}
                   />
-                  {!field.value && accounts.length === 0 && (
+                  {!field.value && (
                     <Typography
                       variant="caption"
                       sx={{ mt: 0.5, display: "block" }}
                     >
-                      No account selected.{" "}
+                      Account not found?.{" "}
                       <Link
                         component="button"
                         type="button"
