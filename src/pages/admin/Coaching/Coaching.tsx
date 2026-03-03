@@ -19,6 +19,10 @@ import {
   Lock,
   MenuBook,
   CheckCircleOutline,
+  Person,
+  Phone,
+  Email as EmailIcon,
+  Business,
 } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -33,6 +37,7 @@ import useAppStore from "../../../store/useAppStore";
 import AudioWaveform from "../../../components/AudioWaveform";
 import { CallResult } from "../../../types/call-results";
 import { useSnackbar } from "../../../hooks/useSnackbar";
+import { Contact } from "../../../types/contact";
 
 const prettyDisposition = (raw?: string) => {
   if (!raw) return "";
@@ -57,8 +62,31 @@ const ActivityRow = ({
   callResults,
   onUpdateDisposition,
 }: ActivityRowProps) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [contact, setContact] = useState<Contact | null | undefined>(undefined);
+
+  const contactId = (entry as CallLog & { contactId?: string }).contactId;
+
+  useEffect(() => {
+    if (!isOpen || !contactId) {
+      setContact(contactId ? undefined : null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get<Contact>(`/contacts/${contactId}`)
+      .then((res) => {
+        if (!cancelled) setContact(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setContact(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, contactId]);
 
   let formattedTime = "";
   if (entry.action?.timestamp) {
@@ -135,6 +163,69 @@ const ActivityRow = ({
 
       {isOpen && (
         <Box pl={4} pb={2}>
+          {contactId && (
+            <Paper
+              variant="outlined"
+              sx={{ p: 2, mb: 2, bgcolor: "action.hover" }}
+            >
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Contact
+              </Typography>
+              {contact === undefined ? (
+                <Typography variant="body2" color="text.secondary">
+                  Loading…
+                </Typography>
+              ) : contact ? (
+                <Stack spacing={0.5}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Person fontSize="small" color="action" />
+                    <Typography variant="body2" fontWeight={500}>
+                      {[contact.first_name, contact.last_name]
+                        .filter(Boolean)
+                        .join(" ") || "—"}
+                    </Typography>
+                  </Stack>
+                  {(contact.title || contact.account?.companyName) && (
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Business fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {[contact.title, contact.account?.companyName]
+                          .filter(Boolean)
+                          .join(" at ")}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {contact.phone && (
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Phone fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {contact.phone}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {contact.email && (
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <EmailIcon fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {contact.email}
+                      </Typography>
+                    </Stack>
+                  )}
+                  <Button
+                    size="small"
+                    sx={{ alignSelf: "flex-start", mt: 0.5 }}
+                    onClick={() => navigate(`/contacts/${contact.id}`)}
+                  >
+                    View contact
+                  </Button>
+                </Stack>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Contact not found
+                </Typography>
+              )}
+            </Paper>
+          )}
           {entry.recordingUrl ? (
             <AudioWaveform url={entry.recordingUrl} />
           ) : (
@@ -237,13 +328,13 @@ const Coaching = () => {
   return (
     <Box p={3}>
       <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} sx={{ mb: 3 }}>
-        <Tab label="Improve" sx={{ fontWeight: 600 }} />
+        {/* <Tab label="Improve" sx={{ fontWeight: 600 }} /> */}
         <Tab label="Coach" sx={{ fontWeight: 600 }} />
       </Tabs>
 
-      {tabIndex === 0 ? (
+      {/* {tabIndex === 0 ? (
         <ImproveSection />
-      ) : (
+      ) : ( */}
         <>
           <Typography variant="h5" fontWeight="bold" gutterBottom>
             Coach Panel
@@ -317,7 +408,7 @@ const Coaching = () => {
             )}
           </Paper>
         </>
-      )}
+      {/* )} */}
     </Box>
   );
 };
