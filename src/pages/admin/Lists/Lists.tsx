@@ -35,6 +35,8 @@ import { Contact } from "../../../types/contact";
 
 import api from "../../../utils/axiosInstance";
 
+const MAX_LISTS_PER_USER = 10;
+
 const Lists = () => {
   const navigate = useNavigate();
   const lists = useAppStore((state) => state.lists);
@@ -69,6 +71,7 @@ const Lists = () => {
     cloningId,
     handleRefreshContactsForList,
     listToDelete,
+    atListLimit,
   } = useListManager();
 
   const load = useCallback(async () => {
@@ -125,11 +128,22 @@ const Lists = () => {
             onClick={() => navigate("/import-contacts")}
             color="info"
           />
-          <SimpleButton
-            label="Create New List"
-            onClick={() => navigate("/create-new-list")}
-            color="info"
-          />
+          <Tooltip
+            title={
+              atListLimit
+                ? `Maximum ${MAX_LISTS_PER_USER} lists per user. Delete a list to create a new one.`
+                : "Create New List"
+            }
+          >
+            <span>
+              <SimpleButton
+                label="Create New List"
+                onClick={() => !atListLimit && navigate("/create-new-list")}
+                color="info"
+                disabled={atListLimit}
+              />
+            </span>
+          </Tooltip>
           <SimpleButton
             label={`${!showDropped ? "Show" : "Hide"} Dropped Calls`}
             onClick={() => setShowDropped(!showDropped)}
@@ -173,6 +187,7 @@ const Lists = () => {
                           onDeleteClick={handleDeleteClick}
                           onCloneClick={handleClone}
                           cloningId={cloningId}
+                          atListLimit={atListLimit}
                           onContactRemoved={handleRefreshContactsForList}
                         />
                       ))}

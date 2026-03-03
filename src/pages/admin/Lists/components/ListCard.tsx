@@ -26,6 +26,8 @@ import ConnectionMenu from "./ConnectionMenu";
 import StepRow from "./StepRow";
 import { Step } from "../../../../interfaces/list-dialing-step";
 
+const MAX_LISTS_PER_USER = 10;
+
 interface ListCardProps {
   list: any;
   selectedCall: string;
@@ -40,6 +42,7 @@ interface ListCardProps {
   onDeleteClick: (id: string) => void;
   onCloneClick: (id: string) => void;
   cloningId: string | null;
+  atListLimit?: boolean;
   onContactRemoved?: (listId: string, steps?: Step[]) => void;
 }
 
@@ -57,6 +60,7 @@ const ListCard = ({
   onDeleteClick,
   onCloneClick,
   cloningId,
+  atListLimit,
   onContactRemoved,
 }: ListCardProps) => {
   const theme = useTheme();
@@ -150,14 +154,22 @@ const ListCard = ({
           >
             <Edit fontSize="small" />
           </IconButton>
-          <Tooltip title="Clone list">
-            <IconButton
-              size="small"
-              onClick={() => onCloneClick(list.id)}
-              disabled={cloningId === list.id}
-            >
-              <ContentCopy fontSize="small" />
-            </IconButton>
+          <Tooltip
+            title={
+              atListLimit
+                ? `Maximum ${MAX_LISTS_PER_USER} lists per user. Delete a list to clone.`
+                : "Clone list"
+            }
+          >
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => onCloneClick(list.id)}
+                disabled={cloningId === list.id || atListLimit}
+              >
+                <ContentCopy fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
           <IconButton
             size="small"

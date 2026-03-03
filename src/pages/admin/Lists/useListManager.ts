@@ -5,10 +5,13 @@ import useAppStore from "../../../store/useAppStore";
 import { Contact } from "../../../types/contact";
 import { Step } from "../../../interfaces/list-dialing-step";
 
+const MAX_LISTS_PER_USER = 10;
+
 const useListManager = () => {
   const { enqueue } = useSnackbar();
   const deleteList = useAppStore((state) => state.deleteList);
   const fetchLists = useAppStore((state) => state.fetchLists);
+  const lists = useAppStore((state) => state.lists);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuListId, setMenuListId] = useState<string | null>(null);
@@ -77,6 +80,13 @@ const useListManager = () => {
 
   const handleClone = async (listId: string) => {
     if (cloningId) return;
+    if ((lists?.length ?? 0) >= MAX_LISTS_PER_USER) {
+      enqueue(
+        `Maximum ${MAX_LISTS_PER_USER} lists per user. Delete a list to clone.`,
+        { variant: "error" }
+      );
+      return;
+    }
     setCloningId(listId);
     try {
       await api.post(`/lists/${listId}/duplicate`);
@@ -99,10 +109,13 @@ const useListManager = () => {
     await fetchLists();
   };
 
+  const atListLimit = (lists?.length ?? 0) >= MAX_LISTS_PER_USER;
+
   return {
     selectedCalls,
     expandedListId,
     eligibleContacts,
+    atListLimit,
     handleExpand,
     handleConnectionChange,
     anchorEl,

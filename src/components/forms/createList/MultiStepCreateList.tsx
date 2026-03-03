@@ -7,6 +7,9 @@ import { ZodError } from "zod";
 import { z } from "zod";
 
 import useAppStore from "../../../store/useAppStore";
+import { useSnackbar } from "../../../hooks/useSnackbar";
+
+const MAX_LISTS_PER_USER = 10;
 import CreateList_step_1 from "./steps/CreateList_step_1";
 import CreateList_step_3 from "./steps/CreateList_step_3";
 
@@ -21,10 +24,12 @@ import api from "../../../utils/axiosInstance";
 const MultiStepForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { enqueue } = useSnackbar();
   const [step, setStep] = useState(1);
   const [originalListName, setOriginalListName] = useState<string>("");
   const getListById = useAppStore((state) => state.getListById);
   const updateList = useAppStore((state) => state.updateList);
+  const lists = useAppStore((state) => state.lists);
   const methods = useForm({
     defaultValues: {
       listName: "",
@@ -105,6 +110,13 @@ const MultiStepForm = () => {
 
   const onConfirmHandler = async () => {
     const formDataValues = methods.getValues();
+    if (!id && (lists?.length ?? 0) >= MAX_LISTS_PER_USER) {
+      enqueue(
+        `Maximum ${MAX_LISTS_PER_USER} lists per user. Delete a list to create a new one.`,
+        { variant: "error" }
+      );
+      return;
+    }
     try {
       const { data } = await submitList(formDataValues);
       console.log(id ? "List updated:" : "New list created:", data);
