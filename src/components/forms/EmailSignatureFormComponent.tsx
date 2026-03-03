@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Box, Paper, Typography, Button, CircularProgress, Stack } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  CircularProgress,
+  Stack,
+} from "@mui/material";
 import { Save } from "@mui/icons-material";
 import api from "../../utils/axiosInstance";
 import { useSnackbar } from "../../hooks/useSnackbar";
@@ -40,16 +47,15 @@ const EmailSignatureFormComponent = () => {
     try {
       await api.put("/email/signature", { html: signature });
       enqueue("Signature saved successfully", { variant: "success" });
-      
+
       // Refresh settings to keep store in sync
       const { data } = await api.get("/settings");
       setSettings(data);
     } catch (error: any) {
       console.error("Failed to save signature:", error);
-      enqueue(
-        error.response?.data?.message || "Failed to save signature",
-        { variant: "error" }
-      );
+      enqueue(error.response?.data?.message || "Failed to save signature", {
+        variant: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -70,7 +76,8 @@ const EmailSignatureFormComponent = () => {
           <Stack spacing={3}>
             <Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Your signature will be automatically appended to all outbound emails.
+                Your signature will be automatically appended to all outbound
+                emails.
               </Typography>
               <Box sx={{ position: "relative" }}>
                 <RichTextEditor
