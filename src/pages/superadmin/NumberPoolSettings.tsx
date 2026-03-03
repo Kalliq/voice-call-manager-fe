@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -42,6 +42,8 @@ type User = {
 type View = "pool" | "problematic" | "spammed";
 type AssignmentFilter = "all" | "assigned" | "unassigned";
 
+const MAX_NUMBERS_PER_USER = 2;
+
 const NumberPoolSettings = () => {
   const [view, setView] = useState<View>("pool");
   const [numbers, setNumbers] = useState<NumberRecord[]>([]);
@@ -58,6 +60,16 @@ const NumberPoolSettings = () => {
   const usageCounts = numbers.map((num) => num.usageCount || 0);
   const maxUsage = Math.max(...usageCounts, 1);
   const minUsage = Math.min(...usageCounts, 0);
+
+  const userNumberCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    numbers.forEach((n) => {
+      if (n.assigned && n.user) {
+        counts[n.user] = (counts[n.user] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [numbers]);
 
   const getUsageColor = (count: number) => {
     if (count >= maxUsage * 0.75) return "#d32f2f";
@@ -89,14 +101,22 @@ const NumberPoolSettings = () => {
   }, [view]);
 
   const handleSelect = (number: string) => {
-    setSelected((prev) =>
-      prev.includes(number)
-        ? prev.filter((n) => n !== number)
-        : [...prev, number]
-    );
+    setSelected((prev) => {
+      if (prev.includes(number)) {
+        return prev.filter((n) => n !== number);
+      }
+      if (assignUser) {
+        const currentCount = userNumberCounts[assignUser] || 0;
+        const maxCanAdd = Math.max(0, MAX_NUMBERS_PER_USER - currentCount);
+        if (prev.length >= maxCanAdd) return prev;
+      }
+      return [...prev, number];
+    });
   };
 
   const handleAssign = async () => {
+    const currentCount = userNumberCounts[assignUser] || 0;
+    if (currentCount + selected.length > MAX_NUMBERS_PER_USER) return;
     setLoading(true);
     await api.post("/numbers/assign", {
       userId: assignUser,
@@ -214,6 +234,12 @@ const NumberPoolSettings = () => {
           gap={2}
           flexWrap="wrap"
         >
+          {assignUser &&
+            (userNumberCounts[assignUser] || 0) >= MAX_NUMBERS_PER_USER && (
+              <Typography variant="body2" color="warning.main" sx={{ alignSelf: "center" }}>
+                Max {MAX_NUMBERS_PER_USER} numbers per user. This user has reached the limit.
+              </Typography>
+            )}
           {/* Assign to user */}
           <FormControl size="small" sx={{ minWidth: 220 }}>
             <InputLabel id="assign-user-label" shrink>
@@ -249,7 +275,13 @@ const NumberPoolSettings = () => {
 
           <Button
             variant="contained"
-            disabled={!assignUser || !selected.length || loading}
+            disabled={
+              !assignUser ||
+              !selected.length ||
+              loading ||
+              (userNumberCounts[assignUser] || 0) + selected.length >
+                MAX_NUMBERS_PER_USER
+            }
             onClick={handleAssign}
           >
             Assign
@@ -363,7 +395,14 @@ const NumberPoolSettings = () => {
                 <Checkbox
                   checked={selected.includes(num.number)}
                   onChange={() => handleSelect(num.number)}
-                  disabled={!!num.released}
+                  disabled={
+                    !!num.released ||
+                    (!!assignUser &&
+                      !selected.includes(num.number) &&
+                      !num.assigned &&
+                      (userNumberCounts[assignUser] || 0) + selected.length >=
+                        MAX_NUMBERS_PER_USER)
+                  }
                 />
               </TableCell>
               <TableCell>{num.number}</TableCell>

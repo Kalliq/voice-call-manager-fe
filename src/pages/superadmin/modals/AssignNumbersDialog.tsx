@@ -12,6 +12,8 @@ import {
   Box,
 } from "@mui/material";
 
+const MAX_NUMBERS_PER_USER = 2;
+
 interface AssignNumbersDialogProps {
   open: boolean;
   onClose: () => void;
@@ -20,6 +22,7 @@ interface AssignNumbersDialogProps {
   selectedNumbers: string[];
   onNumbersChange: (numbers: string[]) => void;
   onAssign: () => void;
+  maxSelectable?: number;
 }
 
 export default function AssignNumbersDialog({
@@ -30,8 +33,18 @@ export default function AssignNumbersDialog({
   selectedNumbers,
   onNumbersChange,
   onAssign,
+  maxSelectable,
 }: AssignNumbersDialogProps) {
   const availableNumbers = numbers.filter((n) => !n.assigned || n.released);
+
+  const handleNumbersChange = (newValue: any[]) => {
+    const newNumbers = newValue.map((n) => n.number || String(n)).filter(Boolean);
+    const limited =
+      maxSelectable !== undefined && newNumbers.length > maxSelectable
+        ? newNumbers.slice(0, maxSelectable)
+        : newNumbers;
+    onNumbersChange(limited);
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -43,6 +56,12 @@ export default function AssignNumbersDialog({
         <Stack spacing={2} mt={1}>
           <Typography variant="body2" color="text.secondary">
             Select phone numbers to assign. Only unassigned numbers are shown.
+            {maxSelectable !== undefined &&
+              (maxSelectable === 0 ? (
+                <> This user has reached the maximum of {MAX_NUMBERS_PER_USER} numbers.</>
+              ) : (
+                <> Maximum {maxSelectable} more number(s) can be assigned.</>
+              ))}
           </Typography>
           <Autocomplete
             multiple
@@ -51,11 +70,7 @@ export default function AssignNumbersDialog({
             value={numbers.filter((n) =>
               selectedNumbers.includes(n.number || String(n))
             )}
-            onChange={(_, newValue) => {
-              onNumbersChange(
-                newValue.map((n) => n.number || String(n)).filter(Boolean)
-              );
-            }}
+            onChange={(_, newValue) => handleNumbersChange(newValue)}
             renderInput={(params) => (
               <TextField {...params} label="Phone Numbers" />
             )}
@@ -88,7 +103,11 @@ export default function AssignNumbersDialog({
         <Button
           variant="contained"
           onClick={onAssign}
-          disabled={selectedNumbers.length === 0}
+          disabled={
+            selectedNumbers.length === 0 ||
+            (maxSelectable !== undefined &&
+              selectedNumbers.length > maxSelectable)
+          }
         >
           Assign Numbers
         </Button>

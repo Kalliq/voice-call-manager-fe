@@ -34,6 +34,8 @@ import {
 } from "@mui/icons-material";
 import api from "../../utils/axiosInstance";
 import { UserRole } from "voice-javascript-common";
+
+const MAX_NUMBERS_PER_USER = 2;
 import AssignAdminUsersDialog from "./modals/AssignAdminUsersDialog";
 import CreateAdminDialog from "./modals/CreateAdminDialog";
 import CreateUserDialog from "./modals/CreateUserDialog";
@@ -400,6 +402,8 @@ const TenantDetails = () => {
 
   const handleAssignNumbers = async () => {
     if (!selectedUserForNumber || selectedNumbers.length === 0) return;
+    const currentCount = userNumbers[selectedUserForNumber]?.length || 0;
+    if (currentCount + selectedNumbers.length > MAX_NUMBERS_PER_USER) return;
     try {
       await api.post("/numbers/assign", {
         userId: selectedUserForNumber,
@@ -1132,6 +1136,15 @@ const TenantDetails = () => {
         selectedNumbers={selectedNumbers}
         onNumbersChange={setSelectedNumbers}
         onAssign={handleAssignNumbers}
+        maxSelectable={
+          selectedUserForNumber
+            ? Math.max(
+                0,
+                MAX_NUMBERS_PER_USER -
+                  (userNumbers[selectedUserForNumber]?.length || 0)
+              )
+            : undefined
+        }
       />
 
       <EditTenantDialog
