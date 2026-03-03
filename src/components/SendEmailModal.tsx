@@ -241,17 +241,12 @@ const SendEmailModal = ({
     // Final safety check: ensure signature is appended before send
     const finalBody = withSignature(body, signature || "");
 
-    // Convert HTML to plain text for email (backend expects plain text)
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = finalBody;
-    const plainTextBody = tempDiv.textContent || tempDiv.innerText || "";
-
     setSending(true);
     try {
       await api.post("/email/gmail/send", {
         contactId,
         subject: subject.trim(),
-        body: plainTextBody.trim(),
+        body: finalBody.trim(),
       });
 
       enqueue("Email sent successfully", { variant: "success" });

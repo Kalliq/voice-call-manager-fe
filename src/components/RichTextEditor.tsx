@@ -60,18 +60,19 @@ const RichTextEditor = ({
         openOnClick: false,
       }),
     ],
-    []
+    [],
   );
 
   // Memoize editorProps to prevent editor recreation
   const editorProps = useMemo(
     () => ({
       attributes: {
-        class: "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
-        style: `min-height: ${minHeight}; padding: 12px; border: 1px solid #e0e0e0; border-radius: 4px;`,
+        class:
+          "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
+        style: `min-height: ${minHeight}; padding: 12px; border: 1px solid #e0e0e0; border-radius: 4px; font-synthesis: auto;`,
       },
     }),
-    [minHeight]
+    [minHeight],
   );
 
   const editor = useEditor({
@@ -100,7 +101,7 @@ const RichTextEditor = ({
   // Do NOT sync on every value prop change - that causes the typing loop
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
-    
+
     // Only reset when triggerReset changes (external update like template/signature)
     if (triggerReset !== undefined && triggerReset !== lastTriggerRef.current) {
       editor.commands.setContent(value || "", { emitUpdate: false });
@@ -135,7 +136,10 @@ const RichTextEditor = ({
   }) => (
     <Button
       size="small"
-      onClick={onClick}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        if (!disabled && !readOnly) onClick();
+      }}
       disabled={disabled || readOnly}
       variant={isActive ? "contained" : "outlined"}
       sx={{
@@ -168,21 +172,27 @@ const RichTextEditor = ({
         >
           <Stack direction="row" spacing={0.5}>
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 1 }).run()
+              }
               isActive={editor.isActive("heading", { level: 1 })}
               title="Heading 1"
             >
               H1
             </ToolbarButton>
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 2 }).run()
+              }
               isActive={editor.isActive("heading", { level: 2 })}
               title="Heading 2"
             >
               H2
             </ToolbarButton>
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 3 }).run()
+              }
               isActive={editor.isActive("heading", { level: 3 })}
               title="Heading 3"
             >
@@ -244,7 +254,9 @@ const RichTextEditor = ({
               <FormatAlignLeft fontSize="small" />
             </ToolbarButton>
             <ToolbarButton
-              onClick={() => editor.chain().focus().setTextAlign("center").run()}
+              onClick={() =>
+                editor.chain().focus().setTextAlign("center").run()
+              }
               isActive={editor.isActive({ textAlign: "center" })}
               title="Align Center"
             >
