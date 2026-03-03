@@ -85,14 +85,14 @@ const StepRow = ({
         <TableCell align="right">
           {hasEligible && (
             <Box display="inline-flex" alignItems="center" gap={1}>
-              <Tooltip title="Change connection type">
+              {/* <Tooltip title="Change connection type">
                 <IconButton
                   size="small"
                   onClick={(e) => onConnectionClick(e, list.id)}
                 >
                   <PhoneForwardedOutlined fontSize="small" />
                 </IconButton>
-              </Tooltip>
+              </Tooltip> */}
               <Box
                 component="span"
                 display="inline-flex"

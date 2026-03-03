@@ -21,8 +21,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Checkbox,
+  Switch,
+  Backdrop,
 } from "@mui/material";
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import { UserRole } from "voice-javascript-common";
@@ -43,6 +43,7 @@ export default function SuperUserManagement() {
 
   const [admins, setAdmins] = useState<any[]>([]);
   const [selectedAdminEmail, setSelectedAdminEmail] = useState<string>("");
+  const [togglingActive, setTogglingActive] = useState(false);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -80,6 +81,18 @@ export default function SuperUserManagement() {
     }
   };
 
+  const handleToggleActive = async (userId: string, active: boolean) => {
+    setTogglingActive(true);
+    try {
+      await api.post(`/users/${userId}/active`, { active });
+      await loadUsers();
+    } catch (err) {
+      console.error("Failed to update user active status", err);
+    } finally {
+      setTogglingActive(false);
+    }
+  };
+
   const handleCreateUser = async () => {
     try {
       await api.post("/users", {
@@ -112,7 +125,16 @@ export default function SuperUserManagement() {
   }, []);
 
   return (
-    <Box p={4}>
+    <Box p={4} sx={{ position: "relative" }}>
+      <Backdrop
+        open={togglingActive}
+        sx={{
+          color: "#fff",
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
       <Typography variant="h5" mb={2}>
         User Management
       </Typography>
@@ -177,6 +199,7 @@ export default function SuperUserManagement() {
                   <TableCell>Email</TableCell>
                   <TableCell>Role</TableCell>
                   <TableCell>Assigned Admin</TableCell>
+                  <TableCell>Active</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -186,6 +209,16 @@ export default function SuperUserManagement() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.role}</TableCell>
                     <TableCell>{user.adminEmail || "-"}</TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={user.active !== false}
+                        onChange={(e) =>
+                          handleToggleActive(user.id, e.target.checked)
+                        }
+                        disabled={user.role === "superadmin" || togglingActive}
+                        color="primary"
+                      />
+                    </TableCell>
                     <TableCell>
                       <IconButton
                         onClick={() => handleDelete(user.id)}

@@ -24,7 +24,8 @@ export const useSettings = () => {
           return (
             key !== "user" &&
             key !== "id" &&
-            !["createdat", "updatedat", "created_at", "updated_at"].includes(lowerKey)
+            !["createdat", "updatedat", "created_at", "updated_at"].includes(lowerKey) &&
+            !["__v","generalsettings", "notificationssettings", "general_settings", "notifications_settings"].includes(lowerKey)
           );
         })
         .reduce((acc, key) => {

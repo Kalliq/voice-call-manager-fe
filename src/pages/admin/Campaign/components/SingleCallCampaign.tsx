@@ -546,9 +546,9 @@ const SingleCallCampaignPanel: React.FC<SingleCallCampaignPanelProps> = ({
               >
                 Send email
               </Button>
-              <Button variant="outlined" startIcon={<Animation />}>
+              {/* <Button variant="outlined" startIcon={<Animation />}>
                 Add to sequence
-              </Button>
+              </Button> */}
             </Paper>
             <Grid
               item

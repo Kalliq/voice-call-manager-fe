@@ -630,9 +630,9 @@ const ContactDetails = () => {
               >
                 Send email
               </Button>
-              <Button variant="outlined" startIcon={<Add />}>
+              {/* <Button variant="outlined" startIcon={<Add />}>
                 Add to sequence
-              </Button>
+              </Button> */}
               <Button
                 variant="contained"
                 color="primary"

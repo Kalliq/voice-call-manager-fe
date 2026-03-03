@@ -58,9 +58,13 @@ const Login: React.FC = () => {
       } else {
         navigate("/dashboard");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setErrorMessage("Invalid email or password");
+      if(error?.status === 400){
+        setErrorMessage("User not active");  
+      } else {
+        setErrorMessage("Invalid email or password");
+      }      
     } finally {
       setLoading(false);
     }

@@ -13,10 +13,10 @@ const schema = {
           label: "TELEPHONY CONNECTION",
           options: [
             { label: "Power dialer", value: TelephonyConnection.SOFT_CALL },
-            {
-              label: "Parallel Dialing",
-              value: TelephonyConnection.PARALLEL_CALL,
-            },
+            // {
+            //   label: "Parallel Dialing",
+            //   value: TelephonyConnection.PARALLEL_CALL,
+            // },
           ],
         },
         {

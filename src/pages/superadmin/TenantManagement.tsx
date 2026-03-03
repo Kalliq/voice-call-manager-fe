@@ -108,7 +108,11 @@ export default function TenantManagement() {
               params: { period: "month", tenantId: tenant.id },
             });
 
-            return { id: tenant.id, minutes: data.totalMinutes, totalCalls: data.callsTotal };
+            return {
+              id: tenant.id,
+              minutes: data.totalMinutes ?? 0,
+              totalCalls: data.callsTotal ?? 0,
+            };
           } catch (err) {
             console.error("Failed to fetch minutes for tenant", err);
             return { id: tenant.id, minutes: 0, totalCalls: 0 };
@@ -289,7 +293,9 @@ export default function TenantManagement() {
                           const entry = tenantMinutes.find(
                             (t) => t.id === tenant.id
                           );
-                          return  entry ? "Total calls : " +entry.totalCalls + ' lasted ' + entry.minutes + 'm': "0";
+                          return entry
+                            ? `${entry.totalCalls} call${entry.totalCalls !== 1 ? "s" : ""}, ${Math.round(entry.minutes)} min total`
+                            : "0 calls";
                         })()}
                       </Typography>
                     </Box>

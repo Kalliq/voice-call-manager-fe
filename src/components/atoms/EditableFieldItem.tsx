@@ -94,6 +94,9 @@ const EditableFieldItem = ({
                   fontSize: 13,
                   py: 0.5,
                 },
+                textOverflow: "ellipsis",
+                wordWrap: "break-word",
+                wordBreak: "break-all",
               }}
             />
             <IconButton
@@ -115,7 +118,7 @@ const EditableFieldItem = ({
           </Stack>
         ) : (
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-            <Typography fontSize={13} sx={{ flexGrow: 1 }}>
+            <Typography fontSize={13} sx={{ flexGrow: 1, textOverflow: "ellipsis", wordWrap: "break-word", wordBreak: "break-all" }}>
               {value || "—"}
             </Typography>
             {onSave && (

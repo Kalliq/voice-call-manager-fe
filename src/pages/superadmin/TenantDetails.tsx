@@ -22,6 +22,8 @@ import {
   IconButton,
   Tabs,
   Tab,
+  Switch,
+  Backdrop,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -150,6 +152,7 @@ const TenantDetails = () => {
   // Accounts state
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [togglingActive, setTogglingActive] = useState(false);
   const [openAccountDialog, setOpenAccountDialog] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
 
@@ -344,6 +347,20 @@ const TenantDetails = () => {
       await loadTenant();
     } catch (err) {
       console.error("Failed to remove user", err);
+    }
+  };
+
+  const handleToggleActive = async (userId: string, active: boolean) => {
+    setTogglingActive(true);
+    try {
+      await api.post(`/users/${userId}/active`, { active });
+      await loadTenantUsers();
+      await loadNumbers();
+      await loadUserNumbers();
+    } catch (err) {
+      console.error("Failed to update user active status", err);
+    } finally {
+      setTogglingActive(false);
     }
   };
 
@@ -597,7 +614,16 @@ const TenantDetails = () => {
   ].filter((field) => field.value);
 
   return (
-    <Box p={3}>
+    <Box p={3} sx={{ position: "relative" }}>
+      <Backdrop
+        open={togglingActive}
+        sx={{
+          color: "#fff",
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
       <Box mb={3} display="flex" alignItems="center" gap={2} justifyContent="space-between">
         <Box display="flex" alignItems="center" gap={2}>
           <Button
@@ -707,6 +733,7 @@ const TenantDetails = () => {
                       <TableRow>
                         <TableCell>Email</TableCell>
                         <TableCell>Role</TableCell>
+                        <TableCell>Active</TableCell>
                         <TableCell>Assigned Numbers</TableCell>
                         <TableCell>Actions</TableCell>
                       </TableRow>
@@ -714,7 +741,7 @@ const TenantDetails = () => {
                     <TableBody>
                       {adminUsers.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={4} align="center">
+                          <TableCell colSpan={5} align="center">
                             <Typography color="text.secondary" py={2}>
                               No admin users assigned to this tenant
                             </Typography>
@@ -727,6 +754,17 @@ const TenantDetails = () => {
                             <TableRow key={admin.id}>
                               <TableCell>{admin.email}</TableCell>
                               <TableCell>{admin.role}</TableCell>
+                              <TableCell>
+                                <Switch
+                                  checked={admin.active !== false}
+                                  onChange={(e) =>
+                                    handleToggleActive(admin.id, e.target.checked)
+                                  }
+                                  disabled={admin.role === "superadmin" || togglingActive}
+                                  color="primary"
+                                  size="small"
+                                />
+                              </TableCell>
                               <TableCell>
                                 {assignedNumbers.length > 0 ? (
                                   <Stack direction="row" spacing={0.5} flexWrap="wrap">
@@ -815,6 +853,7 @@ const TenantDetails = () => {
                         <TableCell>Email</TableCell>
                         <TableCell>Role</TableCell>
                         <TableCell>Assigned Admin</TableCell>
+                        <TableCell>Active</TableCell>
                         <TableCell>Assigned Numbers</TableCell>
                         <TableCell>Actions</TableCell>
                       </TableRow>
@@ -822,7 +861,7 @@ const TenantDetails = () => {
                     <TableBody>
                       {users.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} align="center">
+                          <TableCell colSpan={6} align="center">
                             <Typography color="text.secondary" py={2}>
                               No users assigned to this tenant
                             </Typography>
@@ -836,6 +875,17 @@ const TenantDetails = () => {
                               <TableCell>{user.email}</TableCell>
                               <TableCell>{user.role}</TableCell>
                               <TableCell>{user.adminId ? user.adminId.email : "-"}</TableCell>
+                              <TableCell>
+                                <Switch
+                                  checked={user.active !== false}
+                                  onChange={(e) =>
+                                    handleToggleActive(user.id, e.target.checked)
+                                  }
+                                  disabled={user.role === "superadmin" || togglingActive}
+                                  color="primary"
+                                  size="small"
+                                />
+                              </TableCell>
                               <TableCell>
                                 {assignedNumbers.length > 0 ? (
                                   <Stack direction="row" spacing={0.5} flexWrap="wrap">
