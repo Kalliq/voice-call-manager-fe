@@ -11,7 +11,6 @@ type Contact = Omit<ContactBase, "phone"> & {
   mobile?: PhoneField;
   other?: PhoneField;
   account?: { id: string; companyName: string };
-  [key: string]: unknown;
 };
 
 type CallSession = Contact & {
