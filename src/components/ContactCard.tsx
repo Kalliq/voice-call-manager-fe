@@ -103,7 +103,7 @@ const ContactCard = ({
                   pl: 1,
                 }}
               >
-                {contact.phone}
+                {contact.phone?.number}
               </Typography>
             </Box>
 

@@ -327,7 +327,7 @@ const AccountDetails = () => {
                         </TableCell>
                         <TableCell>{contact.company || "-"}</TableCell>
                         <TableCell>{contact.email || "-"}</TableCell>
-                        <TableCell>{contact.phone || "-"}</TableCell>
+                        <TableCell>{contact.phone?.number || "-"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

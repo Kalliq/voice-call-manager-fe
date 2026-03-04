@@ -96,7 +96,7 @@ const DialerPopoverCall = () => {
     navigate("/campaign", {
       state: {
         contactId: contact.id,
-        phone: contact.phone || phoneNumber,
+        phone: contact.phone?.number || phoneNumber,
         autoStart: true,
       },
     });
@@ -158,7 +158,7 @@ const DialerPopoverCall = () => {
           mode="active"
           displayLabel={
             contact
-              ? `${contact.first_name} ${contact.last_name} – ${contact.phone || phoneNumber}`
+              ? `${contact.first_name} ${contact.last_name} – ${contact.phone?.number || phoneNumber}`
               : phoneNumber
           }
           phone={phoneNumber}
@@ -220,7 +220,7 @@ const DialerPopoverCall = () => {
               <Stack direction="row" spacing={1} alignItems="center">
                 <Phone fontSize="small" />
                 <Typography fontSize="12px" color="text.secondary">
-                  {contact.phone || phoneNumber}
+                  {contact.phone?.number || phoneNumber}
                 </Typography>
               </Stack>
             </Stack>

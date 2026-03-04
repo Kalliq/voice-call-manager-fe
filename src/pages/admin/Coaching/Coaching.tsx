@@ -195,11 +195,11 @@ const ActivityRow = ({
                       </Typography>
                     </Stack>
                   )}
-                  {contact.phone && (
+                  {contact.phone?.number && (
                     <Stack direction="row" alignItems="center" spacing={1}>
                       <Phone fontSize="small" color="action" />
                       <Typography variant="body2" color="text.secondary">
-                        {contact.phone}
+                        {contact.phone.number}
                       </Typography>
                     </Stack>
                   )}
