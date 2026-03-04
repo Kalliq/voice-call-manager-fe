@@ -132,9 +132,10 @@ const ContinueDialog = ({
   const saveHandler = async (stopAfter = false) => {
     await Promise.all(
       currentBatch.map((c) => {
-        const result =
+        const rawResult =
           selectedResults[c.id] ||
           (c.id !== answeredSessionId ? defaultDisposition : "");
+        const result = transformToSnakeCase(rawResult);
         return handleResult(c, result);
       })
     );
