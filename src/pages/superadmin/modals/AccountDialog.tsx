@@ -30,6 +30,7 @@ export default function AccountDialog({
   const [formData, setFormData] = useState<AccountFormData>({
     companyName: "",
     website: "",
+    description: "",
     location: "",
     zipCode: "",
     address: "",
@@ -49,6 +50,7 @@ export default function AccountDialog({
       setFormData({
         companyName: account.companyName || "",
         website: account.website || "",
+        description: account.description || "",
         location: account.location || "",
         zipCode: account.zipCode || "",
         address: account.address || "",
@@ -65,6 +67,7 @@ export default function AccountDialog({
       setFormData({
         companyName: "",
         website: "",
+        description: "",
         location: "",
         zipCode: "",
         address: "",
@@ -194,6 +197,19 @@ export default function AccountDialog({
                 value={formData.industry}
                 onChange={(e) => {
                   setFormData({ ...formData, industry: e.target.value });
+                  setError(null);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Description"
+                fullWidth
+                multiline
+                minRows={2}
+                value={formData.description || ""}
+                onChange={(e) => {
+                  setFormData({ ...formData, description: e.target.value });
                   setError(null);
                 }}
               />

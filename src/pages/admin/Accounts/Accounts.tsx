@@ -15,13 +15,21 @@ import {
   Button,
   CircularProgress,
   Stack,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
+  People as PeopleIcon,
+} from "@mui/icons-material";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import { useNavigate } from "react-router-dom";
 import api from "../../../utils/axiosInstance";
 import { useEffect, useState, useCallback } from "react";
 import AccountDialog from "../../superadmin/modals/AccountDialog";
+import { DeleteDialog } from "../../../components/DeleteDialog";
 import useAppStore from "../../../store/useAppStore";
 import { Account, AccountFormData } from "../../../types/account";
 
@@ -34,11 +42,12 @@ const AccountsPage = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(3);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [openAccountDialog, setOpenAccountDialog] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<AccountFormData | null>(null);
+  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
 
   const loadAccounts = useCallback(async () => {
     try {
@@ -62,6 +71,18 @@ const AccountsPage = () => {
   useEffect(() => {
     loadAccounts();
   }, [loadAccounts]);
+
+  const handleDeleteAccount = async () => {
+    if (!accountToDelete) return;
+    try {
+      await api.delete(`/accounts/${accountToDelete.id}`);
+      enqueue("Account deleted", { variant: "success" });
+      setAccountToDelete(null);
+      await loadAccounts();
+    } catch (err) {
+      enqueue("Failed to delete account", { variant: "error" });
+    }
+  };
 
   const handleSaveAccount = async (accountData: AccountFormData) => {
     try {
@@ -122,12 +143,10 @@ const AccountsPage = () => {
               <TableCell>Industry</TableCell>
               <TableCell>Phone</TableCell>
               <TableCell>Address</TableCell>
-              <TableCell>City</TableCell>
-              <TableCell>State</TableCell>
               <TableCell>Zip Code</TableCell>
               <TableCell>Country</TableCell>
               <TableCell>Location</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell sx={{ width: 150 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -150,32 +169,39 @@ const AccountsPage = () => {
                   <TableCell>{account.industry}</TableCell>
                   <TableCell>{account.phone}</TableCell>
                   <TableCell>{account.address}</TableCell>
-                  <TableCell>{account.city}</TableCell>
-                  <TableCell>{account.state}</TableCell>
                   <TableCell>{account.zipCode}</TableCell>
                   <TableCell>{account.country}</TableCell>
                   <TableCell>{account.location}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/accounts/${account.id}`);
-                      }}
-                    >
-                      View
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/accounts/contacts/${account.id}`);
-                      }}
-                    >
-                      Contacts
-                    </Button>
+                  <TableCell
+                    sx={{ width: 150 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Tooltip title="View">
+                      <IconButton
+                        color="primary"
+                        onClick={() => navigate(`/accounts/${account.id}`)}
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Contacts">
+                      <IconButton
+                        color="primary"
+                        onClick={() =>
+                          navigate(`/accounts/contacts/${account.id}`)
+                        }
+                      >
+                        <PeopleIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton
+                        color="error"
+                        onClick={() => setAccountToDelete(account)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))
@@ -184,7 +210,7 @@ const AccountsPage = () => {
           <TableFooter>
             <TableRow>
               <TablePagination
-                rowsPerPageOptions={[3, 6, 9]}
+                rowsPerPageOptions={[10, 25, 50]}
                 count={total}
                 page={page}
                 rowsPerPage={rowsPerPage}
@@ -209,6 +235,14 @@ const AccountsPage = () => {
         account={selectedAccount}
         users={[]}
         onSave={handleSaveAccount}
+      />
+
+      <DeleteDialog
+        open={!!accountToDelete}
+        title="Delete Account"
+        text={`Are you sure you want to delete "${accountToDelete?.companyName}"?`}
+        onClose={() => setAccountToDelete(null)}
+        onConfirm={handleDeleteAccount}
       />
     </Box>
   );

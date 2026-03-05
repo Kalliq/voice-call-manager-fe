@@ -14,17 +14,15 @@ type ContactFieldOption = { id: ContactField; name: string };
 type FieldOptionsMap = {
   contacts: ContactFieldOption[];
   leads: AppField[];
-  accounts: AppField[];
   opportunities: AppField[];
 };
-type TabType = "contacts" | "leads" | "accounts" | "opportunities";
+type TabType = "contacts" | "leads" |  "opportunities";
 type SaveState = "idle" | "loading" | "success";
 
 const fieldOptions: FieldOptionsMap = {
   contacts: [
     { id: "first_name", name: "First Name" },
     { id: "last_name", name: "Last Name" },
-    { id: "company", name: "Company" },
     { id: "email", name: "Email" },
     { id: "phone", name: "Phone" },
     { id: "linkedIn", name: "LinkedIn" },
@@ -32,7 +30,9 @@ const fieldOptions: FieldOptionsMap = {
     { id: "timezone", name: "Timezone" },
     { id: "state", name: "State" },
     { id: "title", name: "Title" },
+    { id: "company", name: "Company" },
     { id: "accountWebsite", name: "Company Website" },
+    { id: "accountDescription", name: "Company Description" },
   ],
   leads: [
     { id: "first_name", name: "First Name" },
@@ -41,12 +41,6 @@ const fieldOptions: FieldOptionsMap = {
     { id: "email", name: "Email" },
     { id: "personal_phone", name: "Personal Phone" },
     { id: "corporate_phone", name: "Corporate Phone" },
-  ],
-  accounts: [
-    { id: "account_name", name: "Account Name" },
-    { id: "industry", name: "Industry" },
-    { id: "website", name: "Website" },
-    { id: "revenue", name: "Revenue" },
   ],
   opportunities: [
     { id: "opportunity_name", name: "Opportunity Name" },
@@ -67,7 +61,6 @@ export default function FieldMapper() {
     integrationSettings ?? {
       contacts: [],
       leads: [],
-      accounts: [],
       opportunities: [],
     }
   );
@@ -134,7 +127,6 @@ export default function FieldMapper() {
       <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)}>
         <Tab label="Contacts" value="contacts" />
         <Tab label="Leads" value="leads" />
-        <Tab label="Accounts" value="accounts" />
         <Tab label="Opportunities" value="opportunities" />
       </Tabs>
 

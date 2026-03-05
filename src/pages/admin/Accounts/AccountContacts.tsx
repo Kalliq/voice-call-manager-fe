@@ -66,6 +66,8 @@ const AccountContacts = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [targetListId, setTargetListId] = useState("");
+  const [deleteBulkOpen, setDeleteBulkOpen] = useState(false);
+  const [deletingBulk, setDeletingBulk] = useState(false);
 
   const { moveContacts } = useMoveContacts({
     onMoved: (moved: number, skipped: number) => {
@@ -149,6 +151,24 @@ const AccountContacts = () => {
     enqueue("Deleted", { variant: "success" });
     setDeleting(null);
     load();
+  };
+
+  const onDeleteBulk = async () => {
+    if (deletingBulk || selectedContactIds.length === 0) return;
+    setDeletingBulk(true);
+    try {
+      await api.delete("/contacts/bulk", { data: { ids: selectedContactIds } });
+      enqueue(`Deleted ${selectedContactIds.length} contact(s)`, {
+        variant: "success",
+      });
+      setDeleteBulkOpen(false);
+      setSelectedContactIds([]);
+      load();
+    } catch {
+      enqueue("Failed to delete selected contacts", { variant: "error" });
+    } finally {
+      setDeletingBulk(false);
+    }
   };
 
   const onCall = (c: Contact) => {
@@ -242,16 +262,25 @@ const AccountContacts = () => {
         />
         <Box display="flex" gap={2}>
           {selectedContactIds.length > 0 && (
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => {
-                setTargetListId("");
-                setMoveDialogOpen(true);
-              }}
-            >
-              Move to List
-            </Button>
+            <>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => {
+                  setTargetListId("");
+                  setMoveDialogOpen(true);
+                }}
+              >
+                Move to List
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => setDeleteBulkOpen(true)}
+              >
+                Delete Selected ({selectedContactIds.length})
+              </Button>
+            </>
           )}
           <SelectField
             items={lists}
@@ -440,6 +469,14 @@ const AccountContacts = () => {
         onConfirm={() => onDelete(deleting!)}
         title="Delete Contact?"
         text={`Are you sure you want to delete ${deleting?.first_name} ${deleting?.last_name}?`}
+      />
+      <DeleteDialog
+        open={deleteBulkOpen}
+        onClose={() => !deletingBulk && setDeleteBulkOpen(false)}
+        onConfirm={onDeleteBulk}
+        title="Delete Selected Contacts?"
+        text={`Are you sure you want to delete ${selectedContactIds.length} selected contact(s)? This action cannot be undone.`}
+        confirmDisabled={deletingBulk}
       />
       <MoveContactsDialog
         open={moveDialogOpen}

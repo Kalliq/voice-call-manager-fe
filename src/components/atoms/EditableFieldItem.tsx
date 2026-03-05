@@ -7,7 +7,8 @@ interface EditableFieldItemProps {
   label: string;
   value?: string;
   onSave?: (value: string) => Promise<void>;
-  multiline?: boolean;
+  /** When true, renders a textarea instead of a single-line input when editing */
+  textarea?: boolean;
 }
 
 const EditableFieldItem = ({
@@ -15,7 +16,7 @@ const EditableFieldItem = ({
   label,
   value = "",
   onSave,
-  multiline = false,
+  textarea = false,
 }: EditableFieldItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
@@ -57,7 +58,7 @@ const EditableFieldItem = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !multiline && !e.shiftKey) {
+    if (e.key === "Enter" && !textarea && !e.shiftKey) {
       e.preventDefault();
       handleSave();
     } else if (e.key === "Escape") {
@@ -80,12 +81,13 @@ const EditableFieldItem = ({
           {label}
         </Typography>
         {isEditing ? (
-          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
+          <Stack direction="row" spacing={0.5} alignItems={textarea ? "flex-start" : "center"} sx={{ mt: 0.5 }}>
             <TextField
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              multiline={multiline}
+              multiline={textarea}
+              minRows={textarea ? 3 : undefined}
               size="small"
               autoFocus
               sx={{
@@ -118,7 +120,19 @@ const EditableFieldItem = ({
           </Stack>
         ) : (
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-            <Typography fontSize={13} sx={{ flexGrow: 1, textOverflow: "ellipsis", wordWrap: "break-word", wordBreak: "break-all" }}>
+            <Typography
+              fontSize={13}
+              sx={{
+                flexGrow: 1,
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+              }}
+            >
               {value || "—"}
             </Typography>
             {onSave && (

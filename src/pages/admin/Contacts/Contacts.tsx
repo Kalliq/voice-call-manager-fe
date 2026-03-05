@@ -72,6 +72,13 @@ const ContactsPage = () => {
     useState("");
   const [assigningUnassigned, setAssigningUnassigned] = useState(false);
   const [unassignedCount, setUnassignedCount] = useState(0);
+  const [deleteBulkOpen, setDeleteBulkOpen] = useState(false);
+  const [deletingBulk, setDeletingBulk] = useState(false);
+  const [noPhoneStats, setNoPhoneStats] = useState<{
+    withoutPhone: number;
+    total: number;
+    percentage: number;
+  } | null>(null);
 
   const { moveContacts } = useMoveContacts({
     onMoved: (moved: number, skipped: number) => {
@@ -106,16 +113,27 @@ const ContactsPage = () => {
     }
   };
 
+  const loadNoPhoneStats = useCallback(async () => {
+    try {
+      const res = await api.get("/contacts/stats/no-phone");
+      setNoPhoneStats(res.data);
+    } catch {
+      setNoPhoneStats(null);
+    }
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const isUnassigned = selectedListId === "__unassigned__";
+      const isNoPhone = selectedListId === "__no_phone__";
       const res = await api.get("/contacts", {
         params: {
           search,
-          page: isUnassigned ? 1 : page + 1,
-          limit: isUnassigned ? 10000 : rowsPerPage,
-          listId: isUnassigned ? undefined : selectedListId || undefined,
+          page: isUnassigned || isNoPhone ? 1 : page + 1,
+          limit: isUnassigned || isNoPhone ? 10000 : rowsPerPage,
+          listId:
+            isUnassigned || isNoPhone ? undefined : selectedListId || undefined,
         },
       });
       let data = res.data.data || [];
@@ -129,14 +147,23 @@ const ContactsPage = () => {
         data = data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
       }
 
+      if (isNoPhone) {
+        data = data.filter(
+          (c: Contact) => !c.phone || c.phone.trim() === ""
+        );
+        totalCount = data.length;
+        data = data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+      }
+
       setContacts(data);
       setTotal(totalCount);
+      loadNoPhoneStats();
     } catch {
       enqueue("Failed to load contacts", { variant: "error" });
     } finally {
       setLoading(false);
     }
-  }, [search, page, rowsPerPage, selectedListId, enqueue]);
+  }, [search, page, rowsPerPage, selectedListId, enqueue, loadNoPhoneStats]);
 
   const loadLists = async () => {
     try {
@@ -222,6 +249,24 @@ const ContactsPage = () => {
     }
   };
 
+  const onDeleteBulk = async () => {
+    if (deletingBulk || selectedContactIds.length === 0) return;
+    setDeletingBulk(true);
+    try {
+      await api.delete("/contacts/bulk", { data: { ids: selectedContactIds } });
+      enqueue(`Deleted ${selectedContactIds.length} contact(s)`, {
+        variant: "success",
+      });
+      setDeleteBulkOpen(false);
+      setSelectedContactIds([]);
+      load();
+    } catch {
+      enqueue("Failed to delete selected contacts", { variant: "error" });
+    } finally {
+      setDeletingBulk(false);
+    }
+  };
+
   const onCall = (c: Contact) => {
     navigate("/campaign", {
       state: {
@@ -244,6 +289,10 @@ const ContactsPage = () => {
   useEffect(() => {
     loadUnassignedCount();
   }, [loadUnassignedCount]);
+
+  useEffect(() => {
+    loadNoPhoneStats();
+  }, [loadNoPhoneStats]);
 
   return (
     <Box p={3}>
@@ -285,61 +334,95 @@ const ContactsPage = () => {
           </Button>
         </Box>
       </Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-      >
-        <TextField
-          size="small"
-          placeholder="Search..."
-          value={searchInput}
-          onChange={(e) => onSearchChange(e.target.value)}
-          autoComplete="off"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon color="action" />
-              </InputAdornment>
-            ),
-            endAdornment: loading ? (
-              <InputAdornment position="end">
-                <CircularProgress size={16} />
-              </InputAdornment>
-            ) : null,
-          }}
-          sx={{ width: 300 }}
-        />
-        <Box display="flex" gap={2}>
-          {selectedContactIds.length > 0 && (
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => {
-                setTargetListId("");
-                setMoveDialogOpen(true);
-              }}
-            >
-              Move to List
-            </Button>
-          )}
-          <SelectField
-            items={[
-              { id: "__unassigned__", listName: "Unassigned from list" },
-              ...lists,
-            ]}
-            label="Filter by List"
-            value={selectedListId}
-            onChange={(val) => {
-              setSelectedListId(val);
-              setPage(0);
+      <Stack spacing={1} mb={2}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <TextField
+            size="small"
+            placeholder="Search..."
+            value={searchInput}
+            onChange={(e) => onSearchChange(e.target.value)}
+            autoComplete="off"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+              endAdornment: loading ? (
+                <InputAdornment position="end">
+                  <CircularProgress size={16} />
+                </InputAdornment>
+              ) : null,
             }}
-            getValue={(l) => l.id}
-            getLabel={(l) => l.listName}
-            placeholder="All lists"
+            sx={{ width: 300 }}
           />
-        </Box>
+          <Box display="flex" gap={2}>
+            {selectedContactIds.length > 0 && (
+              <>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => {
+                    setTargetListId("");
+                    setMoveDialogOpen(true);
+                  }}
+                >
+                  Move to List
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => setDeleteBulkOpen(true)}
+                >
+                  Delete Selected ({selectedContactIds.length})
+                </Button>
+              </>
+            )}
+            <SelectField
+              items={[
+                { id: "__unassigned__", listName: "Unassigned from list" },
+                {
+                  id: "__no_phone__",
+                  listName: "Contacts with no phone number",
+                },
+                ...lists,
+              ]}
+              label="Filter by"
+              value={selectedListId}
+              onChange={(val) => {
+                setSelectedListId(val);
+                setPage(0);
+              }}
+              getValue={(l) => l.id}
+              getLabel={(l) => l.listName}
+              placeholder="All lists"
+            />
+          </Box>
+        </Stack>
+        {noPhoneStats != null && noPhoneStats.total > 0 && (
+          <Tooltip
+            title={
+              <Typography component="span">
+                {noPhoneStats.withoutPhone} of {noPhoneStats.total} contacts (
+                <strong>{noPhoneStats.percentage}%</strong>) have no phone number
+              </Typography>
+            }
+          >
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              fontWeight="bold"
+              sx={{ cursor: "help", alignSelf: "flex-start" }}
+            >
+              Contacts with no phone number: {noPhoneStats.withoutPhone} (
+              {noPhoneStats.percentage}%)
+            </Typography>
+          </Tooltip>
+        )}
       </Stack>
 
       {loading ? (
@@ -527,6 +610,14 @@ const ContactsPage = () => {
         title="Delete All Contacts?"
         text="Are you sure you want to delete all contacts? This action cannot be undone."
         confirmDisabled={deletingAll}
+      />
+      <DeleteDialog
+        open={deleteBulkOpen}
+        onClose={() => !deletingBulk && setDeleteBulkOpen(false)}
+        onConfirm={onDeleteBulk}
+        title="Delete Selected Contacts?"
+        text={`Are you sure you want to delete ${selectedContactIds.length} selected contact(s)? This action cannot be undone.`}
+        confirmDisabled={deletingBulk}
       />
       <MoveContactsDialog
         open={moveDialogOpen}

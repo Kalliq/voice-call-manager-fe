@@ -11,11 +11,7 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
-  TextField,
-  Divider,
   CircularProgress,
-  Chip,
 } from "@mui/material";
 import {
   Business,
@@ -232,6 +228,28 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                 onSave={
                   onUpdate
                     ? (value) => onUpdate("accountName", value)
+                    : undefined
+                }
+              />
+              <EditableFieldItem
+                icon={<Business color="primary" />}
+                label="Account website"
+                value={contact.account?.website || ""}
+                onSave={
+                  onUpdate
+                    ? (value) => onUpdate("accountWebsite", value)
+                    : undefined
+                }
+              />
+              
+              <EditableFieldItem
+                icon={<Business color="primary" />}
+                label="Account description"
+                value={contact.account?.description || ""}
+                textarea={true}
+                onSave={
+                  onUpdate
+                    ? (value) => onUpdate("accountDescription", value)
                     : undefined
                 }
               />

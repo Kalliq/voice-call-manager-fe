@@ -35,7 +35,6 @@ import {
 import api from "../../utils/axiosInstance";
 import { UserRole } from "voice-javascript-common";
 
-const MAX_NUMBERS_PER_USER = 2;
 import AssignAdminUsersDialog from "./modals/AssignAdminUsersDialog";
 import CreateAdminDialog from "./modals/CreateAdminDialog";
 import CreateUserDialog from "./modals/CreateUserDialog";
@@ -389,21 +388,8 @@ const TenantDetails = () => {
     setOpenAssignUserToAdminDialog(true);
   };
 
-  const handleRemoveAdmin = async (adminId: string) => {
-    if (!id || !confirm("Are you sure you want to remove this admin?")) return;
-    try {
-      await api.delete(`/tenants/${id}/admin-users/${adminId}`);
-      await loadTenantUsers();
-      await loadTenant();
-    } catch (err) {
-      console.error("Failed to remove admin", err);
-    }
-  };
-
   const handleAssignNumbers = async () => {
     if (!selectedUserForNumber || selectedNumbers.length === 0) return;
-    const currentCount = userNumbers[selectedUserForNumber]?.length || 0;
-    if (currentCount + selectedNumbers.length > MAX_NUMBERS_PER_USER) return;
     try {
       await api.post("/numbers/assign", {
         userId: selectedUserForNumber,
@@ -804,7 +790,7 @@ const TenantDetails = () => {
                                     <PhoneIcon fontSize="small" />
                                   </IconButton>
                                   <IconButton
-                                    onClick={() => handleRemoveAdmin(admin.id)}
+                                    onClick={() => handleRemoveUser(admin.id)}
                                     size="small"
                                     color="error"
                                   >
@@ -1136,15 +1122,6 @@ const TenantDetails = () => {
         selectedNumbers={selectedNumbers}
         onNumbersChange={setSelectedNumbers}
         onAssign={handleAssignNumbers}
-        maxSelectable={
-          selectedUserForNumber
-            ? Math.max(
-                0,
-                MAX_NUMBERS_PER_USER -
-                  (userNumbers[selectedUserForNumber]?.length || 0)
-              )
-            : undefined
-        }
       />
 
       <EditTenantDialog

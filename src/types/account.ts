@@ -2,6 +2,7 @@ export interface Account {
   id: string;
   createdByUserId: string;
   companyName: string;
+  description?: string;
   location?: string;
   zipCode?: string;
   address?: string;
