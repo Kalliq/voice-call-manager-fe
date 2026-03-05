@@ -15,14 +15,10 @@ import {
   Tooltip,
 } from "@mui/material";
 import {
-  AccessTime,
-  Lock,
   MenuBook,
   CheckCircleOutline,
-  Person,
-  Phone,
-  Email as EmailIcon,
-  Business,
+  Download,
+  OpenInNew,
 } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -33,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 
 import ImproveSection from "./ImproveSection";
 import api from "../../../utils/axiosInstance";
+import cfg from "../../../config";
 import useAppStore from "../../../store/useAppStore";
 import AudioWaveform from "../../../components/AudioWaveform";
 import { CallResult } from "../../../types/call-results";
@@ -65,15 +62,38 @@ const ActivityRow = ({
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [contact, setContact] = useState<Contact | null | undefined>(undefined);
 
   const contactId = (entry as CallLog & { contactId?: string }).contactId;
 
+  const handleDownload = async () => {
+    if (!entry.recordingUrl) return;
+    setDownloading(true);
+    try {
+      const url = `${cfg.backendUrl}${entry.recordingUrl}`;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `recording-${entry.sid || "call"}.mp3`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      // Fallback: open in new tab
+      window.open(`${cfg.backendUrl}${entry.recordingUrl}`, "_blank");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   useEffect(() => {
-    if (!isOpen || !contactId) {
-      setContact(contactId ? undefined : null);
+    if (!contactId) {
+      setContact(null);
       return;
     }
+    setContact(undefined);
     let cancelled = false;
     api
       .get<Contact>(`/contacts/${contactId}`)
@@ -86,7 +106,7 @@ const ActivityRow = ({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, contactId]);
+  }, [contactId]);
 
   let formattedTime = "";
   if (entry.action?.timestamp) {
@@ -136,6 +156,33 @@ const ActivityRow = ({
             ))}
           </Select>
 
+          {contactId && (
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                {contact === undefined
+                  ? "Loading…"
+                  : contact
+                    ? [contact.first_name, contact.last_name]
+                        .filter(Boolean)
+                        .join(" ") || "—"
+                    : "—"}
+              </Typography>
+              {contact?.id && (
+                <Tooltip title="View contact" arrow placement="top">
+                  <OpenInNew
+                    fontSize="small"
+                    sx={{
+                      cursor: "pointer",
+                      color: "primary.main",
+                      "&:hover": { opacity: 0.8 },
+                    }}
+                    onClick={() => navigate(`/contacts/${contact.id}`)}
+                  />
+                </Tooltip>
+              )}
+            </Stack>
+          )}
+
           {entry.action?.notes && (
             <Tooltip title={entry.action.notes} arrow placement="top">
               <MenuBook
@@ -163,71 +210,23 @@ const ActivityRow = ({
 
       {isOpen && (
         <Box pl={4} pb={2}>
-          {contactId && (
-            <Paper
-              variant="outlined"
-              sx={{ p: 2, mb: 2, bgcolor: "action.hover" }}
-            >
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Contact
-              </Typography>
-              {contact === undefined ? (
-                <Typography variant="body2" color="text.secondary">
-                  Loading…
-                </Typography>
-              ) : contact ? (
-                <Stack spacing={0.5}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Person fontSize="small" color="action" />
-                    <Typography variant="body2" fontWeight={500}>
-                      {[contact.first_name, contact.last_name]
-                        .filter(Boolean)
-                        .join(" ") || "—"}
-                    </Typography>
-                  </Stack>
-                  {(contact.title || contact.account?.companyName) && (
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Business fontSize="small" color="action" />
-                      <Typography variant="body2" color="text.secondary">
-                        {[contact.title, contact.account?.companyName]
-                          .filter(Boolean)
-                          .join(" at ")}
-                      </Typography>
-                    </Stack>
-                  )}
-                  {contact.phone && (
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Phone fontSize="small" color="action" />
-                      <Typography variant="body2" color="text.secondary">
-                        {contact.phone}
-                      </Typography>
-                    </Stack>
-                  )}
-                  {contact.email && (
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <EmailIcon fontSize="small" color="action" />
-                      <Typography variant="body2" color="text.secondary">
-                        {contact.email}
-                      </Typography>
-                    </Stack>
-                  )}
+          {entry.recordingUrl ? (
+            <>
+              <Stack direction="row" alignItems="center" spacing={2} mb={2}>
+                <Tooltip title="Download recording" arrow placement="top">
                   <Button
                     size="small"
-                    sx={{ alignSelf: "flex-start", mt: 0.5 }}
-                    onClick={() => navigate(`/contacts/${contact.id}`)}
+                    variant="outlined"
+                    onClick={handleDownload}
+                    disabled={downloading}
+                    startIcon={<Download fontSize="small" />}
                   >
-                    View contact
+                    {downloading ? "Downloading…" : "Download"}
                   </Button>
-                </Stack>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Contact not found
-                </Typography>
-              )}
-            </Paper>
-          )}
-          {entry.recordingUrl ? (
-            <AudioWaveform url={entry.recordingUrl} />
+                </Tooltip>
+              </Stack>
+              <AudioWaveform url={entry.recordingUrl} />
+            </>
           ) : (
             <Typography fontSize={12} color="text.secondary">
               No call recording available for this call.

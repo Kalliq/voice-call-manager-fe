@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
-import { Box, Button, Slider, Stack, Typography } from "@mui/material";
+import { Box, IconButton, Slider, Stack, Tooltip, Typography } from "@mui/material";
+import { PlayArrow, Pause, Stop } from "@mui/icons-material";
 
 import cfg from "../config";
 
@@ -72,10 +73,16 @@ const AudioWaveform = ({
     };
   }, [url]);
 
-  const togglePlayPause = () => {
+  const play = () => {
     if (!waveRef.current) return;
-    waveRef.current.playPause();
-    setIsPlaying(waveRef.current.isPlaying());
+    waveRef.current.play();
+    setIsPlaying(true);
+  };
+
+  const pause = () => {
+    if (!waveRef.current) return;
+    waveRef.current.pause();
+    setIsPlaying(false);
   };
 
   const stopPlayback = () => {
@@ -105,14 +112,27 @@ const AudioWaveform = ({
         aria-label="Playback position"
       />
 
-      <Stack direction="row" spacing={2} alignItems="center" mt={1}>
-        <Button variant="contained" size="small" onClick={togglePlayPause}>
-          {isPlaying ? "Pause" : "Play"}
-        </Button>
-        <Button variant="outlined" size="small" onClick={stopPlayback}>
-          Stop
-        </Button>
-        <Typography fontSize="0.85rem" color="text.secondary">
+      <Stack direction="row" spacing={0.5} alignItems="center" mt={1}>
+        <Tooltip title="Play">
+          <span>
+            <IconButton size="small" onClick={play} disabled={isPlaying} color="primary">
+              <PlayArrow />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Pause">
+          <span>
+            <IconButton size="small" onClick={pause} disabled={!isPlaying} color="primary">
+              <Pause />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Stop">
+          <IconButton size="small" onClick={stopPlayback} color="primary">
+            <Stop />
+          </IconButton>
+        </Tooltip>
+        <Typography fontSize="0.85rem" color="text.secondary" sx={{ ml: 1 }}>
           {formatTime(progress)} / {formatTime(duration)}
         </Typography>
       </Stack>
