@@ -25,20 +25,32 @@ const useListManager = () => {
   const [eligibleContacts, setEligibleContacts] = useState<{
     [listId: string]: { [stepIndex: number]: Contact[] };
   }>({});
+  const [loadingContactsForListId, setLoadingContactsForListId] = useState<
+    string | null
+  >(null);
 
   const fetchEligibleContacts = async (listId: string, steps: Step[]) => {
-    const results: { [stepIndex: number]: Contact[] } = {};
+    setLoadingContactsForListId(listId);
+    try {
+      // Fetch all steps in parallel instead of sequentially
+      const results = await Promise.all(
+        steps.map((_, i) =>
+          api
+            .post(`/lists/${listId}/step/${i + 1}/contacts`)
+            .then((res) => res.data)
+            .catch(() => [] as Contact[])
+        )
+      );
 
-    for (let i = 0; i < steps.length; i++) {
-      try {
-        const res = await api.post(`/lists/${listId}/step/${i + 1}/contacts`);
-        results[i] = res.data;
-      } catch {
-        results[i] = [];
-      }
+      const resultsMap: { [stepIndex: number]: Contact[] } = {};
+      results.forEach((data, i) => {
+        resultsMap[i] = data;
+      });
+
+      setEligibleContacts((prev) => ({ ...prev, [listId]: resultsMap }));
+    } finally {
+      setLoadingContactsForListId(null);
     }
-
-    setEligibleContacts((prev) => ({ ...prev, [listId]: results }));
   };
 
   const handleExpand = (listId: string, steps?: Step[]) => {
@@ -115,6 +127,7 @@ const useListManager = () => {
     selectedCalls,
     expandedListId,
     eligibleContacts,
+    loadingContactsForListId,
     atListLimit,
     handleExpand,
     handleConnectionChange,

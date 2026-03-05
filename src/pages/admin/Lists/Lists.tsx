@@ -57,6 +57,7 @@ const Lists = () => {
     selectedCalls,
     expandedListId,
     eligibleContacts,
+    loadingContactsForListId,
     handleExpand,
     handleConnectionChange,
     anchorEl,
@@ -178,6 +179,7 @@ const Lists = () => {
                           selectedCall={selectedCalls[list.id]}
                           expanded={expandedListId === list.id}
                           eligibleContacts={eligibleContacts[list.id]}
+                          loadingContacts={loadingContactsForListId === list.id}
                           onExpand={handleExpand}
                           onConnectionClick={openMenu}
                           onConnectionChange={handleConnectionChange}

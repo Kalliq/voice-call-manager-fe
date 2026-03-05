@@ -9,6 +9,10 @@ interface EditableFieldItemProps {
   onSave?: (value: string) => Promise<void>;
   /** When true, renders a textarea instead of a single-line input when editing */
   textarea?: boolean;
+  /** When > 0, truncates the text after the specified number of characters */
+  truncateTextAfter?: number;
+  /** The type of the value (e.g. "url" for LinkedIn URLs) */
+  type?: "url" | "text"| "email";
 }
 
 const EditableFieldItem = ({
@@ -17,6 +21,8 @@ const EditableFieldItem = ({
   value = "",
   onSave,
   textarea = false,
+  truncateTextAfter = 0,
+  type = "text",
 }: EditableFieldItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
@@ -121,6 +127,10 @@ const EditableFieldItem = ({
         ) : (
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
             <Typography
+              component={type === "url" ? "a" : "span"}
+              href={type === "url" ? value : undefined}
+              target={type === "url" ? "_blank" : undefined}
+              rel={type === "url" ? "noopener noreferrer" : undefined}
               fontSize={13}
               sx={{
                 flexGrow: 1,
@@ -131,6 +141,7 @@ const EditableFieldItem = ({
                 textOverflow: "ellipsis",
                 wordWrap: "break-word",
                 overflowWrap: "break-word",
+                maxWidth: truncateTextAfter > 0 ? `${truncateTextAfter}px` : "100%",
               }}
             >
               {value || "—"}

@@ -10,6 +10,7 @@ import {
   Typography,
   useTheme,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
 import {
   ExpandMore,
@@ -33,6 +34,7 @@ interface ListCardProps {
   selectedCall: string;
   expanded: boolean;
   eligibleContacts: Record<number, any[]>;
+  loadingContacts?: boolean;
   onExpand: (id: string, steps?: Step[]) => void;
   onConnectionClick: (e: React.MouseEvent<HTMLElement>, id: string) => void;
   onConnectionChange: (id: string, option: string) => void;
@@ -51,6 +53,7 @@ const ListCard = ({
   selectedCall,
   expanded,
   eligibleContacts,
+  loadingContacts,
   onExpand,
   onConnectionClick,
   onConnectionChange,
@@ -184,32 +187,43 @@ const ListCard = ({
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
           <Collapse in={expanded} timeout="auto" unmountOnExit>
             <Box margin={1}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Step Name</TableCell>
-                    <TableCell>Eligible Contacts</TableCell>
-                    <TableCell>Priority</TableCell>
-                    <TableCell align="right">Operations</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {list.steps?.map((step: Step, i: number) => (
-                    <StepRow
-                      key={step.id}
-                      step={step}
-                      index={i}
-                      contacts={eligibleContacts?.[i] ?? step.contacts}
-                      selectedCallType={selectedCall}
-                      list={list}
-                      onConnectionClick={onConnectionClick}
-                      onContactRemoved={() =>
-                        onContactRemoved?.(list.id, list.steps)
-                      }
-                    />
-                  ))}
-                </TableBody>
-              </Table>
+              {loadingContacts ? (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  py={3}
+                >
+                  <CircularProgress size={24} />
+                </Box>
+              ) : (
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Step Name</TableCell>
+                      <TableCell>Eligible Contacts</TableCell>
+                      <TableCell>Priority</TableCell>
+                      <TableCell align="right">Operations</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {list.steps?.map((step: Step, i: number) => (
+                      <StepRow
+                        key={step.id}
+                        step={step}
+                        index={i}
+                        contacts={eligibleContacts?.[i] ?? step.contacts}
+                        selectedCallType={selectedCall}
+                        list={list}
+                        onConnectionClick={onConnectionClick}
+                        onContactRemoved={() =>
+                          onContactRemoved?.(list.id, list.steps)
+                        }
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </Box>
           </Collapse>
         </TableCell>

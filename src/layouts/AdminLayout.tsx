@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   AppBar,
   Accordion,
@@ -654,6 +654,12 @@ export default function AdminLayout() {
                 notifications.map((notification) => (
                   <MenuItem
                     key={notification.id}
+                    component={Link}
+                    to={
+                      notification.meta?.contactId
+                        ? `/contacts/${notification.meta.contactId}`
+                        : "/contacts"
+                    }
                     onClick={() => handleNotificationClick(notification)}
                     sx={{
                       backgroundColor: notification.isRead

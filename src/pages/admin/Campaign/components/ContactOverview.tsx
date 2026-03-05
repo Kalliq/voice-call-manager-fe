@@ -234,6 +234,7 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
               <EditableFieldItem
                 icon={<Business color="primary" />}
                 label="Account website"
+                type="url"
                 value={contact.account?.website || ""}
                 onSave={
                   onUpdate
@@ -331,6 +332,8 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                 icon={<LinkedIn color="primary" />}
                 label="LinkedIn URL"
                 value={contact.linkedIn || ""}
+                truncateTextAfter={250}
+                type="url"
                 onSave={
                   onUpdate ? (value) => onUpdate("linkedIn", value) : undefined
                 }
