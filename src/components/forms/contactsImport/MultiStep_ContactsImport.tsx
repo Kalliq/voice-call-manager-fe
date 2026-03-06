@@ -26,6 +26,8 @@ type ImportFormValues = {
   hasHeader: boolean;
   mapping: Record<string, string>;
   duplicateField: string;
+  timezoneMode: string;
+  timezoneManual?: string;
   selectedListId: string; // or mongoose.Types.ObjectId if you want to be strict
 };
 
@@ -57,6 +59,8 @@ const MultiStepForm = () => {
       hasHeader: false,
       mapping: {},
       duplicateField: "",
+      timezoneMode: "",
+      timezoneManual: "",
       selectedListId: "",
     },
     resolver: zodResolver(
@@ -94,6 +98,13 @@ const MultiStepForm = () => {
     formData.append("file", formDataValues.file); // <--- IMPORTANT
     formData.append("hasHeader", String(formDataValues.hasHeader));
     formData.append("duplicateField", formDataValues.duplicateField);
+    formData.append("timezoneMode", formDataValues.timezoneMode ?? "");
+    if (
+      formDataValues.timezoneMode === "manual" &&
+      formDataValues.timezoneManual
+    ) {
+      formData.append("timezoneManual", formDataValues.timezoneManual);
+    }
     formData.append("selectedListId", formDataValues.selectedListId);
 
     // mapping is stored as { fieldId: csvColumn }, API expects { csvColumn: fieldId }

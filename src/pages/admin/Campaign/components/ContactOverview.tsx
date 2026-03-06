@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Autocomplete,
   Box,
   Grid,
   Paper,
@@ -8,9 +9,7 @@ import {
   Stack,
   Tabs,
   Tab,
-  Select,
-  MenuItem,
-  FormControl,
+  TextField,
   CircularProgress,
 } from "@mui/material";
 import {
@@ -36,6 +35,7 @@ import ActivityRow from "./molecules/ActivityRow";
 import { Contact } from "../../../../types/contact";
 import { EditableFieldItem } from "../../../../components/atoms/EditableFieldItem";
 import { formatContactLocalTime } from "../../../../utils/formatContactLocalTime";
+import { getAllTimezones } from "../../../../utils/timezones";
 
 interface ContactOverviewProps {
   contact: Contact;
@@ -70,6 +70,7 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
   const [loadingReplies, setLoadingReplies] = useState(false);
 
   const { settings } = useAppStore((s) => s);
+  const timezones = useMemo(() => getAllTimezones(), []);
   const callResults: CallResult[] =
     (settings?.["Phone Settings"]?.callResults as CallResult[]) ?? [];
 
@@ -363,6 +364,11 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                   >
                     Timezone
                   </Typography>
+                  {!showTimezoneSelect && (
+                    <Typography fontSize={13} sx={{ minHeight: 32, py: 0.5 }}>
+                      {contact.timezone || "—"}
+                    </Typography>
+                  )}
                   <Box
                     sx={{
                       minHeight: 32,
@@ -372,54 +378,36 @@ const ContactOverview = ({ contact, onUpdate }: ContactOverviewProps) => {
                     }}
                     onClick={() => setIsTimezoneOpen(true)}
                   >
-                    <FormControl fullWidth size="small">
-                      <Select
-                        open={isTimezoneOpen}
-                        onOpen={() => setIsTimezoneOpen(true)}
-                        onClose={() => {
-                          setIsTimezoneOpen(false);
-                          setIsTimezoneHovered(false);
-                        }}
-                        value={contact.timezone || ""}
-                        onChange={(e) => {
-                          if (onUpdate) {
-                            onUpdate("timezone", e.target.value);
-                          }
-                        }}
-                        displayEmpty
-                        sx={{
-                          fontSize: 13,
-                          "& .MuiSelect-select": {
-                            py: 0.5,
-                          },
-                        }}
-                      >
-                        <MenuItem value="">
-                          <em>None</em>
-                        </MenuItem>
-                        <MenuItem value="America/New_York">
-                          Eastern (New York)
-                        </MenuItem>
-                        <MenuItem value="America/Chicago">
-                          Central (Chicago)
-                        </MenuItem>
-                        <MenuItem value="America/Denver">
-                          Mountain (Denver)
-                        </MenuItem>
-                        <MenuItem value="America/Phoenix">
-                          Mountain (Phoenix)
-                        </MenuItem>
-                        <MenuItem value="America/Los_Angeles">
-                          Pacific (Los Angeles)
-                        </MenuItem>
-                        <MenuItem value="America/Anchorage">
-                          Alaska (Anchorage)
-                        </MenuItem>
-                        <MenuItem value="Pacific/Honolulu">
-                          Hawaii (Honolulu)
-                        </MenuItem>
-                      </Select>
-                    </FormControl>
+                    <Autocomplete
+                      size="small"
+                      options={timezones}
+                      getOptionLabel={(option) => option}
+                      value={contact.timezone || null}
+                      onChange={(_, newValue) => {
+                        if (onUpdate) {
+                          onUpdate("timezone", newValue ?? "");
+                        }
+                      }}
+                      onOpen={() => setIsTimezoneOpen(true)}
+                      onClose={() => {
+                        setIsTimezoneOpen(false);
+                        setIsTimezoneHovered(false);
+                      }}
+                      open={isTimezoneOpen}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="None"
+                          size="small"
+                          sx={{
+                            "& .MuiInputBase-input": {
+                              fontSize: 13,
+                              py: 0.5,
+                            },
+                          }}
+                        />
+                      )}
+                    />
                   </Box>
                 </Box>
               </Box>

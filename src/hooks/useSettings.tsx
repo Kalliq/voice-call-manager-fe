@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import useAppStore from "../store/useAppStore";
 import { translateToTitleCase } from "../utils/translateToTitle";
@@ -25,7 +25,7 @@ export const useSettings = () => {
             key !== "user" &&
             key !== "id" &&
             !["createdat", "updatedat", "created_at", "updated_at"].includes(lowerKey) &&
-            !["__v","generalsettings", "notificationssettings", "general_settings", "notifications_settings"].includes(lowerKey)
+            !["__v", "generalsettings", "notificationssettings", "notifications_settings"].includes(lowerKey)
           );
         })
         .reduce((acc, key) => {
@@ -40,23 +40,6 @@ export const useSettings = () => {
     parent: "Phone Settings",
     child: "powerDialerManagement",
   });
-
-  useEffect(() => {
-    if (settings && !selected) {
-      const parent = settingsKeys.find((k) =>
-        k.toLowerCase().includes("power dialer")
-      );
-      if (parent) {
-        const originalKey = keyMap[parent] || parent;
-        const child = Object.keys(settings[originalKey] || {}).find(
-          (subKey) =>
-            subKey.toLowerCase().includes("powerdialer") ||
-            subKey.toLowerCase().includes("power_dialer")
-        );
-        if (child) setSelected({ parent, child });
-      }
-    }
-  }, [settings, settingsKeys, selected, keyMap]);
 
   const handleChildClick = (parent: string, child: string) => {
     setSelected({ parent, child });

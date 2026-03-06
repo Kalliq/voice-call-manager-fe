@@ -414,8 +414,9 @@ export default function AdminLayout() {
                           {Object.keys(settings[originalKey] ?? {})
                             .filter((subKey) => {
                               return (
-                                settingsComponentRegistry[category]?.[subKey] !=
-                                null
+                                settingsComponentRegistry[category]?.[
+                                  subKey
+                                ] != null
                               );
                             })
                             .map((subKey) => (

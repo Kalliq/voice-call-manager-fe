@@ -7,9 +7,28 @@ export const csvFileImportStep_1_ValidationSchema = z.object({
   hasHeader: z.boolean(),
 });
 
-export const csvFileImportStep_2_ValidationSchema = z.object({
-  duplicateField: z.string().min(1, "Please select a duplicate filter field"),
-});
+export const TIMEZONE_MODE = {
+  EMPTY: "",
+  USE_FROM_CSV_MAP: "use_from_csv_map",
+  AUTO_DETECT: "auto_detect",
+  MANUAL: "manual",
+} as const;
+
+export const csvFileImportStep_2_ValidationSchema = z
+  .object({
+    duplicateField: z.string().min(1, "Please select a duplicate filter field"),
+    timezoneMode: z.string(),
+    timezoneManual: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.timezoneMode === TIMEZONE_MODE.MANUAL) {
+        return !!data.timezoneManual && data.timezoneManual.trim().length > 0;
+      }
+      return true;
+    },
+    { message: "Please select a timezone", path: ["timezoneManual"] }
+  );
 
 const REQUIRED_MAPPING_FIELDS = [
   "first_name",
